@@ -1,25 +1,44 @@
-/* Design tokens for the "Engineering print" look. See
-   docs/design/engineering-print.md. Area stylesheets use these variables and
-   never hard-code colour or font values. */
+/* Design tokens for the "Modern light" look. See docs/design/modern-light.md.
+   Area stylesheets use these variables and never hard-code colour or font values.
+   The --paper* / --ink* / --rule* names are kept from the previous look so existing
+   rules, layout.css and tiling keep working: read --paper as the page background,
+   --paper-raised as a surface (cards, inputs) and --paper-sunk as a recessed fill. */
+@import url("/vendor/fonts/fonts.css");
 :root {
-  --paper: #F4F1EA;
-  --paper-raised: #FBFAF6;
-  --paper-sunk: #EAE6DC;
-  --ink: #141414;
-  --ink-2: #4A4843;
-  --ink-3: #656259;
-  --rule: rgba(20, 20, 20, .18);
-  --rule-strong: #141414;
-  --accent: #FF5A1F;
-  --accent-ink: #B8370A;
-  --accent-wash: #FFE4D6;
-  --ok: #1E7A4C;
-  --ok-ink: #196D43;
-  --info: #1F4FD8;
-  --warn: #B7791F;
-  --warn-ink: #8A5A13;
-  --muted: #666660;
-  --font-sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --radius: 0;
+  /* Surfaces */
+  --paper: #F4F6FA;
+  --paper-raised: #FFFFFF;
+  --paper-sunk: #EDF0F5;
+  /* Text */
+  --ink: #111827;
+  --ink-2: #475467;
+  --ink-3: #566274;
+  --muted: #5B6677;
+  /* Borders: --rule is the soft hairline, --rule-strong the border of controls. */
+  --rule: #E3E7EE;
+  --rule-strong: #C8CFDB;
+  /* The one accent: selection, primary actions, focus, links. */
+  --accent: #4F46E5;
+  --accent-ink: #4338CA;
+  --accent-wash: #EEF0FF;
+  --on-accent: #FFFFFF;
+  /* Status colours. Marks use the base colour, text uses the -ink colour. */
+  --danger: #DC3545;
+  --danger-ink: #B42330;
+  --danger-wash: #FDECEE;
+  --ok: #16A34A;
+  --ok-ink: #0F7A3C;
+  --info: #0369A1;
+  --warn: #D97706;
+  --warn-ink: #8F4A0B;
+  /* Type */
+  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  /* Shape and elevation */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .06);
+  --shadow-md: 0 8px 24px rgba(16, 24, 40, .12);
+  --focus-ring: 0 0 0 3px rgba(79, 70, 229, .3);
 }
