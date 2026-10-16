@@ -1,11 +1,11 @@
-# Project State — Compass codebase knowledge base
+# Project State — ResponseCompass codebase knowledge base
 
-This folder is the **source of truth for how the Compass codebase is built.** It is a
+This folder is the **source of truth for how the ResponseCompass codebase is built.** It is a
 persistent, interlinked wiki that an engineer or an LLM agent reads *before* changing
 the code, and updates *after* changing it. Read [index.md](index.md) for the full page
 catalog and [log.md](log.md) for the change history.
 
-> **If you are about to modify Compass, start here.** Find the page(s) for the area you
+> **If you are about to modify ResponseCompass, start here.** Find the page(s) for the area you
 > are touching, read them, make your change, then update those same pages and append a
 > line to [log.md](log.md). A change is not finished until this folder reflects it.
 
@@ -125,5 +125,5 @@ Record the outcome as a `docs` entry in [log.md](log.md).
 - **The SOW files** (`*_SOW_*.md`) are the requirement specifications. This wiki documents
   what was actually built, which is the better reference for *modifying* the code.
 
-Compass is developed for real production use. Describe it as a production system; earlier
+ResponseCompass is developed for real production use. Describe it as a production system; earlier
 requirement documents that frame it as a time-boxed exercise are historical context only.

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Compass application defense and reference guide">
-  <title>Compass — Application Defense Guide</title>
+  <meta name="description" content="ResponseCompass application defense and reference guide">
+  <title>ResponseCompass — Application Defense Guide</title>
   <style>
     :root { color-scheme: dark; --ink:#eaf5f8; --muted:#a8c0ca; --surface:#0d1d27; --surface-2:#102b38; --line:#285264; --accent:#4dc6dd; --green:#54d1aa; --amber:#f0b85b; --red:#ff866f; --violet:#b597ff; }
     * { box-sizing:border-box; } html { scroll-behavior:smooth; } body { margin:0; font:16px/1.58 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#08131b; color:var(--ink); }
@@ -32,9 +32,9 @@
     </aside>
     <main>
       <section id="purpose">
-        <p class="eyebrow">Reference for application defense</p><h2>Compass in one sentence</h2>
-        <p class="lede">Compass is a synthetic multi-room operational control room that uses deterministic application logic to manage simulated demand and uses a bounded recommendation agent to rank eligible responders for one selected issue.</p>
-        <div class="notice"><strong>What it is not:</strong> Compass is not an HR system, payroll system, real plant controller, predictive-maintenance product, real-world scheduler, or legal/labor advisory tool. All people, equipment, maps, histories, and outcomes are synthetic and domain-neutral.</div>
+        <p class="eyebrow">Reference for application defense</p><h2>ResponseCompass in one sentence</h2>
+        <p class="lede">ResponseCompass is a synthetic multi-room operational control room that uses deterministic application logic to manage simulated demand and uses a bounded recommendation agent to rank eligible responders for one selected issue.</p>
+        <div class="notice"><strong>What it is not:</strong> ResponseCompass is not an HR system, payroll system, real plant controller, predictive-maintenance product, real-world scheduler, or legal/labor advisory tool. All people, equipment, maps, histories, and outcomes are synthetic and domain-neutral.</div>
         <div class="grid" style="margin-top:16px"><article class="card"><h3>Question 1: capacity</h3><p>The application deterministically selects which actionable unresolved issue may receive available capacity next.</p></article><article class="card"><h3>Question 2: responder fit</h3><p>Compass ranks only the application-supplied eligible responders for that one issue.</p></article><article class="card"><h3>Application authority</h3><p>The application validates, offers, assigns, resolves, audits, and persists every canonical transition.</p></article></div>
       </section>
 
@@ -111,11 +111,11 @@ teamSuccess = min(0.98, highProbability + 0.60 × lowProbability × (1 − highP
 
       <section id="offline"><h2>Offline Demo</h2><p>Offline Demo is a deterministic API-free fixture, not a broken Live mode. It contains a fixed issue, fixed candidates, stored Compass result, deterministic baselines, real offer/assignment/override actions, public audit, and reset. It needs no credentials, network, provider availability, or API spend.</p></section>
 
-      <section id="operations"><h2>Docker deployment and health</h2><p>Compass runs in one hardened Node 22 Docker container on port <strong>3000</strong>, using a named persistent volume for room state, metadata, provider settings, audit data, and application events. The image excludes secrets/local state, runs non-root with a read-only root filesystem, separate temporary storage, no added Linux capabilities, and no-new-privileges.</p><p>Health succeeds only when every configured room is <code>READY</code>. State migration is deliberate: back up state, validate an empty target volume, stop the previous writer, copy once, start the service, confirm health/revisions, and retain rollback material. A nonempty volume is never automatically merged or overwritten.</p></section>
+      <section id="operations"><h2>Docker deployment and health</h2><p>ResponseCompass runs in one hardened Node 22 Docker container on port <strong>3000</strong>, using a named persistent volume for room state, metadata, provider settings, audit data, and application events. The image excludes secrets/local state, runs non-root with a read-only root filesystem, separate temporary storage, no added Linux capabilities, and no-new-privileges.</p><p>Health succeeds only when every configured room is <code>READY</code>. State migration is deliberate: back up state, validate an empty target volume, stop the previous writer, copy once, start the service, confirm health/revisions, and retain rollback material. A nonempty volume is never automatically merged or overwritten.</p></section>
 
       <section id="questions"><h2>Defense questions and answers</h2>
-        <details><summary>Is Compass deterministic?</summary><div>Application facts, eligibility, priority, staffing, simulation time, persisted RNG streams, outcomes, validation, persistence, and fallbacks are deterministic from stored state. Optional provider rankings/prose are not assumed deterministic and are revalidated.</div></details>
-        <details><summary>Does Compass globally optimize the workforce?</summary><div>No. The deterministic queue picks an issue eligible for capacity; Compass ranks responders for that one issue only. There is no unconstrained global workforce optimization.</div></details>
+        <details><summary>Is ResponseCompass deterministic?</summary><div>Application facts, eligibility, priority, staffing, simulation time, persisted RNG streams, outcomes, validation, persistence, and fallbacks are deterministic from stored state. Optional provider rankings/prose are not assumed deterministic and are revalidated.</div></details>
+        <details><summary>Does ResponseCompass globally optimize the workforce?</summary><div>No. The deterministic queue picks an issue eligible for capacity; Compass ranks responders for that one issue only. There is no unconstrained global workforce optimization.</div></details>
         <details><summary>Can a model send people, change shifts, or invent facts?</summary><div>No. The model may only propose a bounded event or rank an application-supplied candidate set. The backend owns and validates all mutations.</div></details>
         <details><summary>Why keep hidden skill?</summary><div>It supplies controlled synthetic ground truth for outcomes. It is deliberately unavailable to operators and Compass, preserving uncertainty and avoiding privileged synthetic performance scoring.</div></details>
         <details><summary>Does Force Resolve guarantee success?</summary><div>No. It bypasses waiting, not outcome logic. The same attempt probability and stored random draw can reopen the issue.</div></details>
@@ -123,10 +123,10 @@ teamSuccess = min(0.98, highProbability + 0.60 × lowProbability × (1 − highP
         <details><summary>What happens if two operators act at once?</summary><div>They share canonical room state. Serialized mutation, revision checks, and eligibility revalidation reject stale/conflicting actions rather than silently making invalid assignments.</div></details>
       </section>
 
-      <section id="verification"><h2>Verification posture and demonstration script</h2><p>Compass uses hermetic backend tests (no provider/network calls and no production-data writes) and Chromium end-to-end tests with provider failures forced. Coverage includes room isolation, failure containment, clock speeds, durable triggers, queue caps, workforce legality, handovers, redaction, races, Live/Offline behavior, map interaction, accessible controls, analytics drill-down, and Docker build/health configuration.</p>
+      <section id="verification"><h2>Verification posture and demonstration script</h2><p>ResponseCompass uses hermetic backend tests (no provider/network calls and no production-data writes) and Chromium end-to-end tests with provider failures forced. Coverage includes room isolation, failure containment, clock speeds, durable triggers, queue caps, workforce legality, handovers, redaction, races, Live/Offline behavior, map interaction, accessible controls, analytics drill-down, and Docker build/health configuration.</p>
         <div class="notice"><strong>Suggested defense walkthrough:</strong> open a paused room; select an active issue; show the deterministic nearest/naive comparators beside Compass’s bounded recommendation; explain that an operator can override; follow the event feed and Station Status; inspect the shift-first Analytics drill-down; then use Offline Demo to show the same workflow without a provider.</div>
       </section>
-      <footer>Compass application reference guide. All operational data and outcomes described here are synthetic.</footer>
+      <footer>ResponseCompass application reference guide. All operational data and outcomes described here are synthetic.</footer>
     </main>
   </div>
 </body>

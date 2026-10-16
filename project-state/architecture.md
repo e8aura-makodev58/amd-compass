@@ -1,6 +1,6 @@
 # Architecture — the whole system on one page
 
-Compass is a **context-aware responder-dispatch agent inside a persistent simulated
+ResponseCompass is a **context-aware responder-dispatch agent inside a persistent simulated
 control room**. An operational simulation decides what needs attention; Compass decides
 *who* should respond to each issue, right now, and explains the tradeoff.
 
@@ -12,7 +12,7 @@ The governing sentence:
 ## The load-bearing boundary
 
 **Application code owns facts; models only propose or rank within bounds.** This is the
-single most important thing to preserve when changing Compass. See
+single most important thing to preserve when changing ResponseCompass. See
 [concepts/agent-boundary.md](concepts/agent-boundary.md).
 
 - Application code owns: time, facts, eligibility, geometry, metrics, baselines,

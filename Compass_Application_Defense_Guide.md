@@ -1,8 +1,8 @@
-# Compass — Application Defense Guide
+# ResponseCompass — Application Defense Guide
 
-## 1. What Compass is
+## 1. What ResponseCompass is
 
-Compass is a synthetic operational-control-room application. It simulates equipment issues, responder availability, shift continuity, dispatch, repair outcomes, and operational history across independently selectable Control Rooms. Its purpose is to demonstrate a disciplined decision-support workflow:
+ResponseCompass is a synthetic operational-control-room application. It simulates equipment issues, responder availability, shift continuity, dispatch, repair outcomes, and operational history across independently selectable Control Rooms. Its purpose is to demonstrate a disciplined decision-support workflow:
 
 1. The application decides which unresolved issue may receive the next available capacity.
 2. Compass evaluates only the eligible responders supplied for that one issue.
@@ -18,7 +18,7 @@ Compass is not an HR system, payroll system, production scheduler, real-world ov
 | Compass Recommendation Agent | Ranks the already eligible responders for one selected issue and explains qualitative tradeoffs. | Eligibility, evidence, baselines, validation, fallback ranking, and final dispatch are deterministic. The provider’s ranking text/order may be non-deterministic. | Optionally, for a bounded structured ranking of supplied candidates. | No. The application revalidates then creates offers/assignments atomically. |
 | Application / control-room runtime | Canonical source of truth. It owns simulation time, queue priority, staffing, shifts, candidate packets, RNG, state writes, validation, audit, and analytics. | Yes, given persisted state and RNG streams. | No dependency on a provider for correctness. | Yes, through serialized atomic mutations only. |
 
-The defense point is simple: **Compass is decision support inside an application-owned safety envelope, not an autonomous decision maker.** Provider output can be unavailable, malformed, stale, or rejected; the simulator and dispatch workflow remain valid because deterministic fallbacks exist.
+The defense point is simple: **ResponseCompass is decision support inside an application-owned safety envelope, not an autonomous decision maker.** Provider output can be unavailable, malformed, stale, or rejected; the simulator and dispatch workflow remain valid because deterministic fallbacks exist.
 
 ## 3. Trust boundary and hidden truth
 
@@ -264,15 +264,15 @@ Offline Demo is not a degraded external service. It is a deterministic, API-free
 
 ## 10. Docker operation and health
 
-Compass runs in one hardened Node 22 Docker container on port **3000**. It uses one named persistent volume for room state, metadata, provider settings, audit data, and application events. The image excludes secrets and local state, runs non-root with a read-only root filesystem, separate temporary writable storage, no added Linux capabilities, and no-new-privileges.
+ResponseCompass runs in one hardened Node 22 Docker container on port **3000**. It uses one named persistent volume for room state, metadata, provider settings, audit data, and application events. The image excludes secrets and local state, runs non-root with a read-only root filesystem, separate temporary writable storage, no added Linux capabilities, and no-new-privileges.
 
 The health check calls the control-room directory and succeeds only when every configured room is `READY`. State migration is deliberate: pause if necessary, back up the prior data directory, verify an empty target volume, stop the previous writer, copy state once, start Compose, verify room health/revisions, and retain rollback material. A nonempty state volume is never automatically merged or overwritten.
 
 ## 11. Defense questions and concise answers
 
-**Is Compass deterministic?** The application’s state, eligibility, priority, staffing, simulation clock, RNG streams, outcome process, validation, persistence, and fallbacks are deterministic from persisted state. Optional provider rankings/proposed narratives are not assumed deterministic and are never trusted without validation.
+**Is ResponseCompass deterministic?** The application’s state, eligibility, priority, staffing, simulation clock, RNG streams, outcome process, validation, persistence, and fallbacks are deterministic from persisted state. Optional provider rankings/proposed narratives are not assumed deterministic and are never trusted without validation.
 
-**Does Compass choose who should work next globally?** The deterministic queue chooses which actionable issue may receive available capacity. Compass then ranks responders only for that specific issue. It does not perform unconstrained global workforce optimization.
+**Does ResponseCompass choose who should work next globally?** The deterministic queue chooses which actionable issue may receive available capacity. Compass then ranks responders only for that specific issue. It does not perform unconstrained global workforce optimization.
 
 **Can the model send a responder, change a shift, or invent an issue?** No. It can only propose a bounded event or rank an application-supplied eligible list. The backend validates the result and owns all state changes.
 

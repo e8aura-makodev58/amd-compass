@@ -1,14 +1,14 @@
-# Compass — Rebuild Statement of Work
+# ResponseCompass — Rebuild Statement of Work
 
-**Purpose:** Define a standalone, production-oriented specification for rebuilding Compass: a synthetic operational-control-room simulation that dispatches responders to equipment issues, maintains auditable operational state, and exposes safe operator views.
+**Purpose:** Define a standalone, production-oriented specification for rebuilding ResponseCompass: a synthetic operational-control-room simulation that dispatches responders to equipment issues, maintains auditable operational state, and exposes safe operator views.
 
-**Usage note:** Use this SOW with independent agents to develop Compass from scratch, without relying on an existing codebase. Compare the resulting designs, behavior, verification evidence, and tradeoffs against one another to evaluate how faithfully each rebuild satisfies the specification.
+**Usage note:** Use this SOW with independent agents to develop ResponseCompass from scratch, without relying on an existing codebase. Compare the resulting designs, behavior, verification evidence, and tradeoffs against one another to evaluate how faithfully each rebuild satisfies the specification.
 
 ## 1. Product and scope
 
-Compass shall provide independently selectable manufacturing **Control Rooms** in one deployment. A Control Room is a complete simulated operating environment with its own equipment, personnel, issues, assignments, history, clock, scenario policy, deterministic random state, and audit data.
+ResponseCompass shall provide independently selectable manufacturing **Control Rooms** in one deployment. A Control Room is a complete simulated operating environment with its own equipment, personnel, issues, assignments, history, clock, scenario policy, deterministic random state, and audit data.
 
-Compass shall support bounded queue dispatch, shift continuity, handover, surge staffing, recurring temporary repairs, contextual responder assignment, and drill-down analytics. It shall use synthetic, domain-neutral data only. It shall not connect to real machinery, personnel, payroll, scheduling, or production systems.
+ResponseCompass shall support bounded queue dispatch, shift continuity, handover, surge staffing, recurring temporary repairs, contextual responder assignment, and drill-down analytics. It shall use synthetic, domain-neutral data only. It shall not connect to real machinery, personnel, payroll, scheduling, or production systems.
 
 The product answers two application-owned questions in order:
 
@@ -57,7 +57,7 @@ An issue lifecycle shall support at least queued/pending work, recommendation or
 
 Active rosters permit at most one PRIMARY and one SUPPORT simultaneously. A responder cannot have concurrent active assignments. A resolution record shall retain all unique lifetime contributors to that attempt; this historical contributor list has no artificial maximum.
 
-When a responder moves because of assignment, assistance, transfer, release, resolution, handover, or reconciliation, their canonical location changes once at that event snapshot. Active responders shall render adjacent to the assigned station at deterministic, non-overlapping offsets; released responders return to a persisted duty station. Every real move records a public `RESPONDER_MOVED` event. Compass shall not fabricate continuous or per-second tracking.
+When a responder moves because of assignment, assistance, transfer, release, resolution, handover, or reconciliation, their canonical location changes once at that event snapshot. Active responders shall render adjacent to the assigned station at deterministic, non-overlapping offsets; released responders return to a persisted duty station. Every real move records a public `RESPONDER_MOVED` event. ResponseCompass shall not fabricate continuous or per-second tracking.
 
 ### 4.2 Hidden truth and outcomes
 
@@ -167,7 +167,7 @@ Offline mode is a deterministic, API-free shared-mode path. It shall present a f
 
 ## 10. Deployment and operations
 
-Package Compass as a single Docker container using a supported Node 22 LTS runtime. Configure one explicit persistent data root that contains per-room state/audits, room metadata, provider settings, offline audit records, and deployment-level application events. The implementation shall use a safe local default and an explicit production mount without scattering persistence paths through application modules.
+Package ResponseCompass as a single Docker container using a supported Node 22 LTS runtime. Configure one explicit persistent data root that contains per-room state/audits, room metadata, provider settings, offline audit records, and deployment-level application events. The implementation shall use a safe local default and an explicit production mount without scattering persistence paths through application modules.
 
 Provide Docker Compose deployment exposing port 3000 with a named persistent volume. The image shall exclude secrets and local runtime data, run as non-root, use a read-only root filesystem, mount temporary writable storage separately, drop capabilities, and enable no-new-privileges. Test data-root overrides must be unavailable in production.
 
