@@ -70,8 +70,8 @@ A watcher also stops on its own once your assignment reads "none". The main agen
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no task this round) |
-| gemini | STOP (no task this round) |
+| codex | RUN (round 3 task open) |
+| gemini | RUN (round 3 task open) |
 | codebuddy | RUN (round 2 task open) |
 | claude | RUN (round 2 task open) |
 
@@ -97,6 +97,88 @@ service is back up. Start with `git merge master` (protocol step 1).
 - Run `npm install` once in your worktree. Verify with both suites (`AGENTS.md` rule 9).
 
 - **codex:** none (contrast fix and Analytics polish merged `08af6b7`)
+
+**Round 3 (2026-10-16), running alongside round 2.** The user asked for tiling panels and a
+new modern light theme. Use maintained open-source libraries rather than writing them from
+scratch. Everything ships **inside the repo and is served by our own server**. No CDN, no
+web fonts from the internet: the E2E suite asserts zero outbound requests, and the app must
+work offline. The frontend has no bundler (plain ES modules served from `frontend/`), so
+vendor each library's prebuilt browser build into `frontend/vendor/<name>/`, together with
+its LICENSE. Add a small `npm run vendor` script (`scripts/vendor-frontend.mjs`) that copies
+the files from `node_modules`, so they can be updated reproducibly. The same shared rules as
+round 2 apply.
+
+- **codex — Tiling panel layout for the Live Floor (desktop).**
+  - **Behaviour:** like Omarchy/Zellij tiling. On the desktop Live Floor (≥901px wide) these
+    panels are tiles that always fill the frame with no gaps or overlaps:
+    - map (`.floor-section`);
+    - issue list (`#issue-list`);
+    - event feed (`#event-feed`);
+    - dispatch/context panel (`.context-panel`).
+    Dragging a divider resizes both neighbours, so tiles stay locked together. A tile can be
+    moved (dragged to another edge/position) and maximised/restored. Every tile has a minimum
+    size, so no tile can be dragged to zero.
+  - **Library:** evaluate [Dockview](https://dockview.dev) (`dockview-core`, vanilla, MIT)
+    first; Golden Layout 2 (MIT) is the fallback. Pick one, record why in
+    `docs/decisions.md`, and vendor it as above. Floating/popout windows stay **off**: tiles
+    must stay locked to each other.
+  - **Persistence:** the layout persists per browser in `localStorage`, wrapped in
+    try/catch; a corrupt or old value falls back to the default. A visible "Reset layout"
+    control restores the default.
+  - **Keyboard:** dividers are keyboard-resizable with focus visible (spec rule 9), using the
+    library's support or a small addition.
+  - **Narrow screens:** below 901px, keep today's stacked document flow (no tiling).
+  - **Don't break the app:**
+    - Keep every element ID, class and ARIA attribute that `app.js`/tests use. Move the
+      existing DOM nodes into tiles rather than re-creating them, because `app.js` holds
+      references and the render lifecycle (`render-lifecycle.js`) must keep working.
+    - The map must re-fit when its tile resizes; use a `ResizeObserver`.
+  - **Files:** you own `frontend/layout.css`, a new `frontend/tiling.js` (+ `tiling.css` if
+    needed), `frontend/vendor/<tiling lib>/`, and the `index.html` lines that load them. In
+    `app.js`, only add the minimal wiring (init call, resize hooks). gemini is restyling all
+    other CSS this round, so don't edit `tokens.css` / `base.css` / `floor.css` / `panel.css`
+    / `ops.css` / `analytics.css`. Style the tiling chrome (dividers, tile headers) with
+    tokens only, so it picks up gemini's theme.
+  - **Server:** if you need a MIME type for a new file extension, add only that line to
+    `mimeTypes` in `backend/src/server.mjs`.
+  - **Tests:** add `e2e/tiling.spec.mjs` with these assertions:
+    - the tiles fill the frame with no gap;
+    - dragging a divider grows one tile and shrinks its neighbour by the same amount;
+    - minimum sizes hold;
+    - the layout persists across reload, and Reset restores it;
+    - no outbound requests;
+    - below 901px the page stacks.
+    Existing E2E tests must still pass, so update selectors only where the DOM really moved,
+    and say so in your handoff.
+  - **Docs:** update `project-state/frontend/overview.md` (layout section).
+
+- **gemini — Modern clean light theme (replaces "Engineering print").**
+  - **Look:** white and cool-grey surfaces, subtle rounded corners (6–10px), soft 1px borders,
+    light elevation (very subtle shadows allowed), one accent colour, clear status colours,
+    modern controls (pill/segmented buttons, styled selects/inputs/checkboxes, visible focus
+    rings).
+  - **Fonts:** **Inter** for UI and **JetBrains Mono** (or Geist Mono) for figures/IDs.
+    Install via `@fontsource-variable/inter` and `@fontsource-variable/jetbrains-mono` (or
+    equivalents), vendor only the latin `woff2` files plus their CSS into
+    `frontend/vendor/fonts/`, and load them from `tokens.css`. Add `.woff2` → `font/woff2`
+    to `mimeTypes` in `backend/src/server.mjs` (that line only).
+  - **Spec:** write `docs/design/modern-light.md` (tokens, rules, ownership), modelled on
+    `docs/design/engineering-print.md`. Mark that file "Superseded by modern-light.md" at the
+    top; don't delete it.
+  - **Files:** you own `frontend/tokens.css`, `base.css`, `floor.css`, `panel.css`,
+    `ops.css` and `analytics.css`. Do **not** edit `layout.css`, `tiling.*` or `index.html`
+    (codex owns them this round). If you need a new stylesheet link, ask under "Questions
+    for main".
+  - **Contrast:** all text must still pass `backend/tests/design-tokens-contrast.test.mjs`
+    (AA 4.5:1 on every surface token). Update the test's surface/text token names if you
+    rename tokens; don't weaken the threshold.
+  - **Keep behaviour:** no ID/class/ARIA changes. Charts stay token-driven. The map's 3D
+    scene is untouched apart from colours.
+  - **Tests:** if an E2E test asserts an old colour (for example the responder-row hover
+    `rgb(234, 230, 220)`), update it and list it in your handoff.
+  - **Done when:** both suites pass, every view (Live Floor, Control Rooms, Analytics,
+    Settings, Offline, the room picker, the search palette) has been checked at 1280px and
+    375px with no leftover paper/ink colours, and `docs/decisions.md` has an entry (append).
 
 - **claude — AMD rate limiting, 429 retry, circuit breaker.**
   - Read `Compass_AMD_Token_Factory_Integration_Guide.md` §2, §5 and §9, and
@@ -154,7 +236,7 @@ service is back up. Start with `git merge master` (protocol step 1).
 
 - **gemini:** none (documentation accuracy pass merged `05596b2`)
 
-- **main agent:** reviews and merges, then re-measures the AMD models live with `npm run measure:amd` (more samples;
+- **main agent:** reviews and merges. Re-measuring the AMD models live with `npm run measure:amd` now (user request), again after claude's limiter merges (more samples;
   also the new `MiniCPM5-2B`) after claude's limiter is merged, so measurement runs through
   the limiter.
 
