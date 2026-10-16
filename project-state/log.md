@@ -63,3 +63,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Header and page title now read **ResponseCompass** (Compass remains the recommendation agent's name). E2E expectations updated for the brand heading and the new hover colour.
 - Layout fixes revealed by the light theme: non-floor views scroll inside their frame on the bounded desktop layout, and the search palette is sized to the viewport rather than the opener's column.
 - Pages updated: none beyond frontend/overview.md (already lists the per-area files).
+
+## [2026-10-16] refactor — Analytics Engineering print restyle
+- Restyled Analytics with token-only paper/ink colours, ruled KPI cells and tables, monospaced figures, square controls, and visible keyboard focus. Charts use ink with orange for downtime; long period series scroll locally so dates and completeness labels remain readable at narrow widths.
+- Kept report backgrounds at full content height within the shared desktop grid. Application behavior and analytics calculations are unchanged; app.js changes are limited to three chart colour arguments.
+- Pages updated: log.md (frontend/overview.md unchanged because behavior is unchanged).

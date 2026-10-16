@@ -107,16 +107,16 @@ _(no merges yet)_
 
 ## codex
 
-- **Status:** IDLE
-- **Updated:** —
-- **Task:** —
-- **Head commit:** —
-- **Changes:** —
-- **Files changed:** —
-- **Verification:** `npm test` — · E2E —
-- **project-state pages updated:** —
-- **Risks / follow-ups:** —
-- **Questions for main:** —
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Analytics view Engineering print restyle.
+- **Head commit:** This handoff's commit on `codex` (see `git log -1 codex`).
+- **Changes:** Replaced dark rounded Analytics cards with token-only paper/ink surfaces, ruled KPI cells, square controls, mono figures, table header rules, and visible keyboard focus. Period charts use ink for issue counts and accent for downtime; dates and partial/insufficient-history labels wrap and long series scroll locally. Analytics aligns to its full content height inside the desktop shell.
+- **Files changed:** `frontend/analytics.css`, `frontend/app.js` (only the three assigned chart colour literals), `project-state/log.md`, `handover.md` (this section only).
+- **Verification:** `npm test` — 230/230 passed; `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 32/32 passed; `git diff --check` clean. Chromium inspected at 1280×900 and 375×900: no Analytics content overflow outside local chart/table scroll areas; four desktop KPI columns / one mobile column; paper and table-header tokens verified; keyboard focus is solid 2px. Preview screenshots are in `/tmp/compass-codex-analytics-{1280,375}.png`.
+- **project-state pages updated:** `project-state/log.md`; frontend overview unchanged because application behavior did not change, as assigned.
+- **Risks / follow-ups:** Shared header/shell retain their existing styling in this branch pending the main agent's changes. Keep the Analytics mobile selector specificity: `layout.css` loads later and otherwise overrides one-column KPI layout below 560px. Initial unit run encountered removed `styles.css` references; incoming commit `236153d` fixed the test readers before successful verification. No screenshot assets included.
+- **Questions for main:** None.
 
 ---
 
