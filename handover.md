@@ -16,6 +16,12 @@ merges finished work into `master`, and archives merged handoffs to
 
 ## Protocol
 
+**All agents (`AGENTS.md` rule 11):** stay inside `amd` folders. Work only in
+`/home/makodev58/amd-compass` and the `amd-compass-<agent>` worktrees. Never read, create,
+edit, move, or delete anything in a folder without `amd` in its name (for example
+`/home/makodev58/compass` or `/home/makodev58/ResponseCompass`) unless the user explicitly
+asks. Exceptions: installed tooling and the read-only Chromium library path in rule 9.
+
 **Worker agents (codex, gemini, codebuddy, claude):**
 
 > Your **task** is your bullet under **Main agent → Assignments**. Your own section further
