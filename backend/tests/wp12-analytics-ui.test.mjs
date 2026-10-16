@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
+import { readFrontendCss } from "./helpers/frontend-css.mjs";
 
 test("WP12 analytics UI renders all P0 panels and denominator safeguards", async () => {
   const root = new URL("../../frontend/", import.meta.url);
-  const [app, css] = await Promise.all([readFile(new URL("app.js", root), "utf8"), readFile(new URL("styles.css", root), "utf8")]);
+  const [app, css] = await Promise.all([readFile(new URL("app.js", root), "utf8"), readFrontendCss()]);
   for (const label of ["Compass vs Baselines", "Equipment", "Responder issue-response summary", "Issue-Class Experience", "Insufficient data"]) assert.match(app, new RegExp(label));
   assert.match(app, /metric\.denominator/);
   assert.match(app, /currentOngoingDowntimeMinutes/);

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
+import { readFrontendCss } from "./helpers/frontend-css.mjs";
 
 const frontendRoot = new URL("../../frontend/", import.meta.url);
 
@@ -22,7 +23,7 @@ test("WP6 recommendation panel renders server-owned evidence and decision afford
   assert.match(app, /Override dispatch/);
   assert.match(app, /A rejection automatically advances/);
   assert.match(app, /is-loading/);
-  const styles = await readFile(new URL("styles.css", frontendRoot), "utf8");
+  const styles = await readFrontendCss();
   assert.match(styles, /button:disabled[^}]*cursor: not-allowed/);
   assert.match(styles, /button\.is-loading[^}]*cursor: wait/);
 });

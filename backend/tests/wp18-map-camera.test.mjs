@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
+import { readFrontendCss } from "./helpers/frontend-css.mjs";
 
 test("manufacturing map defaults to 2D with deliberate desktop pan, explicit zoom, and optional 2.5D controls", async () => {
   const root = new URL("../../frontend/", import.meta.url);
-  const [html, app, css] = await Promise.all(["index.html", "app.js", "styles.css"].map((file) => readFile(new URL(file, root), "utf8")));
+  const [html, app, css] = await Promise.all([...["index.html", "app.js"].map((file) => readFile(new URL(file, root), "utf8")), readFrontendCss()]);
   assert.match(html, /Manufacturing Floor/);
   assert.match(html, /class="floor view-2d"/);
   assert.match(html, /role="group"/);

@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
+import { readFrontendCss } from "./helpers/frontend-css.mjs";
 
 test("WP10 shared control room exposes live state and demo controls", async () => {
   const root = new URL("../../frontend/", import.meta.url);
-  const [html, app, css] = await Promise.all(["index.html", "app.js", "styles.css"].map((file) => readFile(new URL(file, root), "utf8")));
+  const [html, app, css] = await Promise.all([...["index.html", "app.js"].map((file) => readFile(new URL(file, root), "utf8")), readFrontendCss()]);
   for (const label of ["Live Floor", "Live Simulation", "Offline Demo", "Demo", "Agent activity", "Simulation overrides", "Trigger Next Event", "Force Resolve", "Analytics"]) assert.match(html, new RegExp(label));
   for (const endpoint of ["/simulation/force-event", "/force-resolve", "/assignments/override", "/mode"]) assert.match(app, new RegExp(endpoint));
   assert.match(app, /OFFER_PENDING/);
@@ -20,7 +21,7 @@ test("WP10 shared control room exposes live state and demo controls", async () =
 
 test("event feed opens a per-issue audit trail covering analysis, dispatch, and outcome", async () => {
   const root = new URL("../../frontend/", import.meta.url);
-  const [app, css] = await Promise.all(["app.js", "styles.css"].map((file) => readFile(new URL(file, root), "utf8")));
+  const [app, css] = await Promise.all([readFile(new URL("app.js", root), "utf8"), readFrontendCss()]);
   assert.match(app, /data-feed-event-id/);
   assert.match(app, /showingAuditTrail/);
   assert.match(app, /Selected event/);
