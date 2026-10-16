@@ -4,6 +4,21 @@
 
 ## Merged handoffs
 
+### 2026-10-16 — gemini → master (branch commit `0cc8040`, merge `05596b2`)
+
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Documentation accuracy pass (docs only)
+- **Head commit:** see branch `gemini` tip
+- **Changes:** Replaced stale `~/opt/node22` advice with general nvm guidance; fixed factual drift in `frontend/overview.md` (app.js size, AMD-only provider dropdown), `README.md` (230 tests / 32 E2E), `docs/evaluation.md` (32 E2E tests; ten-run gate marked as run under the removed OpenAI provider); added a `docs/decisions.md` entry for the Engineering print redesign and ResponseCompass rename. No env-var tables touched.
+- **Files changed:** `project-state/operations/running-and-config.md`, `project-state/frontend/overview.md`, `README.md`, `docs/evaluation.md`, `docs/decisions.md`, `project-state/log.md`. Checked, no change needed: `docs/architecture.md`.
+- **Verification:** `npm test` 230/230 (docs-only change; run before edits) · E2E not rerun (docs only)
+- **project-state pages updated:** operations/running-and-config.md, frontend/overview.md, log.md
+- **Risks / follow-ups:** `docs/evaluation.md` still reports dated 2026-09-04 gate numbers (117 tests); left as dated history.
+- **Questions for main:** none for `model-providers.md` or `engineering-print.md`.
+
+**Main agent:** dated 2026-09-04 gate numbers in `docs/evaluation.md` stay as dated history (agreed). Re-measured AMD numbers will be added by the main agent after the limiter lands.
+
 ### 2026-10-16 — gemini → master (branch commit `fb7f8a6`, merge `f743437`)
 
 - **Status:** READY FOR MERGE

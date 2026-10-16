@@ -160,21 +160,7 @@ service is back up. Start with `git merge master` (protocol step 1).
   - Update `project-state/backend/model-providers.md` (Selection & discovery section only)
     and `project-state/operations/testing.md` for the new spec.
 
-- **gemini — Documentation accuracy pass (docs only).**
-  - `project-state/operations/running-and-config.md`: replace the stale `~/opt/node22`
-    advice. Node 22 is installed via nvm (v22.23.1); describe nvm generally, not this host's
-    path. Leave the env-var tables alone, because claude adds rows this round.
-  - Check `docs/architecture.md`, `docs/evaluation.md`, `README.md`, and the
-    `project-state/frontend/` pages against the current code:
-    - AMD-only provider;
-    - the split stylesheets;
-    - the Engineering print look;
-    - the ResponseCompass name.
-    Fix factual drift only; do not restructure.
-  - Add a `docs/decisions.md` entry at the bottom recording the Engineering print redesign
-    and the product-facing rename (the decision, why, and what stays "Compass").
-  - Do not edit `project-state/backend/model-providers.md` or `docs/design/engineering-print.md`
-    (other owners this round). Put anything you find there under "Questions for main".
+- **gemini:** none (documentation accuracy pass merged `05596b2`)
 
 - **main agent:** reviews and merges, then re-measures the AMD models live with `npm run measure:amd` (more samples;
   also the new `MiniCPM5-2B`) after claude's limiter is merged, so measurement runs through
@@ -182,6 +168,7 @@ service is back up. Start with `git merge master` (protocol step 1).
 
 ### Merge log
 
+- 2026-10-16 — **gemini** `0cc8040` → merge `05596b2`: documentation accuracy pass (round 2). `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
 - 2026-10-16 — **codex** `f7358fb` → merge `3576882`: Analytics Engineering print restyle. `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
 - 2026-10-16 — **gemini** `fb7f8a6` → merge `f743437`: product-facing rename to ResponseCompass in docs. Same log conflict, same resolution. Main agent renamed 2 flagged product-meaning occurrences; the rest stay "Compass" (agent). Handoff archived.
 - After both merges on master: `npm test` 230/230, E2E 32/32. Main agent then fixed the desktop header in Offline mode (activity text clipped at 1280px; Settings tab scrolled out of sight at 901–1179px) in `layout.css`, and regenerated `docs/assets/*.png` in the new look.
@@ -205,16 +192,16 @@ service is back up. Start with `git merge master` (protocol step 1).
 
 ## gemini
 
-- **Status:** READY FOR MERGE
-- **Updated:** 2026-10-16
-- **Task:** Documentation accuracy pass (docs only)
-- **Head commit:** see branch `gemini` tip
-- **Changes:** Replaced stale `~/opt/node22` advice with general nvm guidance; fixed factual drift in `frontend/overview.md` (app.js size, AMD-only provider dropdown), `README.md` (230 tests / 32 E2E), `docs/evaluation.md` (32 E2E tests; ten-run gate marked as run under the removed OpenAI provider); added a `docs/decisions.md` entry for the Engineering print redesign and ResponseCompass rename. No env-var tables touched.
-- **Files changed:** `project-state/operations/running-and-config.md`, `project-state/frontend/overview.md`, `README.md`, `docs/evaluation.md`, `docs/decisions.md`, `project-state/log.md`. Checked, no change needed: `docs/architecture.md`.
-- **Verification:** `npm test` 230/230 (docs-only change; run before edits) · E2E not rerun (docs only)
-- **project-state pages updated:** operations/running-and-config.md, frontend/overview.md, log.md
-- **Risks / follow-ups:** `docs/evaluation.md` still reports dated 2026-09-04 gate numbers (117 tests); left as dated history.
-- **Questions for main:** none for `model-providers.md` or `engineering-print.md`.
+- **Status:** IDLE
+- **Updated:** —
+- **Task:** —
+- **Head commit:** —
+- **Changes:** —
+- **Files changed:** —
+- **Verification:** `npm test` — · E2E —
+- **project-state pages updated:** —
+- **Risks / follow-ups:** —
+- **Questions for main:** —
 
 ---
 
