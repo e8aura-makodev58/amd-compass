@@ -65,7 +65,7 @@ asks. Exceptions: installed tooling and the read-only Chromium library path in r
 
 Agents' watchers read this table from `master` (`git show master:handover.md`) on each tick.
 **`STOP` means stop your watcher now and do not restart it** until this says `RUN` again.
-A watcher also stops on its own once your assignment reads "none". The main agent sets
+A watcher also stops on its own once the **Current task per agent** table shows "none" for you. The main agent sets
 `STOP` when an agent has no work, which prevents watchers polling each other forever.
 
 | Agent | Watcher |
@@ -79,6 +79,17 @@ Main agent watcher: polls every 300s for `READY FOR MERGE` / `BLOCKED` on each a
 and stops once no agent has an open assignment.
 
 ### Assignments
+
+**Current task per agent** (this table is authoritative; details are in the bullets below):
+
+| Agent | Current task | Round |
+|---|---|---|
+| codex | Tiling panel layout for the Live Floor (Dockview) | 3 |
+| gemini | Modern clean light theme (replaces "Engineering print") | 3 |
+| codebuddy | Header regression E2E + saved-model check at boot | 2 |
+| claude | AMD rate limiting, 429 retry, circuit breaker | 2 |
+
+Finished tasks are recorded in **Merge log** below, never as "none" lines here.
 
 Round 2 (2026-10-16). The redesign and rename are merged. This round fixes text contrast,
 adds regression tests for the header, and hardens the AMD Token Factory path now that the
@@ -95,8 +106,6 @@ service is back up. Start with `git merge master` (protocol step 1).
   `fetchImpl` / fake clocks. `npm test` stays hermetic (rule 9). The main agent runs any
   live check.
 - Run `npm install` once in your worktree. Verify with both suites (`AGENTS.md` rule 9).
-
-- **codex:** none (contrast fix and Analytics polish merged `08af6b7`)
 
 **Round 3 (2026-10-16), running alongside round 2.** The user asked for tiling panels and a
 new modern light theme. Use maintained open-source libraries rather than writing them from
@@ -264,8 +273,6 @@ round 2 apply.
   - Do not touch `model-provider.mjs` (claude owns it this round).
   - Update `project-state/backend/model-providers.md` (Selection & discovery section only)
     and `project-state/operations/testing.md` for the new spec.
-
-- **gemini:** none (documentation accuracy pass merged `05596b2`)
 
 - **main agent:** reviews and merges. Re-measuring the AMD models live with `npm run measure:amd` now (user request), again after claude's limiter merges (more samples;
   also the new `MiniCPM5-2B`) after claude's limiter is merged, so measurement runs through
