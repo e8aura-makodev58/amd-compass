@@ -113,8 +113,21 @@ scratch. Everything ships **inside the repo and is served by our own server**. N
 web fonts from the internet: the E2E suite asserts zero outbound requests, and the app must
 work offline. The frontend has no bundler (plain ES modules served from `frontend/`), so
 vendor each library's prebuilt browser build into `frontend/vendor/<name>/`, together with
-its LICENSE. Add a small `npm run vendor` script (`scripts/vendor-frontend.mjs`) that copies
-the files from `node_modules`, so they can be updated reproducibly. The same shared rules as
+its LICENSE.
+
+**Already on master, do not recreate (main agent, to avoid conflicts):**
+- `npm run vendor` (`scripts/vendor-frontend.mjs`) runs one module per library from
+  `scripts/vendor/`; see `scripts/vendor/README.md`.
+- codex adds `scripts/vendor/dockview.mjs`; gemini adds `scripts/vendor/fonts.mjs`.
+- `package.json` already pins `dockview-core@8.3.1`, `@fontsource-variable/inter@5.3.0`
+  and `@fontsource-variable/jetbrains-mono@5.3.0` as devDependencies. Run `npm install`
+  after `git merge master`, and don't edit `package.json` unless you truly need another
+  package (ask first).
+- `backend/src/server.mjs` already serves `.mjs` and `.woff2` (`font/woff2`), so neither of
+  you needs to touch it.
+- Verified paths: `dockview-core/dist/package/main.esm.min.mjs`,
+  `dockview-core/dist/dockview-core.js` (CSS source), and
+  `@fontsource-variable/{inter,jetbrains-mono}/files/*-latin-wght-{normal,italic}.woff2`. The same shared rules as
 round 2 apply.
 
 - **codex — Tiling panel layout for the Live Floor (desktop).**
@@ -179,8 +192,6 @@ round 2 apply.
     other CSS this round, so don't edit `tokens.css` / `base.css` / `floor.css` / `panel.css`
     / `ops.css` / `analytics.css`. Style the tiling chrome (dividers, tile headers) with
     tokens only, so it picks up gemini's theme.
-  - **Server:** if you need a MIME type for a new file extension, add only that line to
-    `mimeTypes` in `backend/src/server.mjs`.
   - **Tests:** add `e2e/tiling.spec.mjs` with these assertions:
     - the tiles fill the frame with no gap;
     - dragging a divider grows one tile and shrinks its neighbour by the same amount;
@@ -200,8 +211,7 @@ round 2 apply.
   - **Fonts:** **Inter** for UI and **JetBrains Mono** (or Geist Mono) for figures/IDs.
     Install via `@fontsource-variable/inter` and `@fontsource-variable/jetbrains-mono` (or
     equivalents), vendor only the latin `woff2` files plus their CSS into
-    `frontend/vendor/fonts/`, and load them from `tokens.css`. Add `.woff2` → `font/woff2`
-    to `mimeTypes` in `backend/src/server.mjs` (that line only).
+    `frontend/vendor/fonts/`, and load them from `tokens.css`.
   - **Spec:** write `docs/design/modern-light.md` (tokens, rules, ownership), modelled on
     `docs/design/engineering-print.md`. Mark that file "Superseded by modern-light.md" at the
     top; don't delete it.
