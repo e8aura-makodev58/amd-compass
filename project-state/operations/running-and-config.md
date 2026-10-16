@@ -9,8 +9,10 @@ npm ci
 npm run dev
 ```
 
-If the system Node is older than 22, a user-local runtime works without root: download an
-official Node 22 binary tarball (e.g. to `~/opt/node22`) and prepend its `bin/` to `PATH`.
+If the system Node is older than 22, a user-local runtime works without root. Install
+Node 22 with [nvm](https://github.com/nvm-sh/nvm) (`nvm install 22 && nvm use 22`); nvm
+puts the selected version's `bin/` first on `PATH` for the shell session. Re-run
+`nvm use 22` in any new shell before `npm ci`, `npm test`, or `npm run dev`.
 
 `npm run dev` runs `node --env-file-if-exists=.env backend/src/server.mjs`. Open
 `http://127.0.0.1:3000`. The server binds `0.0.0.0` by default for LAN access. `npm start`

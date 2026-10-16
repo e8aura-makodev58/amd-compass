@@ -91,3 +91,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Issue nodes on the map are now filled with the accent, so the one orange mark on the floor is unmistakable. The idle agent-activity ring no longer shows a dark arc (it read as a stalled spinner); the arc and spin appear only while an agent works, and stop under `prefers-reduced-motion`.
 - Added `scripts/measure-amd-models.mjs` (`npm run measure:amd -- --models <id[:effort],…> --samples N`): opt-in live measurement through the app's own agent/planner request functions and validators, run one call at a time; prints a Markdown table. Never part of `npm test`. First run (MiMo, 1 sample): ranking rejected for digits in prose after 47s; planner valid in 8s — MiMo is 6/7 valid across all live runs so far.
 - Pages updated: none yet (backend/model-providers.md and operations/testing.md have other owners this round; the main agent documents the script there with the re-measurement).
+
+## [2026-10-16] docs — Documentation accuracy pass
+- `operations/running-and-config.md`: replaced the stale `~/opt/node22` tarball advice with general nvm guidance. `frontend/overview.md`: corrected the `app.js` size and the provider-dropdown note (AMD only). `docs/evaluation.md` and `README.md`: updated test counts (230 unit/integration, 32 E2E) and marked the ten-run live gate as run under the removed OpenAI provider. Added the Engineering print / ResponseCompass entry to `docs/decisions.md`.
+- Pages updated: operations/running-and-config.md, frontend/overview.md.

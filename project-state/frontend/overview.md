@@ -9,7 +9,7 @@ and re-renders. Node serves these files directly (see [../backend/http-api.md](.
 | File | Responsibility |
 |------|----------------|
 | `index.html` | The DOM scaffold: the room-picker view (shown at `/`) and the app shell — tabs (Live Floor, Control Rooms, Analytics, Settings), the floor-map container, sidebar panels, simulation controls, search palette, audit trail, and demo controls. |
-| `app.js` | The whole SPA controller (~2,000 lines). Parses `/rooms/:id` at boot, polls state, and renders every panel. Handles issue/responder selection, staffing actions, the map (pan/zoom/rotate, floor switching, 2D vs. 2.5D), control-room search, analytics, the audit trail, and the settings forms. |
+| `app.js` | The whole SPA controller (~1,400 lines). Parses `/rooms/:id` at boot, polls state, and renders every panel. Handles issue/responder selection, staffing actions, the map (pan/zoom/rotate, floor switching, 2D vs. 2.5D), control-room search, analytics, the audit trail, and the settings forms. |
 | `render-lifecycle.js` | An idempotent HTML writer (`setHtml`) that preserves form state (select values, focus) across the 1.5s re-render so polling never clobbers an in-progress interaction. |
 | `map-label-layout.js` | Screen-space label layout for the floor map: lane-based collision avoidance for equipment/responder bubbles, measured against projected geometry each frame. |
 | `tokens.css` | Design tokens (colour, type, rules) for the "Engineering print" look; see `docs/design/engineering-print.md`. |
@@ -45,8 +45,8 @@ Three floors, ~20–30 machines each; a 2D top view and an optional 2.5D isometr
   [../concepts/analytics-and-ethics.md](../concepts/analytics-and-ethics.md).
 - **Settings** — an **API** sub-tab (provider / model / reasoning-effort with live model
   discovery) and a **Demo** sub-tab (workforce scenario, agent activity, deferred-demand
-  ledger, handover log). The provider list is rendered dynamically from `/api/settings`,
-  so a newly added provider appears with no client change. See
+  ledger, handover log). The provider dropdown is rendered dynamically from `/api/settings` (today it lists
+  only AMD Token Factory), so a newly added provider would appear with no client change. See
   [../backend/model-providers.md](../backend/model-providers.md).
 
 ## Diagnostics
