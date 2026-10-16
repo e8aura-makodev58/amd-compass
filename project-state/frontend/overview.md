@@ -16,6 +16,13 @@ and re-renders. Node serves these files directly (see [../backend/http-api.md](.
 | `base.css`, `floor.css`, `panel.css`, `ops.css`, `analytics.css` | Per-area styles: shell/header/controls, the map and feeds, the context panel, Settings/Demo/Control Rooms, Analytics. |
 | `layout.css` | Responsive and bounded-workstation layout. Linked last so it overrides the area files. |
 
+Paper-facing text tokens are checked at WCAG AA normal-text contrast (4.5:1) on
+all three paper surfaces by `backend/tests/design-tokens-contrast.test.mjs`. Use
+`--accent-ink`, `--warn-ink`, and `--ok-ink` for coloured text; the corresponding
+base colours remain for marks, rules and fills. Analytics period charts use full-width
+rows on desktop, with unbroken dates and word-wrapped completeness labels; long series
+scroll locally on narrow screens.
+
 ## How it talks to the backend
 
 Two explicit helpers, so every call site states its scope (see

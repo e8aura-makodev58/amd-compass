@@ -190,16 +190,16 @@ service is back up. Start with `git merge master` (protocol step 1).
 
 ## codex
 
-- **Status:** IDLE
-- **Updated:** —
-- **Task:** —
-- **Head commit:** —
-- **Changes:** —
-- **Files changed:** —
-- **Verification:** `npm test` — · E2E —
-- **project-state pages updated:** —
-- **Risks / follow-ups:** —
-- **Questions for main:** —
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Round 2 — text contrast fix and Analytics chart polish.
+- **Head commit:** This handoff's commit on `codex` (see `git log -1 codex`).
+- **Changes:** Darkened `--ink-3` and `--muted`; reused `--accent-ink` for brand/alert text; added `--warn-ink` and `--ok-ink` for status text. Green also failed AA on sunk paper (4.27:1). Retained the original accent/warning/green for fills, dots and map outlines. Added a hermetic WCAG luminance/contrast test which parses tokens and also checks paper-facing `color: var(...)` uses across linked stylesheets. Analytics uses full-width desktop chart rows, 96px minimum period cells, and nonbreaking `<time>` dates; completeness labels wrap between words.
+- **Files changed:** `frontend/tokens.css`, `frontend/base.css`, `frontend/floor.css`, `frontend/panel.css`, `frontend/ops.css`, `frontend/analytics.css`, `frontend/app.js` (only period date markup), `backend/tests/design-tokens-contrast.test.mjs`, `docs/design/engineering-print.md` (token table only), `docs/decisions.md` (append only), `project-state/frontend/overview.md`, `project-state/operations/testing.md`, `project-state/log.md` (append only), `handover.md` (this section only).
+- **Verification:** `npm test` — 232/232 passed; `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 32/32 passed; `git diff --check` clean. Focused Chromium check passed at 1280×900 and 375×900: all seven Day bars fit each desktop chart without horizontal scrolling; dates and completeness words do not split; mobile Hour has twelve bars with local scrolling and no document overflow. Screenshots inspected. No live AMD calls, credentials or provider changes. No old-colour assertions needed updating.
+- **project-state pages updated:** frontend/overview.md, operations/testing.md, log.md.
+- **Risks / follow-ups:** Main may need to reconcile short documentation additions with Gemini's frontend accuracy pass and CodeBuddy's testing-page addition. The contrast gate intentionally requires 4.5:1 even for text tokens currently used in large text, so all are safe for small labels. Inverse paper text on ink buttons is excluded from the paper-facing token scan. No generated screenshot assets included.
+- **Questions for main:** None.
 
 ---
 

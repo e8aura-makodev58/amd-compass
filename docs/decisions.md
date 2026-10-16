@@ -638,3 +638,14 @@ No `failureReason` or `failureMessage` on any run. Independently inspected the t
 - Timeouts: AMD output runs at roughly 25 tokens/s, so a ranking takes 20–40s. Defaults are raised to 60s (agent) and 30s (planner), instead of the guide's suggested 15s, which would discard nearly every valid reply.
 - Compatibility: a persisted settings file naming a removed provider loads as AMD with the default model; old pins and saved credentials for removed providers are dropped, never sent to AMD. Historical recommendation records keep their original `provider` field.
 - Not yet built: local rate limiting, bounded 429 retry with `Retry-After`, and a circuit breaker (guide §9).
+
+## 2026-10-16 — Separate paper-facing text inks from status marks
+
+Darkened tertiary and muted text tokens, reused accent ink for brand/alert text, and
+added warning/green text inks. Every paper-facing text token now meets the normal-text
+AA threshold (4.5:1) on paper, raised paper and sunk paper; the original warning,
+green and orange colours remain for dots, map outlines, rules and fills. Green also
+needed an ink variant because its original colour measured 4.27:1 on sunk paper.
+A hermetic CSS-token contrast test guards this boundary. Analytics charts use full-width
+desktop rows so seven Day bars fit at 1280px, retain dates without line breaks, and wrap
+completeness labels only between words; long narrow-screen series scroll locally.
