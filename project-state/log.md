@@ -100,3 +100,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Darkened tertiary/muted tokens and routed warning, green and accent text through AA-safe inks; preserved brighter status marks. Added hermetic contrast coverage for paper-facing text tokens on all three paper backgrounds.
 - Analytics uses full-width chart rows, nonbreaking dates and whole-word completeness labels so seven Day bars fit at 1280px; long series retain local scrolling on mobile.
 - Pages updated: frontend/overview.md, operations/testing.md; design token table and docs/decisions.md also updated.
+
+## [2026-10-16] chore — Per-agent test ports; shared vendoring script
+- `playwright.config.mjs` reads `COMPASS_E2E_PORT` (default 3012) and uses a per-port data folder, so agents can run E2E in parallel. `handover.md` gains a **Ports** table (E2E and manual-preview port per agent; free them right after testing) and `AGENTS.md` rule 9 points to it.
+- Added `npm run vendor` (`scripts/vendor-frontend.mjs` + one module per library in `scripts/vendor/`), pinned `dockview-core@8.3.1` and `@fontsource-variable/{inter,jetbrains-mono}@5.3.0` as devDependencies, and taught the static server `.mjs` and `.woff2`, ahead of the round-3 tiling and theme work.
+- Pages updated: none beyond this log (operations/testing.md is owned by codebuddy this round; the main agent adds the port note there at merge).

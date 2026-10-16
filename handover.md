@@ -61,6 +61,28 @@ asks. Exceptions: installed tooling and the read-only Chromium library path in r
 
 ## Main agent
 
+### Ports
+
+Each agent tests on **its own ports only** and frees them **immediately** after testing.
+
+| Agent | E2E port (`COMPASS_E2E_PORT`) | Manual preview server |
+|---|---|---|
+| main agent | 3012 (default) | 3013 |
+| codex | 3021 | 3121 |
+| gemini | 3022 | 3122 |
+| codebuddy | 3023 | 3123 |
+| claude | 3024 | 3124 |
+
+- **E2E:** run `COMPASS_E2E_PORT=<your port> LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e`.
+  Playwright starts the server and stops it when the run ends, using its own
+  `/tmp/compass-playwright-control-rooms-<port>` data folder.
+- **Manual preview server** (screenshots, visual checks): start it on your preview port with
+  `NODE_ENV=test`, a scratch `COMPASS_CONTROL_ROOMS_DATA_ROOT`, and both
+  `COMPASS_*_MODE=force-failure`. **Stop it as soon as you have looked**, then check the port
+  is free with `ss -ltn | grep :<port>` before handing off. Never leave a server running.
+- **Hands off:** never bind 3000 (another app) or 3200 (the user's running ResponseCompass),
+  and never stop a process you did not start.
+
 ### Watcher control
 
 Agents' watchers read this table from `master` (`git show master:handover.md`) on each tick.
