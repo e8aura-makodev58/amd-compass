@@ -18,6 +18,9 @@ merges finished work into `master`, and archives merged handoffs to
 
 **Worker agents (codex, gemini, codebuddy, claude):**
 
+> Your **task** is your bullet under **Main agent → Assignments**. Your own section further
+> down (`## codex`, `## gemini`, …) is the empty report form you fill in when you hand back.
+
 1. Before you start a task, run `git merge master` in your worktree to pick up merged work
    and the latest assignments.
 2. Read your assignment in **Main agent → Assignments** below. Work only in your own

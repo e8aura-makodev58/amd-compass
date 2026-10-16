@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("Live controls, analytics, and Offline fallback complete without repair", async ({ page }) => {
   await page.goto("/rooms/plant-1");
-  await expect(page.getByRole("heading", { name: "Compass", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ResponseCompass", exact: true })).toBeVisible();
   await expect(page.getByText("Persistent environment")).toBeVisible();
 
   await page.getByRole("button", { name: "Reset", exact: true }).click();

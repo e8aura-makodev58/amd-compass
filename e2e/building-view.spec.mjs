@@ -42,10 +42,10 @@ test("Shift Personnel and the floor show only people currently on duty", async (
   const second = page.locator("#responder-list > .responder-row").nth(1);
   await expect(first).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await first.hover();
-  await expect(first).toHaveCSS("background-color", "rgb(18, 54, 69)");
+  await expect(first).toHaveCSS("background-color", "rgb(234, 230, 220)");
   await first.click();
   await expect(first).toHaveClass(/selected/);
-  await expect(first).toHaveCSS("background-color", "rgb(18, 54, 69)");
+  await expect(first).toHaveCSS("background-color", "rgb(234, 230, 220)");
   await expect(second).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 });
 
