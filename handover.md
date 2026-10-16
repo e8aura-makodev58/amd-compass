@@ -61,6 +61,28 @@ asks. Exceptions: installed tooling and the read-only Chromium library path in r
 
 ## Main agent
 
+### Ports
+
+Each agent tests on **its own ports only** and frees them **immediately** after testing.
+
+| Agent | E2E port (`COMPASS_E2E_PORT`) | Manual preview server |
+|---|---|---|
+| main agent | 3012 (default) | 3013 |
+| codex | 3021 | 3121 |
+| gemini | 3022 | 3122 |
+| codebuddy | 3023 | 3123 |
+| claude | 3024 | 3124 |
+
+- **E2E:** run `COMPASS_E2E_PORT=<your port> LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e`.
+  Playwright starts the server and stops it when the run ends, using its own
+  `/tmp/compass-playwright-control-rooms-<port>` data folder.
+- **Manual preview server** (screenshots, visual checks): start it on your preview port with
+  `NODE_ENV=test`, a scratch `COMPASS_CONTROL_ROOMS_DATA_ROOT`, and both
+  `COMPASS_*_MODE=force-failure`. **Stop it as soon as you have looked**, then check the port
+  is free with `ss -ltn | grep :<port>` before handing off. Never leave a server running.
+- **Hands off:** never bind 3000 (another app) or 3200 (the user's running ResponseCompass),
+  and never stop a process you did not start.
+
 ### Watcher control
 
 Agents' watchers read this table from `master` (`git show master:handover.md`) on each tick.
@@ -70,7 +92,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 3 task open) |
+| codex | STOP (no task) |
 | gemini | RUN (round 3 task open) |
 | codebuddy | RUN (round 2 task open) |
 | claude | RUN (round 2 task open) |
@@ -84,10 +106,10 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | Tiling panel layout for the Live Floor (Dockview) | 3 |
+| codex | none (tiling merged `8e5f211`) | — |
 | gemini | Modern clean light theme (replaces "Engineering print") | 3 |
 | codebuddy | Header regression E2E + saved-model check at boot | 2 |
-| claude | AMD rate limiting, 429 retry, circuit breaker | 2 |
+| claude | AMD rate limiting, 429 retry, circuit breaker; **next:** ranking-validity fix (prompt + one repair retry) | 2 |
 
 Finished tasks are recorded in **Merge log** below, never as "none" lines here.
 
@@ -113,84 +135,22 @@ scratch. Everything ships **inside the repo and is served by our own server**. N
 web fonts from the internet: the E2E suite asserts zero outbound requests, and the app must
 work offline. The frontend has no bundler (plain ES modules served from `frontend/`), so
 vendor each library's prebuilt browser build into `frontend/vendor/<name>/`, together with
-its LICENSE. Add a small `npm run vendor` script (`scripts/vendor-frontend.mjs`) that copies
-the files from `node_modules`, so they can be updated reproducibly. The same shared rules as
-round 2 apply.
+its LICENSE.
 
-- **codex — Tiling panel layout for the Live Floor (desktop).**
-  - **Behaviour:** like Omarchy/Zellij tiling. On the desktop Live Floor (≥901px wide) these
-    panels are tiles that always fill the frame with no gaps or overlaps:
-    - map (`.floor-section`);
-    - issue list (`#issue-list`);
-    - event feed (`#event-feed`);
-    - dispatch/context panel (`.context-panel`).
-    Dragging a divider resizes both neighbours, so tiles stay locked together. A tile can be
-    moved (dragged to another edge/position) and maximised/restored. Every tile has a minimum
-    size, so no tile can be dragged to zero.
-  - **Library: Dockview** (`dockview-core`, vanilla, MIT). The user's other Compass app
-    ("Polaris", a folder you must not open under rule 11) already runs `dockview-core@8.3.1`
-    in production, so use the same version unless a newer 8.x is clearly better. Golden
-    Layout 2 is the fallback only if Dockview cannot do the job. Record the choice in
-    `docs/decisions.md`. Facts the main agent learned from that app:
-    - **Vendoring:** the ESM build is `dist/package/main.esm.min.mjs`. Serve it as `.js` (or
-      add an `.mjs` MIME type), because our static server types by extension.
-    - **CSS:** the package ships **no `.css` file**, and the ESM build does not inject styles.
-      The stylesheet is the CSS string that `dist/dockview-core.js` injects at load. Extract
-      it verbatim into `frontend/vendor/dockview/dockview.css` (with a provenance header) in
-      the vendor script. Add a `README.md` there with the version, the source paths and
-      `LICENCE.md`.
-    - **Imports:** keep the library import in exactly one module (`frontend/tiling.js`).
-    - **Adopting the page:** that app moves the page's existing DOM regions into Dockview
-      panels (a region map of panel id → node selectors, resolved once before any node moves),
-      so every element ID and handler keeps working. Do the same here.
-    - **Initial layout:** build it with `api.addPanel({ id, component, title, position:
-      { referencePanel, direction } , initialWidth/initialHeight })`, for example:
-      - map left;
-      - the context panel to its right (about 440px wide);
-      - the issue list below the map, with the event feed to its right.
-    - **Stored layouts:** validate them before `api.fromJSON` and fall back to the default
-      on any error:
-      - a version field;
-      - a size cap (that app uses 200,000 chars);
-      - only known panel ids/components.
-      Save on `api.onDidLayoutChange` (debounced).
-    - **What makes those panels "detached":** that app enables floating groups
-      (`addFloatingGroup`, a "Float" toggle) and "Move to new window" pop-outs.
-      **Do not enable either here.** No floating groups, no popouts, no
-      `getTabContextMenuItems` entries for float/new-window: the user wants every panel
-      locked into the tiling grid, Omarchy/Zellij style.
-    - **Theme:** that app uses `themeDark`. Use a light Dockview theme (for example
-      `themeLight`), overridden with our CSS tokens so it follows gemini's new theme.
-    - **Controls:** maximise/restore of a group is fine (Dockview's `group.api.maximize()`).
-  - **Persistence:** the layout persists per browser in `localStorage`, wrapped in
-    try/catch; a corrupt or old value falls back to the default. A visible "Reset layout"
-    control restores the default.
-  - **Keyboard:** dividers are keyboard-resizable with focus visible (spec rule 9), using the
-    library's support or a small addition.
-  - **Narrow screens:** below 901px, keep today's stacked document flow (no tiling).
-  - **Don't break the app:**
-    - Keep every element ID, class and ARIA attribute that `app.js`/tests use. Move the
-      existing DOM nodes into tiles rather than re-creating them, because `app.js` holds
-      references and the render lifecycle (`render-lifecycle.js`) must keep working.
-    - The map must re-fit when its tile resizes; use a `ResizeObserver`.
-  - **Files:** you own `frontend/layout.css`, a new `frontend/tiling.js` (+ `tiling.css` if
-    needed), `frontend/vendor/<tiling lib>/`, and the `index.html` lines that load them. In
-    `app.js`, only add the minimal wiring (init call, resize hooks). gemini is restyling all
-    other CSS this round, so don't edit `tokens.css` / `base.css` / `floor.css` / `panel.css`
-    / `ops.css` / `analytics.css`. Style the tiling chrome (dividers, tile headers) with
-    tokens only, so it picks up gemini's theme.
-  - **Server:** if you need a MIME type for a new file extension, add only that line to
-    `mimeTypes` in `backend/src/server.mjs`.
-  - **Tests:** add `e2e/tiling.spec.mjs` with these assertions:
-    - the tiles fill the frame with no gap;
-    - dragging a divider grows one tile and shrinks its neighbour by the same amount;
-    - minimum sizes hold;
-    - the layout persists across reload, and Reset restores it;
-    - no outbound requests;
-    - below 901px the page stacks.
-    Existing E2E tests must still pass, so update selectors only where the DOM really moved,
-    and say so in your handoff.
-  - **Docs:** update `project-state/frontend/overview.md` (layout section).
+**Already on master, do not recreate (main agent, to avoid conflicts):**
+- `npm run vendor` (`scripts/vendor-frontend.mjs`) runs one module per library from
+  `scripts/vendor/`; see `scripts/vendor/README.md`.
+- codex adds `scripts/vendor/dockview.mjs`; gemini adds `scripts/vendor/fonts.mjs`.
+- `package.json` already pins `dockview-core@8.3.1`, `@fontsource-variable/inter@5.3.0`
+  and `@fontsource-variable/jetbrains-mono@5.3.0` as devDependencies. Run `npm install`
+  after `git merge master`, and don't edit `package.json` unless you truly need another
+  package (ask first).
+- `backend/src/server.mjs` already serves `.mjs` and `.woff2` (`font/woff2`), so neither of
+  you needs to touch it.
+- Verified paths: `dockview-core/dist/package/main.esm.min.mjs`,
+  `dockview-core/dist/dockview-core.js` (CSS source), and
+  `@fontsource-variable/{inter,jetbrains-mono}/files/*-latin-wght-{normal,italic}.woff2`. The same shared rules as
+round 2 apply.
 
 - **gemini — Modern clean light theme (replaces "Engineering print").**
   - **Look:** white and cool-grey surfaces, subtle rounded corners (6–10px), soft 1px borders,
@@ -200,8 +160,7 @@ round 2 apply.
   - **Fonts:** **Inter** for UI and **JetBrains Mono** (or Geist Mono) for figures/IDs.
     Install via `@fontsource-variable/inter` and `@fontsource-variable/jetbrains-mono` (or
     equivalents), vendor only the latin `woff2` files plus their CSS into
-    `frontend/vendor/fonts/`, and load them from `tokens.css`. Add `.woff2` → `font/woff2`
-    to `mimeTypes` in `backend/src/server.mjs` (that line only).
+    `frontend/vendor/fonts/`, and load them from `tokens.css`.
   - **Spec:** write `docs/design/modern-light.md` (tokens, rules, ownership), modelled on
     `docs/design/engineering-print.md`. Mark that file "Superseded by modern-light.md" at the
     top; don't delete it.
@@ -254,6 +213,28 @@ round 2 apply.
   - Update `project-state/backend/model-providers.md` (remove these from "Not yet built")
     and add a `docs/decisions.md` entry.
 
+- **claude — NEXT, after the limiter is READY FOR MERGE: raise AMD ranking validity.**
+  - Live measurement on 2026-10-16 (main agent, `npm run measure:amd`, 3 samples each):
+    - **rankings:** only 1 of 15 valid across MiMo, GLM-5.3, Qwen3.8-Flash-Next, DeepSeek-V4-Flash
+      and MiniCPM5-2B;
+    - **planner:** MiMo 3/3 in about 4.5s, DeepSeek 3/3 in about 7s.
+  - **Main failure:** `prose introduces numeric evidence`. `containsNumericLeakage` in
+    `agent.mjs` rejects any digit, and models write responder IDs (`Engr028`) or numbers in
+    their rationale.
+  - **Do, in order:**
+    1. Harden `SYSTEM_INSTRUCTION`: no digits anywhere in prose, including responder IDs;
+       say "this candidate", "the nearer candidate", and so on. Add one short compliant
+       example.
+    2. Add **one** bounded repair attempt: on `validation-failed`, re-ask once with the
+       validator's error list. It must fit the remaining deadline and use the limiter, and
+       it counts toward the retry budget. The result is still fully revalidated; never
+       accept unvalidated output.
+  - **Do not** loosen `containsNumericLeakage` or any validator (`AGENTS.md` rule 3) without
+    asking the main agent first.
+  - Hermetic tests with fake fetch: a numeric-prose reply triggers exactly one repair; a
+    second failure falls back; the repair is skipped when the deadline is too short.
+  - Record it in `docs/decisions.md`. The main agent re-measures live afterwards.
+
 - **codebuddy — Header regression E2E + saved-model check at boot.**
   - **E2E.** Add `e2e/header-layout.spec.mjs`. At 920, 1024, 1280 and 1440px, in Live and in
     Offline (Offline adds "Reset Offline"), assert:
@@ -280,6 +261,7 @@ round 2 apply.
 
 ### Merge log
 
+- 2026-10-16 — **codex** `e67c40a` → merge `8e5f211`: Dockview tiling for the desktop Live Floor (round 3). Vendoring reconciled into `scripts/vendor/dockview.mjs`. `npm test` 234/234, E2E 38/38. Handoff archived.
 - 2026-10-16 — **codex** `051998d` → merge `08af6b7`: text contrast fix (AA text inks, contrast test) and Analytics period labels (round 2). Append conflicts in `docs/decisions.md` / `project-state/log.md` kept both. `npm test` 232/232, E2E 32/32; `docs/assets` regenerated. Handoff archived.
 - 2026-10-16 — **gemini** `0cc8040` → merge `05596b2`: documentation accuracy pass (round 2). `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
 - 2026-10-16 — **codex** `f7358fb` → merge `3576882`: Analytics Engineering print restyle. `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.

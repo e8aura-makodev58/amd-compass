@@ -4,6 +4,21 @@
 
 ## Merged handoffs
 
+### 2026-10-16 — codex → master (branch commit `e67c40a`, merge `8e5f211`)
+
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Round 3 — Dockview tiling for the desktop Live Floor.
+- **Head commit:** This handoff's commit on `codex` (see `git log -1 codex`).
+- **Changes:** Vendored pinned MIT `dockview-core@8.3.1` browser ESM, exact extracted upstream CSS, licence and provenance; added reproducible `npm run vendor`. `tiling.js` adopts the original map, issues, events and context nodes into four edge-movable desktop tiles (≥901px), with constrained pointer/keyboard dividers, maximise/restore and Reset layout. No floats, pop-outs, close buttons or centre merges. Validates version, size, components and grid membership before restoring localStorage; strips stored parameters/constraints and replaces them with application-owned values. Corrupt or infeasible layouts fall back to default. Ignores zero-size hidden-workspace resizes; preserves base layout through maximisation. Below 901px, restores original node positions and handlers. Very short desktop windows scroll to keep tile minimums reachable. Map dimensions remain responsive and ResizeObserver refreshes projected labels.
+- **Files changed:** `frontend/tiling.js`, `frontend/tiling.css`, `frontend/vendor/dockview/{dockview.js,dockview.css,LICENCE.md,README.md}`, `frontend/index.html` (two stylesheet links), `frontend/app.js` (import + one init call only), `scripts/vendor-frontend.mjs`, `package.json`, `package-lock.json`, `backend/tests/tiling-layout.test.mjs`, `backend/tests/design-tokens-contrast.test.mjs`, `e2e/tiling.spec.mjs`, `e2e/control-room.spec.mjs` (delay route matcher only), `project-state/frontend/overview.md`, `project-state/operations/testing.md`, `project-state/log.md`, `docs/decisions.md`, `handover.md` (this section only).
+- **Verification:** `npm test` — 234/234 passed; `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 38/38 passed; `git diff --check` clean. Six new E2E journeys cover gap/overlap-free coverage at 1440/1280/920px (including 720px height), equal neighbour resizing, keyboard focus/arrows, minimum sizes, reload/view-switch persistence, reset, edge moves, maximise/restore, corrupt/blocked storage, zero outbound requests and breakpoint restoration preserving node identity. The 480px-height scrolling check passed. Vendored JS/CSS/licence regenerate byte-for-byte. Screenshots inspected. No existing E2E assertions changed; the shared journey's delay matcher now uses the actual room-scoped force-event route, fixing its transient-activity timing race. No live AMD calls. Contrast gate resolves Dockview text aliases to the shared inks while keeping AA 4.5:1.
+- **project-state pages updated:** frontend/overview.md (new layout section and file catalog), operations/testing.md, log.md.
+- **Risks / follow-ups:** Reconcile `package.json`/lockfile, `scripts/vendor-frontend.mjs` and documentation additions with Gemini's font/theme branch; the vendor runner must retain both Dockview and font steps. Tiling chrome uses existing shared tokens and owns its overrides in `tiling.css`; `layout.css` and all Gemini-owned area stylesheets are unchanged. Existing E2E assertions remain intact; only the stale force-event delay route was corrected. Do not merge the stale main-agent/other-agent sections from this branch's handover; preserve their latest master versions. No generated screenshot assets committed.
+- **Questions for main:** None.
+
+**Main agent:** branch predated the shared vendoring runner. Kept master's `scripts/vendor-frontend.mjs`, `package.json` and lockfile (`dockview-core` stays a devDependency because the files are vendored); moved codex's Dockview extraction into `scripts/vendor/dockview.mjs`. `npm run vendor` regenerates the committed files byte-for-byte. Log conflict kept both entries. On master: `npm test` 234/234, E2E 38/38. Divider drag checked visually at 1440px.
+
 ### 2026-10-16 — codex → master (branch commit `051998d`, merge `08af6b7`)
 
 - **Status:** READY FOR MERGE
