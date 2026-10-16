@@ -645,3 +645,14 @@ No `failureReason` or `failureMessage` on any run. Independently inspected the t
 - Why: a single 2,000-line-class stylesheet made a coordinated restyle impractical across agents; per-area files let owners work in parallel without conflicts, and design tokens keep colour and type in one place. The name ResponseCompass distinguishes the application from the recommendation agent that was previously also called "Compass".
 - What stays "Compass": the recommendation agent (Compass ranks eligible candidates, Compass recommendation, Compass vs baselines, `agent.mjs`), plus all identifiers and paths: `COMPASS_*` env vars, the `/compass/recommend` route, the `compass-data` Docker volume, file names such as `Compass_*.md`, and code identifiers. Dated historical entries in docs are not rewritten.
 - Scope: presentation and naming only. The deterministic/agent boundary, hidden `ResponderSkill` handling, and all API contracts are unchanged.
+
+## 2026-10-16 — Separate paper-facing text inks from status marks
+
+Darkened tertiary and muted text tokens, reused accent ink for brand/alert text, and
+added warning/green text inks. Every paper-facing text token now meets the normal-text
+AA threshold (4.5:1) on paper, raised paper and sunk paper; the original warning,
+green and orange colours remain for dots, map outlines, rules and fills. Green also
+needed an ink variant because its original colour measured 4.27:1 on sunk paper.
+A hermetic CSS-token contrast test guards this boundary. Analytics charts use full-width
+desktop rows so seven Day bars fit at 1280px, retain dates without line breaks, and wrap
+completeness labels only between words; long narrow-screen series scroll locally.

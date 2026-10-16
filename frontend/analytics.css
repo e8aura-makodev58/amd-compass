@@ -62,6 +62,7 @@ body.busy button { cursor: wait; }
 .experience-matrix th:not(:first-child), .experience-matrix td:not(:first-child) { text-align: right; }
 .experience-matrix td span { display: block; margin-top: 4px; color: var(--ink-2); }
 .experience-matrix td strong { color: var(--ink); }
+.dashboard-trends > .chart-grid { grid-template-columns: minmax(0, 1fr); }
 .chart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .analytics-chart { display: grid; min-width: 0; gap: 8px; padding: 14px; text-align: left; color: var(--ink); border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-raised); }
 .analytics-chart > div:first-child { display: grid; gap: 4px; }
@@ -103,14 +104,19 @@ body.busy button { cursor: wait; }
 .analytics-period-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0; }
 /* Keep each period's date and completeness visible; long series scroll locally. */
 .period-chart { overflow-x: auto; }
-.period-bars { display: grid; grid-template-columns: repeat(var(--period-count), minmax(76px, 1fr)); align-items: end; min-height: 190px; gap: 7px; border-bottom: 1px solid var(--rule); }
+.period-bars { display: grid; grid-template-columns: repeat(var(--period-count), minmax(96px, 1fr)); align-items: end; min-height: 190px; gap: 7px; border-bottom: 1px solid var(--rule); }
 .period-bar { display: grid; grid-template-rows: 130px auto auto; min-width: 0; align-items: end; gap: 4px; padding: 5px; color: var(--ink); border: 0; border-left: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-raised); }
 .period-bar.insufficient { border-left-style: dashed; }
 .period-bar.insufficient span { opacity: .3; }
 .period-bar span { display: block; width: 100%; min-height: 4px; background: var(--ink); }
 .period-bar.partial span { border: 1px dashed var(--paper-raised); opacity: .65; }
-.period-bar strong, .period-bar small { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: .66rem; overflow-wrap: anywhere; }
-.period-bar small { color: var(--ink-2); }
+.period-bar strong, .period-bar small { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: .66rem; overflow-wrap: normal; word-break: normal; }
+.period-bar small { color: var(--ink-2); white-space: normal; }
+.period-bar time { white-space: nowrap; }
+@media (min-width: 901px) {
+  .period-chart { grid-template-columns: minmax(130px, .2fr) minmax(0, 1fr); column-gap: 18px; }
+  .period-chart > .period-bars { grid-column: 2; grid-row: 1 / span 2; }
+}
 .analytics-view :is(button, input, [tabindex]):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 @media (max-width: 900px) {
   .kpi-grid, .metric-grid, .chart-grid, .drill-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }

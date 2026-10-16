@@ -25,16 +25,18 @@ that has no token, add the token in `tokens.css` (main agent's file — ask unde
 | `--paper-sunk` | `#EAE6DC` | Hover, selected rows, table headers, wells. |
 | `--ink` | `#141414` | Primary text, strong rules, primary buttons. |
 | `--ink-2` | `#4A4843` | Secondary text. |
-| `--ink-3` | `#7A776F` | Tertiary text, labels, axis text. |
+| `--ink-3` | `#656259` | Tertiary text, labels, axis text. |
 | `--rule` | `#141414` at 18% (`rgba(20,20,20,.18)`) | Hairline dividers and panel borders. |
 | `--rule-strong` | `#141414` | Section frames, the header rule, focused outlines. |
-| `--accent` | `#FF5A1F` | Issues, alerts, the one primary call to action per view. |
+| `--accent` | `#FF5A1F` | Issue / alert marks, rules and fills; use `--accent-ink` for text. |
 | `--accent-ink` | `#B8370A` | Accent-coloured text on paper (meets contrast). |
 | `--accent-wash` | `#FFE4D6` | Background tint behind an accent item. |
-| `--ok` | `#1E7A4C` | Available, resolved, strong evidence. |
+| `--ok` | `#1E7A4C` | Available / resolved / strong-evidence dots, rules and fills. |
+| `--ok-ink` | `#196D43` | Available, resolved and strong-evidence text; AA on all three papers. |
 | `--info` | `#1F4FD8` | Offered, in-progress, links. |
-| `--warn` | `#B7791F` | Assigned, moderate evidence, partial data. |
-| `--muted` | `#8A8A84` | Unavailable, off-shift, insufficient data. |
+| `--warn` | `#B7791F` | Assigned / moderate / partial-data dots, rules and fills. |
+| `--warn-ink` | `#8A5A13` | Assigned, moderate evidence and partial-data text; AA on all three papers. |
+| `--muted` | `#666660` | Unavailable, off-shift, insufficient data. |
 | `--font-sans` | `"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif` | Body text and headings. |
 | `--font-mono` | `"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace` | Numbers, IDs, times, labels. |
 | `--radius` | `0` | Corners are square everywhere. `2px` is the maximum, for inputs only. |

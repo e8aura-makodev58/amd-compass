@@ -95,3 +95,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-16] docs — Documentation accuracy pass
 - `operations/running-and-config.md`: replaced the stale `~/opt/node22` tarball advice with general nvm guidance. `frontend/overview.md`: corrected the `app.js` size and the provider-dropdown note (AMD only). `docs/evaluation.md` and `README.md`: updated test counts (230 unit/integration, 32 E2E) and marked the ten-run live gate as run under the removed OpenAI provider. Added the Engineering print / ResponseCompass entry to `docs/decisions.md`.
 - Pages updated: operations/running-and-config.md, frontend/overview.md.
+
+## [2026-10-16] fix — Text contrast and Analytics period labels
+- Darkened tertiary/muted tokens and routed warning, green and accent text through AA-safe inks; preserved brighter status marks. Added hermetic contrast coverage for paper-facing text tokens on all three paper backgrounds.
+- Analytics uses full-width chart rows, nonbreaking dates and whole-word completeness labels so seven Day bars fit at 1280px; long series retain local scrolling on mobile.
+- Pages updated: frontend/overview.md, operations/testing.md; design token table and docs/decisions.md also updated.

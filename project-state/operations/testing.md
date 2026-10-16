@@ -21,6 +21,10 @@ continuity, the map/label layout, render lifecycle, store-failure recovery, and 
 100-opportunity deterministic reliability soak. Tests are named by work package
 (`wpNN-*.test.mjs`) plus a few feature-named files.
 
+`design-tokens-contrast.test.mjs` parses the CSS tokens and checks every paper-facing
+text colour at 4.5:1 against all three paper surfaces, including tokens used by the linked
+area stylesheets. It uses local file reads and WCAG sRGB luminance calculations only.
+
 ## End-to-end — Playwright
 
 ```sh
