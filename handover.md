@@ -61,6 +61,23 @@ asks. Exceptions: installed tooling and the read-only Chromium library path in r
 
 ## Main agent
 
+### Watcher control
+
+Agents' watchers read this table from `master` (`git show master:handover.md`) on each tick.
+**`STOP` means stop your watcher now and do not restart it** until this says `RUN` again.
+A watcher also stops on its own once your assignment reads "none". The main agent sets
+`STOP` when an agent has no work, which prevents watchers polling each other forever.
+
+| Agent | Watcher |
+|---|---|
+| codex | STOP (no task this round) |
+| gemini | STOP (no task this round) |
+| codebuddy | RUN (round 2 task open) |
+| claude | RUN (round 2 task open) |
+
+Main agent watcher: polls every 300s for `READY FOR MERGE` / `BLOCKED` on each agent's branch
+and stops once no agent has an open assignment.
+
 ### Assignments
 
 Round 2 (2026-10-16). The redesign and rename are merged. This round fixes text contrast,
