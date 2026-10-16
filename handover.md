@@ -176,7 +176,7 @@ service is back up. Start with `git merge master` (protocol step 1).
   - Do not edit `project-state/backend/model-providers.md` or `docs/design/engineering-print.md`
     (other owners this round). Put anything you find there under "Questions for main".
 
-- **main agent:** reviews and merges, then re-measures the AMD models live (more samples;
+- **main agent:** reviews and merges, then re-measures the AMD models live with `npm run measure:amd` (more samples;
   also the new `MiniCPM5-2B`) after claude's limiter is merged, so measurement runs through
   the limiter.
 

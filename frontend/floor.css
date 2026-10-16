@@ -40,7 +40,7 @@
 .floor.view-2d .map-label-layer { display: none; }
 .map-node:hover, .map-node.focused { z-index: 3; }
 .map-node.focused .node-shape { outline: 2px solid var(--ink); outline-offset: 3px; }
-.active-equipment .node-shape { border-width: 2px; animation: pulse-node 2.2s infinite; }
+.active-equipment .node-shape { border-width: 2px; background: var(--accent); animation: pulse-node 2.2s infinite; }
 .floor.view-2d .building-viewport { perspective: none; }
 .floor.view-2d .building { --yaw: 0deg; --pitch: 0deg; width: 88%; height: 70%; transform: none; }
 .floor.view-2d .floor-plane { transform: none; }
