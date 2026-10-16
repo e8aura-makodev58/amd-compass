@@ -638,3 +638,10 @@ No `failureReason` or `failureMessage` on any run. Independently inspected the t
 - Timeouts: AMD output runs at roughly 25 tokens/s, so a ranking takes 20–40s. Defaults are raised to 60s (agent) and 30s (planner), instead of the guide's suggested 15s, which would discard nearly every valid reply.
 - Compatibility: a persisted settings file naming a removed provider loads as AMD with the default model; old pins and saved credentials for removed providers are dropped, never sent to AMD. Historical recommendation records keep their original `provider` field.
 - Not yet built: local rate limiting, bounded 429 retry with `Retry-After`, and a circuit breaker (guide §9).
+
+## 2026-10-16 — Engineering print redesign and ResponseCompass product name
+
+- Decision: The frontend adopts the "Engineering print" look (specified in `docs/design/engineering-print.md`): ink-on-paper tokens, hairline rules, ruled tables and cells instead of rounded cards, and accent colour reserved for what needs attention. The stylesheet is split per area (`tokens.css`, `base.css`, `floor.css`, `panel.css`, `ops.css`, `analytics.css`, `layout.css`, linked in that order with `layout.css` last). The product is renamed **ResponseCompass**.
+- Why: a single 2,000-line-class stylesheet made a coordinated restyle impractical across agents; per-area files let owners work in parallel without conflicts, and design tokens keep colour and type in one place. The name ResponseCompass distinguishes the application from the recommendation agent that was previously also called "Compass".
+- What stays "Compass": the recommendation agent (Compass ranks eligible candidates, Compass recommendation, Compass vs baselines, `agent.mjs`), plus all identifiers and paths: `COMPASS_*` env vars, the `/compass/recommend` route, the `compass-data` Docker volume, file names such as `Compass_*.md`, and code identifiers. Dated historical entries in docs are not rewritten.
+- Scope: presentation and naming only. The deterministic/agent boundary, hidden `ResponderSkill` handling, and all API contracts are unchanged.

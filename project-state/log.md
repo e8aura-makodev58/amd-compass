@@ -86,3 +86,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-16] docs — Agents stay inside `amd` folders
 - Added `AGENTS.md` rule 11 and a matching note at the top of the `handover.md` protocol: agents work only in `amd-compass` and its `amd-compass-<agent>` worktrees and never touch folders without `amd` in the name (such as the other Compass folders) unless the user explicitly asks.
 - Pages updated: none (process change only).
+
+## [2026-10-16] docs — Documentation accuracy pass
+- `operations/running-and-config.md`: replaced the stale `~/opt/node22` tarball advice with general nvm guidance. `frontend/overview.md`: corrected the `app.js` size and the provider-dropdown note (AMD only). `docs/evaluation.md` and `README.md`: updated test counts (230 unit/integration, 32 E2E) and marked the ten-run live gate as run under the removed OpenAI provider. Added the Engineering print / ResponseCompass entry to `docs/decisions.md`.
+- Pages updated: operations/running-and-config.md, frontend/overview.md.

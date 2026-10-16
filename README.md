@@ -27,7 +27,7 @@ This is a net-new, synthetic project. It contains no LOCI source, proprietary fa
 - clickable, on-demand issue audit trails with complete Compass analysis, offer history, control-center overrides, and resolution actions;
 - fixed-snapshot P0 analytics with denominators and thin-sample safeguards;
 - API-free deterministic Offline Demo using the same offer/accept and override interaction;
-- 161 automated tests, a 100-opportunity deterministic soak, and ten Chromium E2E journeys.
+- 230 automated tests, a 100-opportunity deterministic soak, and 32 Chromium E2E tests.
 
 ## Architecture
 
