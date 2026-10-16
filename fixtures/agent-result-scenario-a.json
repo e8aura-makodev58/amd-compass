@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "recommendationRequestId": "rec-scenario-a-001",
+  "rankedCandidates": [
+    {
+      "rank": 1,
+      "responderId": "R-ENGR028",
+      "recommendationSummary": "The leading candidate offers the strongest supported same-issue record among eligible responders.",
+      "evidenceReferences": ["sameIssuePerformance", "evidenceStrength", "travelTime"],
+      "tradeoff": {
+        "comparedToResponderId": "R-TECH216",
+        "explanation": "The alternative's apparently stronger raw record rests on weak evidence, while the leading result is strongly supported."
+      }
+    },
+    {
+      "rank": 2,
+      "responderId": "R-ENGR104",
+      "recommendationSummary": "The closest candidate has the travel-time advantage but a less compelling same-issue outcome.",
+      "evidenceReferences": ["travelTime", "sameIssuePerformance", "evidenceStrength"],
+      "tradeoff": {
+        "comparedToResponderId": "R-ENGR028",
+        "explanation": "The travel advantage comes with less compelling same-issue evidence than the leading candidate."
+      }
+    },
+    {
+      "rank": 3,
+      "responderId": "R-OPER088",
+      "recommendationSummary": "This candidate is a credible middle option with moderate supporting evidence.",
+      "evidenceReferences": ["sameIssuePerformance", "evidenceStrength"],
+      "tradeoff": {
+        "comparedToResponderId": "R-ENGR028",
+        "explanation": "The record is credible but less persuasive than the leading candidate's supported evidence."
+      }
+    },
+    {
+      "rank": 4,
+      "responderId": "R-TECH216",
+      "recommendationSummary": "The promising raw result is too lightly supported to outweigh stronger evidence.",
+      "evidenceReferences": ["sameIssuePerformance", "evidenceStrength"],
+      "tradeoff": {
+        "comparedToResponderId": "R-ENGR028",
+        "explanation": "The apparent performance advantage is less trustworthy than the leading candidate's deeper evidence."
+      }
+    }
+  ],
+  "topRecommendation": {
+    "responderId": "R-ENGR028",
+    "rationale": "The leading candidate best balances the operational tradeoff because the same-issue evidence is strongly supported and more compelling than proximity alone."
+  },
+  "uncertaintyNote": "The choice accepts a longer trip in favor of the most strongly supported same-issue evidence."
+}

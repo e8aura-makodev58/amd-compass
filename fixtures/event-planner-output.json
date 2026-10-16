@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0",
+  "eventType": "ISSUE_RAISED",
+  "equipmentId": "EQ-04",
+  "issueClass": "B",
+  "description": "Recurring alignment instability detected",
+  "responseAction": "Inspect the affected mechanism and sensing path, correct the alignment, and verify stable operation through a controlled restart.",
+  "contextReason": "Similar events occurred recently on this equipment"
+}

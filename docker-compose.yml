@@ -1,0 +1,22 @@
+services:
+  compass:
+    build: .
+    container_name: compass-dev
+    ports:
+      # Host 3100 → container 3000 (port 3000 is taken on this host by another service).
+      # Change the left side to any free port if needed.
+      - "3100:3000"
+    environment:
+      # Bind to all interfaces inside the container; Docker's port mapping handles
+      # the external binding. These override any HOST/PORT values from .env.
+      COMPASS_HOST: "0.0.0.0"
+      COMPASS_PORT: "3000"
+    env_file:
+      # Loads model credentials and runtime config from .env on the host.
+      # If .env doesn't exist the container still starts (required: false).
+      - path: .env
+        required: false
+    volumes:
+      # Persist live simulation state and settings across container restarts.
+      - ./backend/data:/app/backend/data
+    restart: unless-stopped

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Compass live responder assignment control room" />
+    <title>Compass — Live Floor</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <section id="room-picker-view" class="room-picker-view" hidden>
+      <div class="room-picker-card">
+        <p class="eyebrow">ResponseCompass</p>
+        <h1>Choose a Control Room</h1>
+        <p class="tagline">Each Control Room runs an independent simulation. Pick one to continue.</p>
+        <div id="room-picker-list" class="room-picker-list" aria-live="polite"><p class="workflow-prompt">Loading control rooms…</p></div>
+      </div>
+    </section>
+    <main class="app-shell" hidden>
+      <header class="topbar">
+        <div><p class="eyebrow">ResponseCompass</p><h1>Compass</h1><p class="tagline">Not just who's closest. Who makes the most sense.</p></div>
+        <nav class="tab-bar" aria-label="Application views"><button id="control-room-tab" class="tab-button active" type="button">Live Floor</button><button id="rooms-tab" class="tab-button" type="button">Control Rooms</button><button id="analytics-tab" class="tab-button" type="button">Analytics</button><button id="settings-tab" class="tab-button" type="button">Settings</button><div id="agent-activity-indicator" class="agent-activity-indicator" role="status" aria-live="polite"><span class="activity-dot"></span><span id="agent-activity-label">Agents idle</span></div></nav>
+        <div class="mode-controls" aria-label="Runtime mode"><button id="live-mode-button" type="button">Live Simulation</button><button id="offline-mode-button" class="secondary-button" type="button">Offline Demo</button><button id="offline-reset-button" class="secondary-button" type="button" hidden>Reset Offline</button></div>
+      </header>
+      <section id="control-room-view">
+        <section id="simulation-controls" class="simulation-bar" aria-label="Simulation controls">
+          <div><span class="eyebrow">Simulation time</span><strong id="simulation-time">—</strong></div><div><span class="eyebrow">State</span><strong id="simulation-status">—</strong></div>
+          <label>Speed<select id="speed-select"><option value="1">1×</option><option value="5">5×</option><option value="10">10×</option><option value="60">60×</option></select></label>
+          <button id="pause-resume-button" type="button">Start</button><button id="reset-button" class="secondary-button" type="button">Reset</button>
+        </section>
+        <section id="control-room-search" class="control-room-search" aria-label="Control Room navigation">
+          <button id="open-control-search" type="button" aria-haspopup="dialog" aria-controls="control-search-palette">Find in Control Room <kbd>/</kbd><span aria-hidden="true"> · </span><kbd>⌘K</kbd></button>
+          <div id="control-search-palette" class="search-palette" role="dialog" aria-modal="true" aria-labelledby="control-search-title" hidden>
+            <div class="search-palette-header"><div><p class="eyebrow">Control Room navigation</p><h2 id="control-search-title">Find an issue, equipment, or responder</h2></div><button id="close-control-search" type="button" class="secondary-button" aria-label="Close control room search">Close</button></div>
+            <label class="search-input-label" for="control-search-input">Search current operational state</label>
+            <input id="control-search-input" type="search" autocomplete="off" placeholder="Search by name, ID, status, or issue class" role="combobox" aria-expanded="true" aria-controls="control-search-results" aria-autocomplete="list" />
+            <div id="control-search-filters" class="search-filters" role="group" aria-label="Search result type"><button type="button" data-search-filter="ALL" aria-pressed="true">All</button><button type="button" data-search-filter="ISSUE">Issues</button><button type="button" data-search-filter="EQUIPMENT">Equipment</button><button type="button" data-search-filter="RESPONDER">Personnel</button></div>
+            <div id="control-search-results" class="search-results" role="listbox" aria-label="Control Room search results"></div>
+            <p class="search-help">Up to 5 matches per category · ↑ ↓ to move · Enter to select · Esc to close</p>
+          </div>
+        </section>
+        <section class="dashboard" aria-label="Compass operational dashboard">
+          <section class="floor-section" aria-labelledby="floor-heading">
+            <div class="section-heading"><div><p class="eyebrow">Persistent environment</p><h2 id="floor-heading">Manufacturing Floor</h2></div><div class="legend"><span><i class="legend-dot equipment-dot"></i>Normal</span><span><i class="legend-dot issue-dot"></i>Issue</span><span><i class="legend-dot responder-dot"></i>Available</span><span><i class="legend-dot assigned-dot"></i>Assigned</span></div></div>
+            <div id="floor" class="floor view-2d" role="group" tabindex="0" aria-label="Interactive manufacturing-floor map. Use the zoom controls or plus and minus keys to zoom. Hold Space and drag an empty map area with a mouse to pan."></div>
+            <div class="lower-grid"><section><p class="eyebrow">Active and waiting issues</p><div id="issue-list" class="issue-list"></div></section><section><p class="eyebrow">Recent event feed</p><div id="event-feed" class="event-feed"></div></section></div>
+          </section>
+          <aside class="context-panel" aria-labelledby="issue-heading">
+            <p id="context-eyebrow" class="eyebrow">Station Status</p><h2 id="issue-heading">Station status</h2><div id="issue-summary" class="issue-summary" aria-live="polite"></div><div id="baseline-panel" class="baseline-panel" aria-live="polite"></div><div id="recommendation-panel" class="recommendation-panel" aria-live="polite"></div><hr /><div class="sidebar-tabs" role="tablist" aria-label="Shift details"><button id="personnel-tab" type="button" role="tab" aria-selected="true" aria-controls="responder-list">Shift Personnel</button><button id="stations-tab" type="button" role="tab" aria-selected="false" aria-controls="station-list">Stations</button></div><div id="responder-list" class="responder-list" role="tabpanel" aria-labelledby="personnel-tab"></div><div id="station-list" class="station-list" role="tabpanel" aria-labelledby="stations-tab" hidden></div>
+          </aside>
+        </section>
+      </section>
+      <section id="rooms-view" class="analytics-view" hidden><div class="section-heading"><div><p class="eyebrow">Deployment directory</p><h2>Control Rooms</h2></div></div><div id="rooms-content"><p class="workflow-prompt">Loading control rooms…</p></div></section>
+      <section id="settings-view" class="settings-view" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Configuration</p><h2>Settings</h2></div></div>
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections"><button id="settings-api-tab" class="settings-tab active" type="button" role="tab" aria-selected="true" aria-controls="settings-content">API</button><button id="settings-demo-tab" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-demo-panel">Demo</button></div>
+        <div id="settings-api-panel" role="tabpanel" aria-labelledby="settings-api-tab"><div id="settings-content"><p class="workflow-prompt">Settings are loading…</p></div></div>
+        <section id="settings-demo-panel" class="demo-view" role="tabpanel" aria-labelledby="settings-demo-tab" hidden>
+          <div class="section-heading"><div><p class="eyebrow">Room-scoped simulation</p><h2>Demo controls</h2></div></div>
+        <div class="demo-grid">
+          <section class="demo-panel agent-monitor" aria-labelledby="agent-monitor-heading">
+            <p class="eyebrow">Live activity</p><h3 id="agent-monitor-heading">Agent activity</h3>
+            <div id="demo-primary-activity" class="primary-activity" role="status" aria-live="polite"><span class="activity-spinner"></span><div><strong id="demo-activity-title">Agents idle</strong><p id="demo-activity-detail">Waiting for the next agent task.</p></div></div>
+            <div class="agent-status-list">
+              <article><span class="activity-dot" id="event-planner-dot"></span><div><strong>Event planner</strong><p id="event-planner-status">Waiting for the next event opportunity.</p></div></article>
+              <article><span class="activity-dot" id="compass-dot"></span><div><strong>Compass recommendation</strong><p id="compass-status">Waiting for a recommendation request.</p></div></article>
+            </div>
+          </section>
+          <section class="demo-panel" aria-labelledby="demo-overrides-heading">
+            <p class="eyebrow">Manual controls</p><h3 id="demo-overrides-heading">Simulation overrides</h3>
+            <p class="workflow-prompt">These controls bypass waiting for presentation purposes. They still use the normal validation, eligibility, and stochastic outcome rules.</p>
+            <div class="demo-override-actions"><button id="force-event-button" type="button">Trigger Next Event</button><button id="force-resolve-button" type="button" disabled>Force Resolve</button></div>
+            <p id="demo-selected-issue" class="demo-selection-note">Select an assigned issue in the Control Room to enable Force Resolve.</p>
+          </section>
+        </div>
+        <div id="demo-continuity" class="demo-continuity-grid" aria-live="polite"></div>
+      </section>
+      </section>
+      <section id="analytics-view" class="analytics-view" hidden><div class="section-heading"><div><p class="eyebrow">Same persistent state</p><h2>Operational analytics</h2></div></div><div id="analytics-content"><p class="workflow-prompt">Analytics are loading…</p></div></section>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

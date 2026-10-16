@@ -1,0 +1,18 @@
+# Compass agent guidance
+
+> **Codebase reference:** `project-state/` is the maintained source of truth for how the
+> codebase is built. Read `project-state/README.md` and `project-state/index.md` first to
+> understand the area you are changing, and update the relevant `project-state/` pages (and
+> `project-state/log.md`) as part of any change. See `project-state/README.md` for the
+> maintenance workflow.
+
+1. Read `Compass_ResponseCompass_SOW_v4_FINAL.md` before changing implementation behavior. For AMD Token Factory provider work, also follow `Compass_AMD_Token_Factory_Integration_Guide.md`; where the guide conflicts with rules 3 and 4 below, those rules win, and the conflict must be recorded in `docs/decisions.md`.
+2. **Superseded 2026-09-08 by explicit user direction — historical record only.** This rule originally read: "Keep Compass focused on per-issue responder assignment; do not add global workforce optimization or issue-priority logic." The user has explicitly expanded scope and lifted this constraint — issue-priority logic, queue/demand triage, staffing/workforce-continuity simulation, and related cross-issue mechanics are now in scope (see `workforce_continuity_and_demand_simulation_SOW.md`). Rules 3 and 4 remain fully binding: priority and staffing are application-owned and deterministic; models retain only bounded ranking/qualitative-explanation roles; and hidden `ResponderSkill` must never leak, directly or through responder-specific or skill-shaped inputs.
+3. Preserve the deterministic/agent boundary: application code owns facts, eligibility, metrics, baselines, simulation outcomes, and mutations; models may only propose bounded events or rank supplied eligible candidates with qualitative tradeoffs.
+4. Treat `ResponderSkill` as hidden simulation truth. Never expose it to Compass, the event planner, normal UI payloads, or analytics.
+5. Use synthetic, domain-neutral data only. Do not copy LOCI source code or introduce proprietary context.
+6. Build Live and Offline as shared-mode paths, not separate applications. Offline must remain API-free.
+7. Complete and test P0 work packages in sequence. Record material deviations in `docs/decisions.md` and update your own section of `handover.md` for every handoff.
+8. **There is no core freeze.** Compass is being built for real use at the user's company; development continues until the user says otherwise. Judge every change on production correctness, behaviour under long runs, and maintainability — never on whether a defect is likely to surface in a demo. The SOW and the older entries in `docs/handover-history.md` and `docs/decisions.md` are written in demo framing and describe a freeze that no longer applies; treat them as historical record, not as current instruction.
+9. Verify with both suites before handing off: `npm test` (hermetic — no network, no writes to `backend/data/`) and `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` (Chromium, forced provider failures, no API spend). Never add live provider calls to `npm test`.
+10. **Multi-agent worktrees.** Codex, Gemini, CodeBuddy, and Claude each work in their own git worktree and branch (`/home/makodev58/amd-compass-<agent>` on branch `<agent>`). The main agent (Claude, unless the user says otherwise) works on `master` in `/home/makodev58/amd-compass` and alone merges into `master`. Follow the protocol at the top of `handover.md`: edit only your own section, commit to your own branch, and never commit to `master` or touch another agent's worktree.

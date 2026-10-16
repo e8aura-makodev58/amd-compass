@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "recommendationRequestId": "rec-scenario-a-001",
+  "issue": {
+    "issueId": "ISS-104",
+    "equipmentId": "EQ-04",
+    "issueClass": "B",
+    "existingPriority": "HIGH"
+  },
+  "candidates": [
+    {
+      "responderId": "R-ENGR104",
+      "displayName": "Engr104",
+      "distanceToIssue": 8,
+      "floorsToIssue": 0,
+      "travelTimeMinutes": 0.09523809523809525,
+      "sameIssueHistoricalCount": 6,
+      "effectiveEvidenceWeight": 6,
+      "soloHistoricalCount": 6,
+      "assistedHistoricalCount": 0,
+      "medianResolutionMinutes": 16,
+      "successRate": 0.8333333333333334,
+      "reopenRate": 0.16666666666666666,
+      "evidenceStrengthLabel": "STRONG"
+    },
+    {
+      "responderId": "R-ENGR028",
+      "displayName": "Engr028",
+      "distanceToIssue": 85,
+      "floorsToIssue": 0,
+      "travelTimeMinutes": 1.0119047619047619,
+      "sameIssueHistoricalCount": 11,
+      "effectiveEvidenceWeight": 11,
+      "soloHistoricalCount": 11,
+      "assistedHistoricalCount": 0,
+      "medianResolutionMinutes": 10,
+      "successRate": 0.9090909090909091,
+      "reopenRate": 0.09090909090909091,
+      "evidenceStrengthLabel": "STRONG"
+    },
+    {
+      "responderId": "R-TECH216",
+      "displayName": "Tech216",
+      "distanceToIssue": 45,
+      "floorsToIssue": 1,
+      "travelTimeMinutes": 2.0357142857142856,
+      "sameIssueHistoricalCount": 1,
+      "effectiveEvidenceWeight": 1,
+      "soloHistoricalCount": 1,
+      "assistedHistoricalCount": 0,
+      "medianResolutionMinutes": 7,
+      "successRate": 1,
+      "reopenRate": 0,
+      "evidenceStrengthLabel": "WEAK"
+    },
+    {
+      "responderId": "R-OPER088",
+      "displayName": "Oper088",
+      "distanceToIssue": 35,
+      "floorsToIssue": 1,
+      "travelTimeMinutes": 1.9166666666666667,
+      "sameIssueHistoricalCount": 4,
+      "effectiveEvidenceWeight": 4,
+      "soloHistoricalCount": 4,
+      "assistedHistoricalCount": 0,
+      "medianResolutionMinutes": 15,
+      "successRate": 0.75,
+      "reopenRate": 0.25,
+      "evidenceStrengthLabel": "MODERATE"
+    }
+  ]
+}

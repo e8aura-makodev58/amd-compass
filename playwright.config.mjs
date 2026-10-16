@@ -1,0 +1,34 @@
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./e2e",
+  timeout: 30_000,
+  fullyParallel: false,
+  workers: 1,
+  reporter: "line",
+  use: {
+    baseURL: "http://127.0.0.1:3012",
+    trace: "retain-on-failure",
+  },
+  webServer: {
+    command: "npm run dev",
+    // /api/state moved under /api/control-rooms/:id/state with Control Rooms;
+    // /api/control-rooms (the room list) is unscoped and always 200s once the
+    // manager has booted, so it's the readiness probe now.
+    url: "http://127.0.0.1:3012/api/control-rooms",
+    reuseExistingServer: false,
+    timeout: 30_000,
+    env: {
+      ...process.env,
+      COMPASS_HOST: "127.0.0.1",
+      COMPASS_PORT: "3012",
+      NODE_ENV: "test",
+      // Keeps every Control Room's data off the real backend/data/ — the
+      // Control Rooms analogue of the COMPASS_LIVE_STATE_PATH override this
+      // config used before rooms existed.
+      COMPASS_CONTROL_ROOMS_DATA_ROOT: "/tmp/compass-playwright-control-rooms",
+      COMPASS_EVENT_PLANNER_MODE: "force-failure",
+      COMPASS_LIVE_COMPASS_MODE: "force-failure",
+    },
+  },
+});

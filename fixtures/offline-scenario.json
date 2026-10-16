@@ -1,0 +1,7 @@
+{
+  "mode": "OFFLINE",
+  "stateFixture": "../backend/seed/scenario-a-state.json",
+  "candidatePacketFixture": "candidate-packet-scenario-a.json",
+  "compassResultFixture": "agent-result-scenario-a.json",
+  "expectedWinners": { "nearest": "R-ENGR104", "naive": "R-TECH216", "compass": "R-ENGR028" }
+}

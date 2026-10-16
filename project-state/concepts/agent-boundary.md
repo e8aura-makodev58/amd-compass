@@ -1,0 +1,51 @@
+# Concept: the deterministic / model boundary
+
+This is the single most important invariant in Compass. Every change must preserve it.
+
+> **Application code owns facts; models only propose or rank within bounds, and are never
+> trusted as authoritative.**
+
+It is also binding governance in the repo-root `AGENTS.md` (rules 3 and 4).
+
+## What application code owns
+
+Time, facts, eligibility, geometry, metrics, baselines, validation, simulation outcomes,
+issue priority, staffing, and **every state mutation**. These are deterministic and
+reproducible from the persisted RNG streams. A model never computes any of them.
+
+## What a model may do
+
+Exactly two bounded jobs:
+
+1. **Event planner** (`event-planner.mjs`) — propose **one** plausible next `ISSUE_RAISED`
+   event for an eligible equipment item and an allowed issue class, as industry-neutral
+   narrative. Validated against `EVENT_PLANNER_JSON_SCHEMA` before anything is persisted.
+2. **Compass agent** (`agent.mjs`) — **rank the eligible candidates it is handed**, with a
+   qualitative summary and a tradeoff per candidate. Validated against
+   `AGENT_RESULT_JSON_SCHEMA`: contiguous ranks, known candidate ids only, the top pick
+   consistent with rank 1, and **no numeric leakage** in the prose.
+
+## Never trust the model
+
+Every model result passes through a strict validator. On any failure — missing credential,
+HTTP error, timeout, invalid or malformed output — the caller resolves to an explicit
+`{ status: "unavailable" }` and the system falls back to a **deterministic baseline**
+(nearest-available and the auditable naive score). Dispatch always continues. A model
+outage degrades explanation quality, never correctness or availability.
+
+## Two hard exclusions
+
+- **Hidden `ResponderSkill`.** The simulation's ground-truth skill is never an input to a
+  model, the planner packet, a public snapshot, the normal UI/API, or analytics — directly
+  or through responder-specific or skill-shaped inputs. See
+  [../backend/domain-model.md](../backend/domain-model.md#invariant-responderskill-is-hidden-truth).
+- **Priority and staffing are application-owned.** Queue/demand triage and workforce
+  continuity are deterministic; models retain only the bounded ranking/qualitative role
+  above. See [../backend/simulation.md](../backend/simulation.md).
+
+## Why it matters for changes
+
+If you are tempted to let a model decide *whether* to act, *what* the outcome is, or *who
+is eligible*, stop — that belongs in application code. The model's role is to choose among
+already-established options and explain the choice. Keeping this line is what makes Compass
+auditable and safe to run unattended.

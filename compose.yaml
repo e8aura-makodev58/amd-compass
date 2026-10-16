@@ -1,0 +1,32 @@
+services:
+  compass:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      COMPASS_HOST: 0.0.0.0
+      COMPASS_PORT: "3000"
+      COMPASS_DATA_DIR: /app/data
+      # Copies the tracked paused demo seed only into an empty volume. It
+      # never overwrites existing runtime state after a pull or restart.
+      COMPASS_BOOTSTRAP_DEMO_SEED: "true"
+    volumes:
+      - compass-data:/app/data
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  compass-data:
+    external: true
+    name: compass-data

@@ -1,0 +1,509 @@
+{
+  "schemaVersion": "1.0",
+  "scenario": "A",
+  "responders": [
+    {
+      "id": "R-ENGR104",
+      "name": "Engr104",
+      "x": 58,
+      "y": 50,
+      "availability": "AVAILABLE",
+      "floor": 1
+    },
+    {
+      "id": "R-ENGR028",
+      "name": "Engr028",
+      "x": 135,
+      "y": 50,
+      "availability": "AVAILABLE",
+      "floor": 1
+    },
+    {
+      "id": "R-TECH216",
+      "name": "Tech216",
+      "x": 95,
+      "y": 50,
+      "availability": "AVAILABLE",
+      "floor": 2
+    },
+    {
+      "id": "R-OPER088",
+      "name": "Oper088",
+      "x": 85,
+      "y": 50,
+      "availability": "AVAILABLE",
+      "floor": 2
+    },
+    {
+      "id": "R-TECH073",
+      "name": "Tech073",
+      "x": 52,
+      "y": 50,
+      "availability": "UNAVAILABLE",
+      "floor": 3
+    },
+    {
+      "id": "R-OPER142",
+      "name": "Oper142",
+      "x": 55,
+      "y": 50,
+      "availability": "ASSIGNED",
+      "currentIssueId": "ISS-103",
+      "floor": 3
+    }
+  ],
+  "issues": [
+    {
+      "id": "ISS-104",
+      "equipmentId": "EQ-04",
+      "issueClass": "B",
+      "existingPriority": "HIGH",
+      "status": "PENDING",
+      "raisedAt": "2026-09-12T10:00:00.000Z"
+    },
+    {
+      "id": "ISS-103",
+      "equipmentId": "EQ-03",
+      "issueClass": "A",
+      "existingPriority": "MEDIUM",
+      "status": "ASSIGNED",
+      "raisedAt": "2026-09-12T09:30:00.000Z",
+      "assignedResponderId": "R-OPER142"
+    }
+  ],
+  "activeIssueId": "ISS-104",
+  "resolutionHistory": [
+    {
+      "id": "H-001",
+      "responderId": "R-ENGR104",
+      "issueClass": "B",
+      "resolutionMinutes": 14,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-01T09:00:00.000Z"
+    },
+    {
+      "id": "H-002",
+      "responderId": "R-ENGR104",
+      "issueClass": "B",
+      "resolutionMinutes": 15,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-02T09:00:00.000Z"
+    },
+    {
+      "id": "H-003",
+      "responderId": "R-ENGR104",
+      "issueClass": "B",
+      "resolutionMinutes": 16,
+      "success": true,
+      "reopened": true,
+      "resolvedAt": "2026-08-03T09:00:00.000Z"
+    },
+    {
+      "id": "H-004",
+      "responderId": "R-ENGR104",
+      "issueClass": "B",
+      "resolutionMinutes": 16,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-04T09:00:00.000Z"
+    },
+    {
+      "id": "H-005",
+      "responderId": "R-ENGR104",
+      "issueClass": "B",
+      "resolutionMinutes": 17,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-05T09:00:00.000Z"
+    },
+    {
+      "id": "H-006",
+      "responderId": "R-ENGR104",
+      "issueClass": "B",
+      "resolutionMinutes": 20,
+      "success": false,
+      "reopened": false,
+      "resolvedAt": "2026-08-06T09:00:00.000Z"
+    },
+    {
+      "id": "H-007",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 8,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "H-008",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 9,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-02T10:00:00.000Z"
+    },
+    {
+      "id": "H-009",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 9,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-03T10:00:00.000Z"
+    },
+    {
+      "id": "H-010",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 10,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-04T10:00:00.000Z"
+    },
+    {
+      "id": "H-011",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 10,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-05T10:00:00.000Z"
+    },
+    {
+      "id": "H-012",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 10,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-06T10:00:00.000Z"
+    },
+    {
+      "id": "H-013",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 10,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-07T10:00:00.000Z"
+    },
+    {
+      "id": "H-014",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 11,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-08T10:00:00.000Z"
+    },
+    {
+      "id": "H-015",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 11,
+      "success": true,
+      "reopened": true,
+      "resolvedAt": "2026-08-09T10:00:00.000Z"
+    },
+    {
+      "id": "H-016",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 12,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-10T10:00:00.000Z"
+    },
+    {
+      "id": "H-017",
+      "responderId": "R-ENGR028",
+      "issueClass": "B",
+      "resolutionMinutes": 14,
+      "success": false,
+      "reopened": false,
+      "resolvedAt": "2026-08-11T10:00:00.000Z"
+    },
+    {
+      "id": "H-018",
+      "responderId": "R-TECH216",
+      "issueClass": "B",
+      "resolutionMinutes": 7,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-12T11:00:00.000Z"
+    },
+    {
+      "id": "H-019",
+      "responderId": "R-OPER088",
+      "issueClass": "B",
+      "resolutionMinutes": 13,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-01T12:00:00.000Z"
+    },
+    {
+      "id": "H-020",
+      "responderId": "R-OPER088",
+      "issueClass": "B",
+      "resolutionMinutes": 14,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-02T12:00:00.000Z"
+    },
+    {
+      "id": "H-021",
+      "responderId": "R-OPER088",
+      "issueClass": "B",
+      "resolutionMinutes": 16,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-08-03T12:00:00.000Z"
+    },
+    {
+      "id": "H-022",
+      "responderId": "R-OPER088",
+      "issueClass": "B",
+      "resolutionMinutes": 17,
+      "success": false,
+      "reopened": true,
+      "resolvedAt": "2026-08-04T12:00:00.000Z"
+    },
+    {
+      "id": "H-023",
+      "responderId": "R-ENGR104",
+      "issueClass": "A",
+      "resolutionMinutes": 11,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-01T09:00:00.000Z"
+    },
+    {
+      "id": "H-024",
+      "responderId": "R-ENGR104",
+      "issueClass": "A",
+      "resolutionMinutes": 12,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-02T09:00:00.000Z"
+    },
+    {
+      "id": "H-025",
+      "responderId": "R-ENGR104",
+      "issueClass": "A",
+      "resolutionMinutes": 13,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-03T09:00:00.000Z"
+    },
+    {
+      "id": "H-026",
+      "responderId": "R-ENGR104",
+      "issueClass": "C",
+      "resolutionMinutes": 18,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-04T09:00:00.000Z"
+    },
+    {
+      "id": "H-027",
+      "responderId": "R-ENGR104",
+      "issueClass": "C",
+      "resolutionMinutes": 19,
+      "success": false,
+      "reopened": false,
+      "resolvedAt": "2026-07-05T09:00:00.000Z"
+    },
+    {
+      "id": "H-028",
+      "responderId": "R-ENGR104",
+      "issueClass": "C",
+      "resolutionMinutes": 20,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-06T09:00:00.000Z"
+    },
+    {
+      "id": "H-029",
+      "responderId": "R-ENGR028",
+      "issueClass": "A",
+      "resolutionMinutes": 9,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-01T10:00:00.000Z"
+    },
+    {
+      "id": "H-030",
+      "responderId": "R-ENGR028",
+      "issueClass": "A",
+      "resolutionMinutes": 10,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-02T10:00:00.000Z"
+    },
+    {
+      "id": "H-031",
+      "responderId": "R-ENGR028",
+      "issueClass": "A",
+      "resolutionMinutes": 11,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-03T10:00:00.000Z"
+    },
+    {
+      "id": "H-032",
+      "responderId": "R-ENGR028",
+      "issueClass": "C",
+      "resolutionMinutes": 15,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-04T10:00:00.000Z"
+    },
+    {
+      "id": "H-033",
+      "responderId": "R-ENGR028",
+      "issueClass": "C",
+      "resolutionMinutes": 16,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-05T10:00:00.000Z"
+    },
+    {
+      "id": "H-034",
+      "responderId": "R-ENGR028",
+      "issueClass": "C",
+      "resolutionMinutes": 17,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-06T10:00:00.000Z"
+    },
+    {
+      "id": "H-035",
+      "responderId": "R-TECH216",
+      "issueClass": "A",
+      "resolutionMinutes": 12,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-01T11:00:00.000Z"
+    },
+    {
+      "id": "H-036",
+      "responderId": "R-TECH216",
+      "issueClass": "A",
+      "resolutionMinutes": 13,
+      "success": false,
+      "reopened": false,
+      "resolvedAt": "2026-07-02T11:00:00.000Z"
+    },
+    {
+      "id": "H-037",
+      "responderId": "R-TECH216",
+      "issueClass": "C",
+      "resolutionMinutes": 21,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-03T11:00:00.000Z"
+    },
+    {
+      "id": "H-038",
+      "responderId": "R-TECH216",
+      "issueClass": "C",
+      "resolutionMinutes": 22,
+      "success": true,
+      "reopened": true,
+      "resolvedAt": "2026-07-04T11:00:00.000Z"
+    },
+    {
+      "id": "H-039",
+      "responderId": "R-OPER088",
+      "issueClass": "A",
+      "resolutionMinutes": 14,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-01T12:00:00.000Z"
+    },
+    {
+      "id": "H-040",
+      "responderId": "R-OPER088",
+      "issueClass": "A",
+      "resolutionMinutes": 15,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-02T12:00:00.000Z"
+    },
+    {
+      "id": "H-041",
+      "responderId": "R-OPER088",
+      "issueClass": "C",
+      "resolutionMinutes": 19,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-03T12:00:00.000Z"
+    },
+    {
+      "id": "H-042",
+      "responderId": "R-OPER088",
+      "issueClass": "C",
+      "resolutionMinutes": 20,
+      "success": false,
+      "reopened": false,
+      "resolvedAt": "2026-07-04T12:00:00.000Z"
+    },
+    {
+      "id": "H-043",
+      "responderId": "R-TECH073",
+      "issueClass": "A",
+      "resolutionMinutes": 16,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-01T13:00:00.000Z"
+    },
+    {
+      "id": "H-044",
+      "responderId": "R-TECH073",
+      "issueClass": "C",
+      "resolutionMinutes": 24,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-02T13:00:00.000Z"
+    },
+    {
+      "id": "H-045",
+      "responderId": "R-TECH073",
+      "issueClass": "B",
+      "resolutionMinutes": 18,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-03T13:00:00.000Z"
+    },
+    {
+      "id": "H-046",
+      "responderId": "R-OPER142",
+      "issueClass": "A",
+      "resolutionMinutes": 10,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-01T14:00:00.000Z"
+    },
+    {
+      "id": "H-047",
+      "responderId": "R-OPER142",
+      "issueClass": "C",
+      "resolutionMinutes": 17,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-02T14:00:00.000Z"
+    },
+    {
+      "id": "H-048",
+      "responderId": "R-OPER142",
+      "issueClass": "B",
+      "resolutionMinutes": 14,
+      "success": true,
+      "reopened": false,
+      "resolvedAt": "2026-07-03T14:00:00.000Z"
+    }
+  ]
+}

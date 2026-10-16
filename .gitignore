@@ -1,0 +1,29 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.cache/
+test-results/
+playwright-report/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+
+# Local runtime audit records (persistent for the demo, never source data)
+# Keep only folder scaffolding tracked for first-clone bootstrap.
+backend/data/*
+!backend/data/.gitkeep
+!backend/data/control-rooms/
+backend/data/control-rooms/*
+!backend/data/control-rooms/.gitkeep
+!backend/data/control-rooms/plant-1/
+backend/data/control-rooms/plant-1/*
+!backend/data/control-rooms/plant-1/.gitkeep
+
+# Local editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "simulationTime": "2026-09-01T08:15:00.000Z",
+  "equipment": [{ "equipmentId": "EQ-01", "status": "NORMAL" }],
+  "activeIssues": [],
+  "recentEvents": [{ "eventType": "ISSUE_RESOLVED", "equipmentId": "EQ-04", "issueClass": "B" }],
+  "recentRecurrenceSummary": { "EQ-04:B": 2 },
+  "allowedIssueClasses": ["A", "B", "C"],
+  "constraints": { "maxActiveIssues": 3 }
+}

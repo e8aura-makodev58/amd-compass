@@ -1,0 +1,8 @@
+{
+  "snapshotSimulationTime": "2026-09-01T08:15:00.000Z",
+  "equipment": [{ "equipmentId": "EQ-01", "uptimePercent": 100, "completedDowntimeMedianMinutes": null, "ongoingDowntimeMinutes": null, "issueCount": 0, "status": "NORMAL" }],
+  "issues": { "byClass": { "A": 1, "B": 0, "C": 0 }, "activeCount": 1, "resolvedCount": 0, "reopenCount": 0, "reopenRate": { "value": null, "denominator": 0, "status": "INSUFFICIENT" } },
+  "responders": [],
+  "issueClassExperience": [],
+  "compassVsBaselines": { "totalRecommendations": 0, "agreementWithNearest": 0, "agreementWithNaive": 0, "disagreementWithNaive": 0, "disagreementWithBoth": 0, "evidenceStrengthDrivenDisagreement": 0 }
+}

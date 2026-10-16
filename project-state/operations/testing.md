@@ -1,0 +1,52 @@
+# Testing
+
+Two suites gate every change. **Both must pass before a handoff.**
+
+## Unit / integration — `npm test`
+
+```sh
+npm test
+```
+
+Runs `node --test backend/tests/*.test.mjs`. This suite is **hermetic**: no network calls,
+no API spend, and no writes to real `backend/data/` (test state goes to isolated temp
+paths via `COMPASS_LIVE_STATE_PATH` / `COMPASS_CONTROL_ROOMS_DATA_ROOT` with `NODE_ENV=test`).
+Never add a live provider call to `npm test`.
+
+Coverage spans contracts and persistence, the clock/scheduler idempotency, planner
+generation and fallback, multi-issue races, the resolution/attempt engines, live
+recommendations and assignments, analytics, Offline reset, the model-provider abstraction
+and provider settings, Control Rooms (migration, manager, health, metadata), workforce
+continuity, the map/label layout, render lifecycle, store-failure recovery, and a
+100-opportunity deterministic reliability soak. Tests are named by work package
+(`wpNN-*.test.mjs`) plus a few feature-named files.
+
+## End-to-end — Playwright
+
+```sh
+LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e
+```
+
+Runs `playwright test` (Chromium). The E2E suite **forces provider failure** so it proves
+the deterministic fallback still dispatches — it makes no real provider call and spends
+nothing. It runs against an isolated `/tmp` data root, not real `backend/data/`. The
+`LD_LIBRARY_PATH` prefix supplies Chromium's system libraries in this environment; plain
+`npm run test:e2e` works where those libraries are already present.
+
+E2E journeys cover the audit trail, the building/floor view and camera, the control-room
+search palette, the live floor and staffing actions, the room picker and multi-room state
+isolation, the override dropdown, and the provider-settings form.
+
+## Discipline
+
+- Adapt a test's *setup* when an interface changes; do not weaken or delete its assertions
+  to make a change pass.
+- When you add a provider, route, entity, env var, or engine behavior, add matching
+  coverage and update the relevant page under `project-state/` (see
+  [../README.md](../README.md#maintenance-workflow)).
+- `git diff --check` should be clean (no whitespace errors) before a handoff.
+
+Cleanup regression coverage checks generic room names, restored room paths and
+conflict handling, saved metadata/suggestion compatibility, and aggregate-only
+recommendation packets even when detailed historical actions exist. The AMD Token
+Factory provider and settings tests stub every fetch, so `npm test` never contacts AMD.
