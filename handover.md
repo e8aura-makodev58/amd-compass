@@ -79,32 +79,7 @@ service is back up. Start with `git merge master` (protocol step 1).
   live check.
 - Run `npm install` once in your worktree. Verify with both suites (`AGENTS.md` rule 9).
 
-- **codex — Text contrast fix + Analytics chart polish.**
-  - For this round you also own `frontend/tokens.css` and `docs/design/engineering-print.md`
-    (token table only). You may change colour values in the other area stylesheets where
-    text uses a failing token.
-  - Text must meet WCAG AA on `--paper`, `--paper-raised` and `--paper-sunk`: 4.5:1 for normal
-    text, 3:1 for large text (≥24px, or ≥18.66px bold). Measured failures today:
-    - `--ink-3` 3.96:1 (labels, axis text, inactive tabs);
-    - `--muted` 3.08:1 (unavailable / off-shift text);
-    - `--warn` 3.23:1 as text ("MODERATE");
-    - `--accent` 2.76:1 (the brand mark "Compass").
-  - Darken `--ink-3` and `--muted`. Add text-safe tokens `--warn-ink` and an accent text
-    colour (or reuse `--accent-ink`), and use them wherever those colours are text. Keep
-    `--accent` / `--warn` for dots, rules and fills. Keep the look; change hues as little as
-    possible.
-  - Add a hermetic unit test, `backend/tests/design-tokens-contrast.test.mjs`. It parses
-    `frontend/tokens.css`, computes WCAG contrast, and fails if any text token is below AA
-    on the three paper tokens. Use `readFrontendCss` in `backend/tests/helpers/frontend-css.mjs`
-    if it helps.
-  - Analytics period charts:
-    - "insufficient history" and dates must not break mid-word;
-    - at 1280px, all 7 Day bars must fit without horizontal scroll;
-    - long series (Hour: 12) may still scroll at 375px.
-  - If a test asserts an old colour, update it and say so in your handoff. Add a short
-    `docs/decisions.md` entry at the bottom for the token change.
-  - Done when: contrast test passes, both suites pass, Analytics checked at 1280px and
-    375px.
+- **codex:** none (contrast fix and Analytics polish merged `08af6b7`)
 
 - **claude — AMD rate limiting, 429 retry, circuit breaker.**
   - Read `Compass_AMD_Token_Factory_Integration_Guide.md` §2, §5 and §9, and
@@ -168,6 +143,7 @@ service is back up. Start with `git merge master` (protocol step 1).
 
 ### Merge log
 
+- 2026-10-16 — **codex** `051998d` → merge `08af6b7`: text contrast fix (AA text inks, contrast test) and Analytics period labels (round 2). Append conflicts in `docs/decisions.md` / `project-state/log.md` kept both. `npm test` 232/232, E2E 32/32; `docs/assets` regenerated. Handoff archived.
 - 2026-10-16 — **gemini** `0cc8040` → merge `05596b2`: documentation accuracy pass (round 2). `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
 - 2026-10-16 — **codex** `f7358fb` → merge `3576882`: Analytics Engineering print restyle. `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
 - 2026-10-16 — **gemini** `fb7f8a6` → merge `f743437`: product-facing rename to ResponseCompass in docs. Same log conflict, same resolution. Main agent renamed 2 flagged product-meaning occurrences; the rest stay "Compass" (agent). Handoff archived.
@@ -177,16 +153,16 @@ service is back up. Start with `git merge master` (protocol step 1).
 
 ## codex
 
-- **Status:** READY FOR MERGE
-- **Updated:** 2026-10-16
-- **Task:** Round 2 — text contrast fix and Analytics chart polish.
-- **Head commit:** This handoff's commit on `codex` (see `git log -1 codex`).
-- **Changes:** Darkened `--ink-3` and `--muted`; reused `--accent-ink` for brand/alert text; added `--warn-ink` and `--ok-ink` for status text. Green also failed AA on sunk paper (4.27:1). Retained the original accent/warning/green for fills, dots and map outlines. Added a hermetic WCAG luminance/contrast test which parses tokens and also checks paper-facing `color: var(...)` uses across linked stylesheets. Analytics uses full-width desktop chart rows, 96px minimum period cells, and nonbreaking `<time>` dates; completeness labels wrap between words.
-- **Files changed:** `frontend/tokens.css`, `frontend/base.css`, `frontend/floor.css`, `frontend/panel.css`, `frontend/ops.css`, `frontend/analytics.css`, `frontend/app.js` (only period date markup), `backend/tests/design-tokens-contrast.test.mjs`, `docs/design/engineering-print.md` (token table only), `docs/decisions.md` (append only), `project-state/frontend/overview.md`, `project-state/operations/testing.md`, `project-state/log.md` (append only), `handover.md` (this section only).
-- **Verification:** `npm test` — 232/232 passed; `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 32/32 passed; `git diff --check` clean. Focused Chromium check passed at 1280×900 and 375×900: all seven Day bars fit each desktop chart without horizontal scrolling; dates and completeness words do not split; mobile Hour has twelve bars with local scrolling and no document overflow. Screenshots inspected. No live AMD calls, credentials or provider changes. No old-colour assertions needed updating.
-- **project-state pages updated:** frontend/overview.md, operations/testing.md, log.md.
-- **Risks / follow-ups:** Main may need to reconcile short documentation additions with Gemini's frontend accuracy pass and CodeBuddy's testing-page addition. The contrast gate intentionally requires 4.5:1 even for text tokens currently used in large text, so all are safe for small labels. Inverse paper text on ink buttons is excluded from the paper-facing token scan. No generated screenshot assets included.
-- **Questions for main:** None.
+- **Status:** IDLE
+- **Updated:** —
+- **Task:** —
+- **Head commit:** —
+- **Changes:** —
+- **Files changed:** —
+- **Verification:** `npm test` — · E2E —
+- **project-state pages updated:** —
+- **Risks / follow-ups:** —
+- **Questions for main:** —
 
 ---
 
