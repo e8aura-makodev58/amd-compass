@@ -4,7 +4,7 @@
 
 ## Merged handoffs
 
-### 2026-10-16 — gemini → master (branch commit `2cc159a`, merge `3a514e0`)
+### 2026-10-16 — gemini → master (branch commit `fb7f8a6`, merge `f743437`)
 
 - **Status:** READY FOR MERGE
 - **Updated:** 2026-10-16
@@ -17,9 +17,9 @@
 - **Risks / follow-ups:** Main agent should repoint the 5 tests (wp10-control-room-ui, event-feed audit, WP12 analytics UI, map 2D, WP6 recommendation panel) at the split stylesheets.
 - **Questions for main:** Kept as "Compass" because ambiguous: `project-state/concepts/agent-boundary.md:50` ("what makes Compass ..."), `project-state/backend/model-providers.md:51` ("so Compass does not ..."), `README.md:5` second sentence ("Compass automatically finds who should respond"), `Compass_Rebuild_SOW.md` line 24/166 ("Compass input"/"stored Compass output").
 
-**Main agent resolution of the gemini questions:** `project-state/concepts/agent-boundary.md` ("what makes ResponseCompass auditable") and `project-state/backend/model-providers.md` ("so ResponseCompass does not rely on `seed`") mean the product and were renamed; `README.md` line 5 ("Compass automatically finds who should respond") and the rebuild SOW's "Compass input" / "stored Compass output" mean the agent and stay "Compass". The 5 failing tests gemini reported were already fixed on master by `236153d`.
+**Main agent resolution of the gemini questions:** `project-state/concepts/agent-boundary.md` ("what makes ResponseCompass auditable") and `project-state/backend/model-providers.md` ("so ResponseCompass does not rely on `seed`") mean the product and were renamed; `README.md` line 5 ("Compass automatically finds who should respond") and the rebuild SOW's "Compass input" / "stored Compass output" mean the agent and stay "Compass". The 5 failing tests gemini reported were already fixed on master by `2626fee`.
 
-### 2026-10-16 — codex → master (branch commit `92b1bbc`, merge `e9ecc9f`)
+### 2026-10-16 — codex → master (branch commit `f7358fb`, merge `3576882`)
 
 - **Status:** READY FOR MERGE
 - **Updated:** 2026-10-16
@@ -29,7 +29,7 @@
 - **Files changed:** `frontend/analytics.css`, `frontend/app.js` (only the three assigned chart colour literals), `project-state/log.md`, `handover.md` (this section only).
 - **Verification:** `npm test` — 230/230 passed; `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 32/32 passed; `git diff --check` clean. Chromium inspected at 1280×900 and 375×900: no Analytics content overflow outside local chart/table scroll areas; four desktop KPI columns / one mobile column; paper and table-header tokens verified; keyboard focus is solid 2px. Preview screenshots are in `/tmp/compass-codex-analytics-{1280,375}.png`.
 - **project-state pages updated:** `project-state/log.md`; frontend overview unchanged because application behavior did not change, as assigned.
-- **Risks / follow-ups:** Shared header/shell retain their existing styling in this branch pending the main agent's changes. Keep the Analytics mobile selector specificity: `layout.css` loads later and otherwise overrides one-column KPI layout below 560px. Initial unit run encountered removed `styles.css` references; incoming commit `236153d` fixed the test readers before successful verification. No screenshot assets included.
+- **Risks / follow-ups:** Shared header/shell retain their existing styling in this branch pending the main agent's changes. Keep the Analytics mobile selector specificity: `layout.css` loads later and otherwise overrides one-column KPI layout below 560px. Initial unit run encountered removed `styles.css` references; incoming commit `2626fee` fixed the test readers before successful verification. No screenshot assets included.
 - **Questions for main:** None.
 
 ## Pre-worktree log

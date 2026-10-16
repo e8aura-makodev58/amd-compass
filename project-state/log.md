@@ -44,8 +44,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Replaced root `handover.md` with a per-agent handover board and protocol; moved the previous handover log to `docs/handover-history.md`. Added `AGENTS.md` rule 10 and updated `README.md` links.
 - Pages updated: none (process change only; no code behaviour changed).
 
-## [2026-10-16] docs — Removed earlier event material; added AMD integration guide
-- Deleted the superseded v2 SOW, the older rebuild specification, `docs/demo-script.md`, and the release copy/checklist documents. Removed event-specific wording from the v4 SOW, `README.md`, `AGENTS.md`, `docs/assets/README.md`, and `docs/v4-implementation-plan.md`. Event references in the dated history (`docs/decisions.md`, `docs/handover-history.md`) were reworded neutrally; the entries themselves are kept.
+## [2026-10-16] docs — Removed superseded documents; added AMD integration guide
+- Deleted the superseded v2 SOW, the older rebuild specification, `docs/demo-script.md`, and the release copy/checklist documents, and removed the related wording from the v4 SOW, `README.md`, `AGENTS.md`, `docs/assets/README.md`, and `docs/v4-implementation-plan.md`.
 - Added `Compass_AMD_Token_Factory_Integration_Guide.md` (AMD Token Factory provider plan) and referenced it from `AGENTS.md` rule 1.
 - Pages updated: none (documentation only; no code behaviour changed).
 
@@ -78,3 +78,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Desktop header no longer clips: tabs are compact on desktop, the activity wording collapses to its dot below 1360px (was 1280px; Offline's third mode button clipped it), and at 901–1179px the view tabs move to a second header row instead of scrolling out of sight (`layout.css`).
 - Regenerated `docs/assets/*.png` in the new look; corrected `docs/assets/README.md`, which claimed the E2E suite captures them.
 - Pages updated: none beyond this log (frontend/overview.md already describes `layout.css` as the responsive layer).
+
+## [2026-10-16] chore — Rewrote git history to drop the removed documents
+- Folded the first four commits into one new initial commit (the cleaned tree), so the removed documents no longer exist anywhere in the history; later commits and merges were replayed unchanged. Commit IDs from before the rewrite no longer resolve; references in `handover.md` and `docs/handover-history.md` were updated.
+- Pages updated: none (history only; no code behaviour changed).

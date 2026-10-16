@@ -133,7 +133,7 @@ The application persists up to 1,000 structured runtime log events in the ignore
 
 ## Source of truth
 
-[`Compass_ResponseCompass_SOW_v4_FINAL.md`](Compass_ResponseCompass_SOW_v4_FINAL.md) supersedes the historical v2 SOW. Material implementation decisions are recorded in [docs/decisions.md](docs/decisions.md), agents coordinate through [handover.md](handover.md), and merged handoffs are archived in [docs/handover-history.md](docs/handover-history.md).
+[`Compass_ResponseCompass_SOW_v4_FINAL.md`](Compass_ResponseCompass_SOW_v4_FINAL.md) is the product specification. Material implementation decisions are recorded in [docs/decisions.md](docs/decisions.md), agents coordinate through [handover.md](handover.md), and merged handoffs are archived in [docs/handover-history.md](docs/handover-history.md).
 
 The generic control rooms are **e8-aura-p1** (`/rooms/plant-1`) and
 **e8-aura-p2** (`/rooms/plant-2`). Compass ranks eligible responders from aggregate
