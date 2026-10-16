@@ -118,10 +118,41 @@ round 2 apply.
     Dragging a divider resizes both neighbours, so tiles stay locked together. A tile can be
     moved (dragged to another edge/position) and maximised/restored. Every tile has a minimum
     size, so no tile can be dragged to zero.
-  - **Library:** evaluate [Dockview](https://dockview.dev) (`dockview-core`, vanilla, MIT)
-    first; Golden Layout 2 (MIT) is the fallback. Pick one, record why in
-    `docs/decisions.md`, and vendor it as above. Floating/popout windows stay **off**: tiles
-    must stay locked to each other.
+  - **Library: Dockview** (`dockview-core`, vanilla, MIT). The user's other Compass app
+    ("Polaris", a folder you must not open under rule 11) already runs `dockview-core@8.3.1`
+    in production, so use the same version unless a newer 8.x is clearly better. Golden
+    Layout 2 is the fallback only if Dockview cannot do the job. Record the choice in
+    `docs/decisions.md`. Facts the main agent learned from that app:
+    - **Vendoring:** the ESM build is `dist/package/main.esm.min.mjs`. Serve it as `.js` (or
+      add an `.mjs` MIME type), because our static server types by extension.
+    - **CSS:** the package ships **no `.css` file**, and the ESM build does not inject styles.
+      The stylesheet is the CSS string that `dist/dockview-core.js` injects at load. Extract
+      it verbatim into `frontend/vendor/dockview/dockview.css` (with a provenance header) in
+      the vendor script. Add a `README.md` there with the version, the source paths and
+      `LICENCE.md`.
+    - **Imports:** keep the library import in exactly one module (`frontend/tiling.js`).
+    - **Adopting the page:** that app moves the page's existing DOM regions into Dockview
+      panels (a region map of panel id → node selectors, resolved once before any node moves),
+      so every element ID and handler keeps working. Do the same here.
+    - **Initial layout:** build it with `api.addPanel({ id, component, title, position:
+      { referencePanel, direction } , initialWidth/initialHeight })`, for example:
+      - map left;
+      - the context panel to its right (about 440px wide);
+      - the issue list below the map, with the event feed to its right.
+    - **Stored layouts:** validate them before `api.fromJSON` and fall back to the default
+      on any error:
+      - a version field;
+      - a size cap (that app uses 200,000 chars);
+      - only known panel ids/components.
+      Save on `api.onDidLayoutChange` (debounced).
+    - **What makes those panels "detached":** that app enables floating groups
+      (`addFloatingGroup`, a "Float" toggle) and "Move to new window" pop-outs.
+      **Do not enable either here.** No floating groups, no popouts, no
+      `getTabContextMenuItems` entries for float/new-window: the user wants every panel
+      locked into the tiling grid, Omarchy/Zellij style.
+    - **Theme:** that app uses `themeDark`. Use a light Dockview theme (for example
+      `themeLight`), overridden with our CSS tokens so it follows gemini's new theme.
+    - **Controls:** maximise/restore of a group is fine (Dockview's `group.api.maximize()`).
   - **Persistence:** the layout persists per browser in `localStorage`, wrapped in
     try/catch; a corrupt or old value falls back to the default. A visible "Reset layout"
     control restores the default.
