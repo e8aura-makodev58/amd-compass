@@ -122,16 +122,16 @@ _(no merges yet)_
 
 ## gemini
 
-- **Status:** IDLE
-- **Updated:** —
-- **Task:** —
-- **Head commit:** —
-- **Changes:** —
-- **Files changed:** —
-- **Verification:** `npm test` — · E2E —
-- **project-state pages updated:** —
-- **Risks / follow-ups:** —
-- **Questions for main:** —
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Product-facing rename to ResponseCompass (documentation only)
+- **Head commit:** see branch `gemini` tip
+- **Changes:** Product-meaning "Compass" now reads "ResponseCompass"; agent-meaning stays "Compass". No file, env var, identifier, data-path, `frontend/` or `backend/` changes.
+- **Files changed:** `README.md`, `Compass_Application_Defense_Guide.md`, `docs/compass-application-defense-guide.html`, `Compass_Rebuild_SOW.md`, `project-state/README.md`, `project-state/architecture.md`, `project-state/backend/model-providers.md`, `project-state/concepts/agent-boundary.md`, `project-state/log.md` (new entry appended). Checked, no change needed: `docs/architecture.md`, `docs/evaluation.md`, other `project-state/` pages (all agent-meaning).
+- **Verification:** `npm test` 225 pass / 5 fail (same 5 fail on the base commit: tests read the removed `frontend/styles.css`, ENOENT, from the stylesheet split; not caused by this change) · E2E 32/32
+- **project-state pages updated:** README.md, architecture.md, concepts/agent-boundary.md, backend/model-providers.md, log.md
+- **Risks / follow-ups:** Main agent should repoint the 5 tests (wp10-control-room-ui, event-feed audit, WP12 analytics UI, map 2D, WP6 recommendation panel) at the split stylesheets.
+- **Questions for main:** Kept as "Compass" because ambiguous: `project-state/concepts/agent-boundary.md:50` ("what makes Compass ..."), `project-state/backend/model-providers.md:51` ("so Compass does not ..."), `README.md:5` second sentence ("Compass automatically finds who should respond"), `Compass_Rebuild_SOW.md` line 24/166 ("Compass input"/"stored Compass output").
 
 ---
 

@@ -1,6 +1,6 @@
 # Concept: the deterministic / model boundary
 
-This is the single most important invariant in Compass. Every change must preserve it.
+This is the single most important invariant in ResponseCompass. Every change must preserve it.
 
 > **Application code owns facts; models only propose or rank within bounds, and are never
 > trusted as authoritative.**

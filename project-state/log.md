@@ -68,3 +68,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Restyled Analytics with token-only paper/ink colours, ruled KPI cells and tables, monospaced figures, square controls, and visible keyboard focus. Charts use ink with orange for downtime; long period series scroll locally so dates and completeness labels remain readable at narrow widths.
 - Kept report backgrounds at full content height within the shared desktop grid. Application behavior and analytics calculations are unchanged; app.js changes are limited to three chart colour arguments.
 - Pages updated: log.md (frontend/overview.md unchanged because behavior is unchanged).
+
+## [2026-10-16] docs — Product-facing rename to ResponseCompass
+- Naming pass only: where "Compass" meant the application/product it now reads "ResponseCompass"; where it means the recommendation agent it stays "Compass". No file, env var (`COMPASS_*`), identifier, or data-path renames; nothing under `frontend/` or `backend/` touched.
+- Pages updated: README.md, architecture.md, concepts/agent-boundary.md, backend/model-providers.md (plus the repo-level README, defense guide, rebuild SOW).

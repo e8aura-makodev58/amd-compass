@@ -1,8 +1,8 @@
-# Compass / ResponseCompass
+# ResponseCompass
 
 **Not just who's closest. Who makes the most sense.**
 
-Compass is a context-aware responder-dispatch agent inside a persistent simulated control room. An existing operational system decides what needs attention; Compass automatically finds who should respond to each issue right now.
+ResponseCompass is a context-aware responder-dispatch agent inside a persistent simulated control room. An existing operational system decides what needs attention; Compass automatically finds who should respond to each issue right now.
 
 The governing boundary is:
 
@@ -71,7 +71,7 @@ The application reads an optional `.env` automatically:
 cp .env.example .env
 ```
 
-Compass uses one model provider: **AMD Token Factory** (OpenAI-compatible, `https://developer.amd.com.cn/radeon/api/v1`). Set the team key with `AMD_TOKEN_FACTORY_API_KEY`, or point `AMD_TOKEN_FACTORY_API_KEY_FILE` at a file containing only the key, and leave both Live modes set to `live`. The key stays server-side and is never sent to the browser. The default model is `MiMo-V2.6-Flash` with reasoning `none`. Without a key, or whenever AMD is slow, rate-limited, unavailable, or returns output that fails validation, Live event generation and responder matching fall back deterministically, so dispatch continues without a model response.
+ResponseCompass uses one model provider: **AMD Token Factory** (OpenAI-compatible, `https://developer.amd.com.cn/radeon/api/v1`). Set the team key with `AMD_TOKEN_FACTORY_API_KEY`, or point `AMD_TOKEN_FACTORY_API_KEY_FILE` at a file containing only the key, and leave both Live modes set to `live`. The key stays server-side and is never sent to the browser. The default model is `MiMo-V2.6-Flash` with reasoning `none`. Without a key, or whenever AMD is slow, rate-limited, unavailable, or returns output that fails validation, Live event generation and responder matching fall back deterministically, so dispatch continues without a model response.
 
 The Settings tab lets an operator save a key and pick another AMD model and reasoning level at runtime, without editing `.env`. See [Compass_AMD_Token_Factory_Integration_Guide.md](Compass_AMD_Token_Factory_Integration_Guide.md) for the service's limits and terms.
 
@@ -79,7 +79,7 @@ Offline Demo is always hard-pinned to the committed fixture, regardless of Live 
 
 ## Docker deployment
 
-The supplied Compose service runs Compass on port 3000 with a named `compass-data` volume. It is intentionally configured with a read-only container filesystem, a writable `/tmp` tmpfs, dropped Linux capabilities, and a non-root application user. The `.env` file is read only at container runtime and is excluded from the image build context.
+The supplied Compose service runs ResponseCompass on port 3000 with a named `compass-data` volume. It is intentionally configured with a read-only container filesystem, a writable `/tmp` tmpfs, dropped Linux capabilities, and a non-root application user. The `.env` file is read only at container runtime and is excluded from the image build context.
 
 ```sh
 docker compose up -d --build
@@ -90,9 +90,9 @@ The health check calls `GET /api/control-rooms` and passes only when every confi
 
 ### Switchover, data migration, and rollback
 
-Stop the existing non-container Compass process before binding Docker to port 3000. Do not run both processes against the same state directory or port.
+Stop the existing non-container ResponseCompass process before binding Docker to port 3000. Do not run both processes against the same state directory or port.
 
-Docker begins with an empty named volume. To retain an existing local deployment, first stop Compass, take a verified backup of its complete `backend/data/` directory, then copy that backup into the **empty** `compass-data` volume using a one-off container. Do not automate or retry-copy into a nonempty volume: legacy room migration is intentionally conflict-safe and must not be bypassed by overwriting state. Start Compose only after validating the copied file set and retain the source backup.
+Docker begins with an empty named volume. To retain an existing local deployment, first stop ResponseCompass, take a verified backup of its complete `backend/data/` directory, then copy that backup into the **empty** `compass-data` volume using a one-off container. Do not automate or retry-copy into a nonempty volume: legacy room migration is intentionally conflict-safe and must not be bypassed by overwriting state. Start Compose only after validating the copied file set and retain the source backup.
 
 If the container fails its health check or a post-switchover validation, stop Compose, keep the named volume unchanged for inspection, and restart the former process from the verified backup/data directory. Do not delete the volume as a rollback step. See `docs/handover-history.md` for the operator checklist.
 

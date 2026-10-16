@@ -1,12 +1,12 @@
 # Model provider
 
-Compass calls a model in exactly two places — the **Compass agent** (`agent.mjs`, ranks
+ResponseCompass calls a model in exactly two places — the **Compass agent** (`agent.mjs`, ranks
 candidates) and the **event planner** (`event-planner.mjs`, proposes the next issue). Both
 send one JSON-output chat-completion request and parse one JSON result. Provider mechanics
 are isolated in `model-provider.mjs`; everything that must never depend on the provider
 (validation, fallback, never trusting the model) lives in the callers.
 
-Compass uses **one provider: AMD Radeon Cloud Token Factory**, an OpenAI-compatible
+ResponseCompass uses **one provider: AMD Radeon Cloud Token Factory**, an OpenAI-compatible
 service. This is a hackathon requirement; OpenAI, OpenRouter, and the self-hosted GPT-OSS
 provider were removed on 2026-10-16 (see `docs/decisions.md`). Service facts, limits, and
 terms are in [`Compass_AMD_Token_Factory_Integration_Guide.md`](../../Compass_AMD_Token_Factory_Integration_Guide.md).
