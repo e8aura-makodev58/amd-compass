@@ -12,7 +12,9 @@ and re-renders. Node serves these files directly (see [../backend/http-api.md](.
 | `app.js` | The whole SPA controller (~2,000 lines). Parses `/rooms/:id` at boot, polls state, and renders every panel. Handles issue/responder selection, staffing actions, the map (pan/zoom/rotate, floor switching, 2D vs. 2.5D), control-room search, analytics, the audit trail, and the settings forms. |
 | `render-lifecycle.js` | An idempotent HTML writer (`setHtml`) that preserves form state (select values, focus) across the 1.5s re-render so polling never clobbers an in-progress interaction. |
 | `map-label-layout.js` | Screen-space label layout for the floor map: lane-based collision avoidance for equipment/responder bubbles, measured against projected geometry each frame. |
-| `styles.css` | Dark-theme layout and the CSS-3D map scene. |
+| `tokens.css` | Design tokens (colour, type, rules) for the "Engineering print" look; see `docs/design/engineering-print.md`. |
+| `base.css`, `floor.css`, `panel.css`, `ops.css`, `analytics.css` | Per-area styles: shell/header/controls, the map and feeds, the context panel, Settings/Demo/Control Rooms, Analytics. |
+| `layout.css` | Responsive and bounded-workstation layout. Linked last so it overrides the area files. |
 
 ## How it talks to the backend
 

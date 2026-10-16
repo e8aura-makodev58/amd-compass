@@ -54,10 +54,47 @@ merges finished work into `master`, and archives merged handoffs to
 
 ### Assignments
 
-- **codex:** none
-- **gemini:** none
+Context (2026-10-16): the frontend is being redesigned to the **"Engineering print"** look
+and the product is renamed **ResponseCompass** (product-facing only; "Compass" stays the
+name of the recommendation agent). Read `docs/design/engineering-print.md` first. The
+stylesheet is already split per area; stay inside the files you are assigned.
+
+**Shared rules for this round**
+- Do not commit regenerated `docs/assets/*.png` screenshots (the E2E run rewrites them):
+  run `git checkout -- docs/assets` before committing. The main agent regenerates them once
+  after merging.
+- Do not touch `AGENTS.md`, `handover.md` outside your section, `docs/handover-history.md`,
+  or the dated entries in `docs/decisions.md` / `project-state/log.md` (append-only: add
+  your own new entry at the bottom of `project-state/log.md`).
+- Run `npm install` once in your worktree. Verify with both suites (AGENTS.md rule 9).
+
+- **codex — Analytics view restyle.**
+  - Own `frontend/analytics.css`. Rewrite it to the design spec using only the tokens in
+    `frontend/tokens.css` (no hard-coded colours or fonts).
+  - In `frontend/app.js`, change only the analytics chart stroke colours (the
+    `#61d7b3` / `#75a7ff` / `#f5b84b` literals in the analytics chart markup, around line
+    1075) to token-based values, e.g. `var(--ink)`, `var(--info)`, `var(--accent)`. No other
+    `app.js` edits; the main agent is editing that file.
+  - Charts: ink strokes, hairline grid, accent only for what needs attention (spec rule 8).
+    Tables per spec rule 7. KPI tiles become ruled cells, not rounded cards.
+  - Done when: Analytics matches the spec at 1280px and 375px width, both suites pass, and
+    you have updated `project-state/frontend/overview.md` only if behaviour changed.
+- **gemini — Product-facing rename to ResponseCompass (documentation only).**
+  - Where "Compass" means the *application/product*, change it to "ResponseCompass". Where
+    it means the *recommendation agent* (Compass ranks candidates, Compass recommendation,
+    Compass vs baselines, Compass agent), keep "Compass".
+  - Files: `README.md`, every page under `project-state/` except the dated entries in
+    `log.md`, `Compass_Application_Defense_Guide.md`, `docs/compass-application-defense-guide.html`,
+    `docs/architecture.md`, `docs/evaluation.md`, `Compass_Rebuild_SOW.md`.
+  - Do **not** rename files, env vars (`COMPASS_*`), code identifiers, data paths, or
+    anything under `frontend/` or `backend/` (the main agent renames UI text).
+  - Do not change meaning or restructure documents; this is a naming pass. When unsure
+    whether an occurrence means the product or the agent, keep it and list it under
+    "Questions for main".
+  - Done when: no product-meaning "Compass" remains in those files, both suites pass, and
+    your section lists every file you changed.
 - **codebuddy:** none
-- **claude:** none
+- **claude:** none (the main agent is doing tokens, header, Live Floor, panel, Settings/Demo/Control Rooms, and UI text rename on `master`)
 
 ### Merge log
 

@@ -1,0 +1,67 @@
+/* Responsive and workstation layout. Loaded last: these rules override the area files. */
+@media (max-width: 1050px) { .simulation-bar { flex-wrap: wrap; }.simulation-bar label { margin-left: 0; }.lower-grid { flex-direction: column; } }
+/* Too narrow to seat the brand and the mode buttons side by side: stack them. */
+@media (max-width: 800px) { .demo-grid, .demo-continuity-grid { grid-template-columns: 1fr; }.agent-activity-indicator { width: 100%; margin-left: 0; order: 2; }.tab-bar { flex-wrap: wrap; } .topbar { grid-template-columns: minmax(0, 1fr); } .topbar .mode-controls { grid-area: 2 / 1; justify-self: start; } .topbar .tab-bar { grid-area: 3 / 1; } }
+@media (max-width: 760px) { .kpi-grid, .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* The Live Control Room is a workstation on a desktop: its frame is fixed to
+   the viewport and only dense evidence areas scroll. Narrow windows keep the
+   normal document flow declared above. */
+/* Header compaction is a WIDTH concern only. It must not be gated on height:
+   a short desktop window is exactly the case that can least afford four rows
+   of chrome, and gating it there previously left those windows worse off than
+   before any compaction existed. */
+@media (min-width: 901px) {
+  /* One header row: brand, views, activity, mode. The eyebrow and tagline are
+     marketing rather than operational, so they yield their two lines to the map. */
+  .topbar { min-height: 0; column-gap: 20px; padding: 0 0 8px; grid-template-columns: auto minmax(0, 1fr) auto; }
+  .topbar > div:first-child { grid-area: 1 / 1; }
+  .topbar .eyebrow, .topbar .tagline { display: none; }
+  .topbar h1 { margin: 0; font-size: 1.3rem; }
+  .topbar .tab-bar { grid-area: 1 / 2; min-height: 0; margin: 0; border-bottom: 0; overflow-x: auto; scrollbar-width: none; }
+  .topbar .tab-bar::-webkit-scrollbar { display: none; }
+  /* A view name that wraps to three lines is worse than one that scrolls. */
+  .tab-button, .agent-activity-indicator { white-space: nowrap; }
+  .topbar .mode-controls { grid-area: 1 / 3; }
+  .topbar .mode-controls button, .simulation-bar button { padding: 7px 12px; font-size: .82rem; }
+  /* The search opener shares the simulation row rather than owning one. */
+  #control-room-view { display: grid; min-height: 0; gap: 8px 12px; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); }
+  .simulation-bar { min-height: 0; gap: 14px; margin: 0; padding: 7px 12px; grid-area: 1 / 1; }
+  .simulation-bar > div { display: flex; gap: 7px; align-items: baseline; min-width: 0; }
+  .simulation-bar > div .eyebrow { margin: 0; }
+  .simulation-bar label { display: flex; gap: 7px; align-items: center; }
+  .simulation-bar select { padding: 5px 26px 5px 7px; }
+  .control-room-search { z-index: 30; align-items: center; min-height: 0; margin: 0; grid-area: 1 / 2; }
+  .dashboard { grid-area: 2 / 1 / 3 / 3; }
+}
+/* Only the bounded-workstation behaviour needs the height, because it trades
+   page scrolling for locally scrolling panes and needs room to be worth it. */
+@media (min-width: 901px) and (min-height: 800px) {
+  body:has(#control-room-view:not([hidden])) { overflow: hidden; }
+  .app-shell { display: grid; height: 100dvh; min-height: 0; max-width: none; padding: 10px 20px; grid-template-rows: auto minmax(0, 1fr); }
+  .dashboard { min-height: 0; height: 100%; }
+  .floor-section { display: grid; min-height: 0; padding: 16px; grid-template-rows: auto minmax(230px, 1fr) minmax(126px, .44fr); gap: 10px; }
+  .section-heading { min-height: 30px; margin: 0; }
+  .floor { height: auto; min-height: 0; }
+  .lower-grid { min-height: 0; margin: 0; }
+  .lower-grid > section { display: grid; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+  .lower-grid .eyebrow { margin-bottom: 5px; }
+  .issue-list, .event-feed { max-height: none; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .context-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 17px 18px; }
+  .context-panel hr { margin: 16px 0; }
+  .issue-summary { margin-top: 10px; }
+  .baseline-panel { margin-top: 12px; }
+  .recommendation-panel { margin-top: 12px; }
+  .search-palette { max-height: calc(100dvh - 96px); overflow: auto; }
+}
+/* Not wide enough for the activity wording next to everything else. The dot
+   still shows state, and the live-region text stays available to assistive
+   technology rather than being removed. */
+@media (min-width: 901px) and (max-width: 1279px) {
+  #agent-activity-label { position: absolute; width: 1px; height: 1px; overflow: hidden; white-space: nowrap; clip-path: inset(50%); }
+  .agent-activity-indicator { padding: 6px 4px; }
+}
+/* Wide enough to carry the tagline without costing the header a second row. */
+@media (min-width: 1500px) {
+  .topbar > div:first-child { display: flex; gap: 11px; align-items: baseline; }
+  .topbar .tagline { display: block; color: #7f9dab; font-size: .78rem; }
+}

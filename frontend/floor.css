@@ -1,0 +1,63 @@
+/* Live Floor: map, legend, building scene, overlay labels, issue list, event feed. */
+.dashboard { min-height: 680px; border: 1px solid #1b3a49; border-radius: 16px; overflow: hidden; background: #0b1821; }
+.floor-section { flex: 1 1 68%; min-width: 0; padding: 24px; border-right: 1px solid #1b3a49; }
+.section-heading { align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.legend { gap: 13px; color: #a9bec9; font-size: .78rem; }.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend-dot, .availability-marker { width: 9px; height: 9px; border-radius: 50%; background: #c8d5db; }.equipment-dot { background: #e5b45a; }.responder-dot, .available { background: #51d1a7; }.unavailable-dot, .unavailable { background: #81909b; }.offered { background: #4dc6dd; }.assigned-dot, .assigned { background: #e7b653; }
+.floor { position: relative; height: 600px; overflow: hidden; overscroll-behavior: contain; touch-action: pan-y; cursor: default; border: 1px solid #244657; border-radius: 12px; background: #10232e; }
+.floor.is-pan-armed { cursor: grab; }
+.floor.is-panning { cursor: grabbing; }
+/* One scene supports both the default 2D plan and optional 2.5D overview.
+   Screen-space pan/zoom lives outside the 3D projection so proportions hold. */
+.building-stage { position: absolute; inset: 0; transform: translate3d(var(--pan-x, 0), var(--pan-y, 0), 0) scale(var(--zoom, 1)); transform-origin: center; transition: transform .18s ease-out; will-change: transform; }
+.building-viewport { position: absolute; inset: 0; display: grid; place-items: center; perspective: 3200px; }
+.building { --yaw: var(--yaw-user, -35deg); --pitch: var(--pitch-user, 58deg); position: relative; width: 76%; height: 40%; transform-style: preserve-3d; transform: translateY(30px) rotateX(var(--pitch)) rotateZ(var(--yaw)) translateZ(calc(var(--focus-level, 0) * -175px)); transition: transform .55s cubic-bezier(.4, 0, .2, 1); will-change: transform; }
+.floor-plane { position: absolute; inset: 0; pointer-events: none; transform-style: preserve-3d; transform: translateZ(calc(var(--level) * 175px)); border: 1px solid #2c5568; background: rgba(13, 32, 43, .5); opacity: .3; transition: opacity .35s ease, border-color .35s ease, visibility .35s ease; }
+.floor-plane.active-floor { border-color: #4dc6dd; background: rgba(16, 44, 58, .8); opacity: 1; }
+.floor-plane:not(.active-floor) .node-shape { border-width: 1px; }
+.floor-grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(#234454 1px, transparent 1px), linear-gradient(90deg, #234454 1px, transparent 1px); background-size: 16.66% 25%; opacity: .4; }
+/* Signage painted on the floor: same axes as the plane it names, sized so it
+   survives the 2.5D foreshortening rather than counter-rotating out of it. */
+.floor-tag { position: absolute; top: 8px; left: 12px; color: #6f93a3; font-size: .92rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+/* Machines and responders lie in the floor plane and share its axes, so in 2.5D
+   they foreshorten with the floor instead of billboarding square to the camera.
+   Readable text is the overlay layer's job, which is what frees them to tilt. */
+.map-node { position: absolute; z-index: 1; pointer-events: auto; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: center; white-space: nowrap; cursor: pointer; transform: translate(-50%, -50%); transition: transform .55s cubic-bezier(.4, 0, .2, 1); }
+/* Wireframes, not filled icons: at ~24 machines per floor, outlines stay readable. */
+.node-shape { display: block; width: 15px; height: 15px; margin: 0 auto; border: 1.5px solid currentColor; background: none; }
+.responder .node-shape { width: 12px; height: 12px; border-radius: 50%; }
+.node-copy { display: none; }
+.active-floor .map-node:hover .node-copy, .map-node.focused .node-copy, .active-floor .active-equipment .node-copy { display: block; margin-top: 3px; }
+.floor:not(.view-2d) .node-copy { display: none !important; }
+.map-label-layer { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.map-overlay-label { position: absolute; display: grid; min-width: 72px; max-width: 132px; gap: 1px; padding: 5px 7px; border: 1px solid #37677a; border-radius: 6px; background: rgba(7, 23, 32, .94); color: #e8f4f7; font-size: .64rem; line-height: 1.2; text-align: center; white-space: nowrap; box-shadow: 0 4px 14px rgba(0, 0, 0, .28); }
+.map-overlay-label > * { overflow: hidden; text-overflow: ellipsis; }
+.map-overlay-label > span { color: #9fb9c3; font-size: .54rem; text-transform: uppercase; }
+.map-overlay-label::after { position: absolute; top: 100%; left: var(--leader-x); width: 1px; height: var(--leader-height); background: linear-gradient(#5c9caf, rgba(92, 156, 175, .15)); content: ""; }
+.map-overlay-label[data-label-placement="below"]::after { display: none; }
+.map-overlay-label[data-label-placement="below"]::before { position: absolute; bottom: 100%; left: var(--leader-x); width: 1px; height: var(--leader-height); background: linear-gradient(rgba(92, 156, 175, .15), #5c9caf); content: ""; }
+.map-overlay-label.responder { border-color: #398c75; }
+.floor.view-2d .map-label-layer { display: none; }
+.map-node:hover, .map-node.focused { z-index: 3; }
+.map-node.focused .node-shape { box-shadow: 0 0 0 3px rgba(77, 198, 221, .35); }
+.active-equipment .node-shape { border-width: 2px; animation: pulse-node 2.2s infinite; }
+.floor.view-2d .building-viewport { perspective: none; }
+.floor.view-2d .building { --yaw: 0deg; --pitch: 0deg; width: 88%; height: 70%; transform: none; }
+.floor.view-2d .floor-plane { transform: none; }
+.floor.view-2d .floor-plane:not(.active-floor) { visibility: hidden; opacity: 0; pointer-events: none; }
+.building-controls { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 7px; max-width: calc(100% - 24px); padding: 6px; border: 1px solid #2c5568; border-radius: 10px; background: rgba(11, 24, 33, .92); cursor: default; }
+.control-group { display: inline-flex; align-items: center; gap: 4px; padding-left: 7px; border-left: 1px solid #294d5e; }
+.control-group:first-child { padding-left: 0; border-left: 0; }
+.building-controls button { min-width: 29px; padding: 4px 7px; border: 1px solid #37647a; border-radius: 6px; background: #10232e; color: #cfe6ee; font-size: .72rem; line-height: 1.4; }
+.building-controls button[aria-pressed="true"] { border-color: #4dc6dd; background: #155168; color: #fff; }
+.building-controls #reset-map { min-width: 48px; }
+.building-hint { color: #8fb0bd; font-size: .68rem; font-weight: 750; letter-spacing: .04em; }
+/* Top-right is the only corner that stays free: floor signage is painted at
+   each plane's top-left, and the control bar sits bottom-right and wraps
+   leftward into the bottom-left corner on a narrow map. */
+.map-help { position: absolute; top: 12px; right: 12px; z-index: 4; margin: 0; padding: 5px 8px; border-radius: 6px; background: rgba(7, 18, 27, .78); color: #91a9b4; font-size: .66rem; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .building-stage, .building, .floor-plane, .map-node { transition-duration: 0s !important; } .active-equipment .node-shape { animation: none; } }
+@keyframes pulse-node { 50% { opacity: .45; } }
+.equipment { color: #e7b653; }.responder { color: #59d4ac; }.responder.unavailable { color: #8c9da7; }.responder.offered { color: #4dc6dd; }.responder.assigned { color: #e7b653; }.active-equipment { color: #ff765d; }.node-label { display: block; color: #e5f1f4; font-size: .72rem; font-weight: 750; }.node-status, .issue-label { display: block; margin-top: 2px; color: #9fb2bc; font-size: .6rem; text-transform: uppercase; letter-spacing: .04em; }.issue-label { color: #ff9c8b; font-weight: 800; }.issue-ring { position: absolute; top: -13px; left: 50%; width: 57px; height: 57px; border: 2px solid #ff765d; border-radius: 50%; transform: translateX(-50%); animation: pulse 2.2s infinite; } @keyframes pulse { 50% { transform: translateX(-50%) scale(1.15); opacity: .4; } }
+.issue-dot { background: #ff765d; }.lower-grid { gap: 20px; margin-top: 20px; }.lower-grid > section { flex: 1 1 50%; min-width: 0; }.issue-list, .event-feed { display: grid; gap: 7px; max-height: 245px; overflow-y: auto; }.issue-card { display: grid; gap: 4px; width: 100%; border-color: #2a4e5e; background: #0e222c; text-align: left; }.issue-card span { color: #98afb9; font-size: .72rem; }.issue-card.selected { border-color: #4dc6dd; background: #123645; }
+.feed-event { display: grid; grid-template-columns: 42px 1fr; gap: 8px; width: 100%; padding: 8px; border: 0; border-left: 2px solid #31586a; border-radius: 0; background: #0e222c; color: inherit; text-align: left; font-size: .72rem; font-weight: inherit; }.feed-event:hover, .feed-event.selected { background: #123645; border-left-color: #4dc6dd; }.feed-event:focus-visible { outline: 2px solid #7ee7f4; outline-offset: -2px; }.feed-event time { color: #8aacbb; font-variant-numeric: tabular-nums; }.feed-event-copy { display: grid; gap: 2px; min-width: 0; }.feed-event-copy > span { overflow: hidden; color: #9eb5be; text-overflow: ellipsis; white-space: nowrap; }.feed-event.disagreement { border-left-color: #e7b653; background: #292719; }

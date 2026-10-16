@@ -53,3 +53,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Removed the OpenAI, OpenRouter, and GPT-OSS providers; added AMD Token Factory (`json_object` output with the schema in the system message, key from env or key file, `max_tokens` cap, truncation and AMD error-wrapper handling). Default model `MiMo-V2.6-Flash` with reasoning `none`, chosen by live measurement; agent/planner timeouts raised to 60s/30s.
 - Replaced `gpt-oss-provider` and `wp21-openrouter-provider` tests with `amd-provider.test.mjs`; rewrote the settings tests and the Settings E2E spec for the single provider.
 - Pages updated: backend/model-providers.md, operations/running-and-config.md, operations/testing.md, index.md.
+
+## [2026-10-16] refactor — Split the stylesheet for the redesign
+- Split `frontend/styles.css` into `tokens.css`, `base.css`, `floor.css`, `panel.css`, `ops.css`, `analytics.css`, and `layout.css` (linked in that order; no visual change, E2E 32/32). Added the "Engineering print" design spec at `docs/design/engineering-print.md` and its tokens.
+- Pages updated: frontend/overview.md.
