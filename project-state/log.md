@@ -72,3 +72,9 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-16] docs — Product-facing rename to ResponseCompass
 - Naming pass only: where "Compass" meant the application/product it now reads "ResponseCompass"; where it means the recommendation agent it stays "Compass". No file, env var (`COMPASS_*`), identifier, or data-path renames; nothing under `frontend/` or `backend/` touched.
 - Pages updated: README.md, architecture.md, concepts/agent-boundary.md, backend/model-providers.md (plus the repo-level README, defense guide, rebuild SOW).
+
+## [2026-10-16] fix — Merged the Analytics restyle and docs rename; desktop header fit
+- Merged `codex` (Analytics restyle) and `gemini` (product-facing ResponseCompass rename in docs) into `master`; renamed two further product-meaning occurrences gemini flagged.
+- Desktop header no longer clips: tabs are compact on desktop, the activity wording collapses to its dot below 1360px (was 1280px; Offline's third mode button clipped it), and at 901–1179px the view tabs move to a second header row instead of scrolling out of sight (`layout.css`).
+- Regenerated `docs/assets/*.png` in the new look; corrected `docs/assets/README.md`, which claimed the E2E suite captures them.
+- Pages updated: none beyond this log (frontend/overview.md already describes `layout.css` as the responsive layer).

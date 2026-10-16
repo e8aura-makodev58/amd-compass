@@ -47,5 +47,5 @@ outage degrades explanation quality, never correctness or availability.
 
 If you are tempted to let a model decide *whether* to act, *what* the outcome is, or *who
 is eligible*, stop — that belongs in application code. The model's role is to choose among
-already-established options and explain the choice. Keeping this line is what makes Compass
+already-established options and explain the choice. Keeping this line is what makes ResponseCompass
 auditable and safe to run unattended.

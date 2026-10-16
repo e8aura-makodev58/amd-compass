@@ -48,7 +48,7 @@ terms are in [`Compass_AMD_Token_Factory_Integration_Guide.md`](../../Compass_AM
   `validateEventProposal` (eligible equipment, issue class, ceilings).
 - Any separate reasoning trace (`message.reasoning`) is ignored — never parsed, stored, or
   shown.
-- Unsupported optional fields are silently dropped by AMD's gateway, so Compass does not
+- Unsupported optional fields are silently dropped by AMD's gateway, so ResponseCompass does not
   rely on `seed`, `stop`, etc.
 
 ## Model choice (measured 2026-10-16)

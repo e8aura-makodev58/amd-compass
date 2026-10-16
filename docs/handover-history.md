@@ -4,7 +4,33 @@
 
 ## Merged handoffs
 
-_(none yet)_
+### 2026-10-16 — gemini → master (branch commit `2cc159a`, merge `3a514e0`)
+
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Product-facing rename to ResponseCompass (documentation only)
+- **Head commit:** see branch `gemini` tip
+- **Changes:** Product-meaning "Compass" now reads "ResponseCompass"; agent-meaning stays "Compass". No file, env var, identifier, data-path, `frontend/` or `backend/` changes.
+- **Files changed:** `README.md`, `Compass_Application_Defense_Guide.md`, `docs/compass-application-defense-guide.html`, `Compass_Rebuild_SOW.md`, `project-state/README.md`, `project-state/architecture.md`, `project-state/backend/model-providers.md`, `project-state/concepts/agent-boundary.md`, `project-state/log.md` (new entry appended). Checked, no change needed: `docs/architecture.md`, `docs/evaluation.md`, other `project-state/` pages (all agent-meaning).
+- **Verification:** `npm test` 225 pass / 5 fail (same 5 fail on the base commit: tests read the removed `frontend/styles.css`, ENOENT, from the stylesheet split; not caused by this change) · E2E 32/32
+- **project-state pages updated:** README.md, architecture.md, concepts/agent-boundary.md, backend/model-providers.md, log.md
+- **Risks / follow-ups:** Main agent should repoint the 5 tests (wp10-control-room-ui, event-feed audit, WP12 analytics UI, map 2D, WP6 recommendation panel) at the split stylesheets.
+- **Questions for main:** Kept as "Compass" because ambiguous: `project-state/concepts/agent-boundary.md:50` ("what makes Compass ..."), `project-state/backend/model-providers.md:51` ("so Compass does not ..."), `README.md:5` second sentence ("Compass automatically finds who should respond"), `Compass_Rebuild_SOW.md` line 24/166 ("Compass input"/"stored Compass output").
+
+**Main agent resolution of the gemini questions:** `project-state/concepts/agent-boundary.md` ("what makes ResponseCompass auditable") and `project-state/backend/model-providers.md` ("so ResponseCompass does not rely on `seed`") mean the product and were renamed; `README.md` line 5 ("Compass automatically finds who should respond") and the rebuild SOW's "Compass input" / "stored Compass output" mean the agent and stay "Compass". The 5 failing tests gemini reported were already fixed on master by `236153d`.
+
+### 2026-10-16 — codex → master (branch commit `92b1bbc`, merge `e9ecc9f`)
+
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Analytics view Engineering print restyle.
+- **Head commit:** This handoff's commit on `codex` (see `git log -1 codex`).
+- **Changes:** Replaced dark rounded Analytics cards with token-only paper/ink surfaces, ruled KPI cells, square controls, mono figures, table header rules, and visible keyboard focus. Period charts use ink for issue counts and accent for downtime; dates and partial/insufficient-history labels wrap and long series scroll locally. Analytics aligns to its full content height inside the desktop shell.
+- **Files changed:** `frontend/analytics.css`, `frontend/app.js` (only the three assigned chart colour literals), `project-state/log.md`, `handover.md` (this section only).
+- **Verification:** `npm test` — 230/230 passed; `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 32/32 passed; `git diff --check` clean. Chromium inspected at 1280×900 and 375×900: no Analytics content overflow outside local chart/table scroll areas; four desktop KPI columns / one mobile column; paper and table-header tokens verified; keyboard focus is solid 2px. Preview screenshots are in `/tmp/compass-codex-analytics-{1280,375}.png`.
+- **project-state pages updated:** `project-state/log.md`; frontend overview unchanged because application behavior did not change, as assigned.
+- **Risks / follow-ups:** Shared header/shell retain their existing styling in this branch pending the main agent's changes. Keep the Analytics mobile selector specificity: `layout.css` loads later and otherwise overrides one-column KPI layout below 560px. Initial unit run encountered removed `styles.css` references; incoming commit `236153d` fixed the test readers before successful verification. No screenshot assets included.
+- **Questions for main:** None.
 
 ## Pre-worktree log
 
