@@ -1,0 +1,52 @@
+/* Tiling chrome follows the shared theme; the upstream stylesheet stays verbatim. */
+#floor-tiles, #floor-tiles .dockview-theme-light {
+  width: 100%; height: 100%; min-width: 0; min-height: 0;
+  --dv-background-color: var(--paper-raised);
+  --dv-paneview-header-border-color: var(--rule);
+  --dv-group-view-background-color: var(--paper-raised);
+  --dv-tabs-and-actions-container-background-color: var(--paper-sunk);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--paper-raised);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--paper-sunk);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--paper-raised);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--paper-sunk);
+  --dv-activegroup-visiblepanel-tab-color: var(--ink);
+  --dv-activegroup-hiddenpanel-tab-color: var(--ink-2);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--ink);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--ink-2);
+  --dv-tab-divider-color: var(--rule);
+  --dv-separator-border: var(--rule);
+  --dv-sash-color: var(--rule);
+  --dv-active-sash-color: var(--info);
+  --dv-drag-over-background-color: var(--paper-sunk);
+  --dv-drag-over-border: 2px solid var(--info);
+  --dv-tabs-and-actions-container-height: 32px;
+  --dv-font-family: var(--font-sans);
+  --dv-border-radius: var(--radius);
+  --dv-tab-font-size: .76rem;
+}
+#floor-tiles .dv-groupview { border: 0; }
+#floor-tiles .dv-tabs-and-actions-container { border-bottom: 1px solid var(--rule); }
+#floor-tiles .tiling-tab-title { padding: 0 10px; font-weight: 600; }
+#floor-tiles .tiling-maximize { padding: 3px 8px; margin: 3px 5px; font-size: .68rem; color: var(--ink); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--radius); }
+#floor-tiles .tiling-maximize:hover { background: var(--paper-sunk); }
+#floor-tiles :is(button, .dv-tab, .dv-groupview, .dv-sash):focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+#floor-tiles .tiling-content { height: 100%; width: 100%; min-height: 0; min-width: 0; overflow: hidden; }
+#floor-tiles .tiling-content > .floor-section { display: grid; width: 100%; height: 100%; min-height: 0; min-width: 0; grid-template-rows: auto minmax(0, 1fr); gap: 8px; padding: 12px; border: 0; }
+#floor-tiles .floor-section > .lower-grid { display: none; }
+#floor-tiles .floor { width: 100%; height: 100%; min-height: 0; }
+#floor-tiles .section-heading { flex-wrap: wrap; gap: 4px; min-height: 0; }
+#floor-tiles .legend { flex-wrap: wrap; gap: 7px; }
+#floor-tiles .tiling-content[data-tile="issues"] > section,
+#floor-tiles .tiling-content[data-tile="events"] > section { display: grid; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); padding: 8px; }
+#floor-tiles :is(.issue-list, .event-feed) { max-height: none; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; }
+#floor-tiles .context-panel { width: 100%; height: 100%; min-height: 0; min-width: 0; padding: 14px; overflow: auto; overscroll-behavior: contain; }
+#reset-layout { margin-right: 8px; }
+@media (min-width: 901px) {
+  body:has(.tiling-active):has(#control-room-view:not([hidden])) { overflow: hidden; }
+  .app-shell:has(.tiling-active) { display: grid; height: 100dvh; min-height: 600px; max-width: none; padding: 10px 20px; grid-template-rows: auto minmax(0, 1fr); }
+  .dashboard.tiling-active { position: relative; display: block; min-width: 0; min-height: 430px; height: 100%; overflow: hidden; }
+}
+/* Preserve usable tile minimums in very short windows, with reachable page scrolling. */
+@media (min-width: 901px) and (max-height: 599px) {
+  body:has(.tiling-active):has(#control-room-view:not([hidden])) { overflow: auto; }
+}

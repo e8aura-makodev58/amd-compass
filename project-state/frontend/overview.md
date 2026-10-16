@@ -15,6 +15,8 @@ and re-renders. Node serves these files directly (see [../backend/http-api.md](.
 | `tokens.css` | Design tokens (colour, type, rules) for the "Engineering print" look; see `docs/design/engineering-print.md`. |
 | `base.css`, `floor.css`, `panel.css`, `ops.css`, `analytics.css` | Per-area styles: shell/header/controls, the map and feeds, the context panel, Settings/Demo/Control Rooms, Analytics. |
 | `layout.css` | Responsive and bounded-workstation layout. Linked last so it overrides the area files. |
+| `tiling.js`, `tiling.css` | Dockview adapter, validated per-browser layout persistence, keyboard splitters and token-based tile chrome. |
+| `vendor/dockview/` | Pinned Dockview 8.3.1 browser ESM, extracted upstream stylesheet, licence and provenance; reproduced with `npm run vendor` (`scripts/vendor-frontend.mjs`). |
 
 Paper-facing text tokens are checked at WCAG AA normal-text contrast (4.5:1) on
 all three paper surfaces by `backend/tests/design-tokens-contrast.test.mjs`. Use
@@ -34,6 +36,35 @@ Two explicit helpers, so every call site states its scope (see
 `currentControlRoomId` is parsed once from `location.pathname` at boot. Room switching is
 full-page navigation, not in-page teardown. Polling pauses while an action is in flight or
 a pointer gesture is active, then resumes.
+
+## Live Floor layout
+
+At desktop widths (≥901px), `tiling.js` adopts the existing map section, issue-list
+section, event-feed section and dispatch/context aside into four Dockview tiles. It
+resolves all nodes before moving any of them, and retains their IDs, ARIA attributes,
+listeners and `app.js` references. The default has the map at upper left, issues/events
+beneath it and context at right. Tiles fill the bounded frame; dividers resize both
+neighbours and clamp to panel minimum sizes. Users can drag tiles to edges and
+maximise/restore a group. Centre merges, floating groups and pop-outs are disabled.
+Very short desktop windows scroll the page to keep the minimum-sized frame reachable.
+
+Layout persistence is per browser (`responsecompass.tiling.v1`), debounced and guarded
+against blocked/full storage. Stored JSON has a version and a 200,000-character cap;
+validation requires exactly the four known panels, one per group, with no detached or
+hidden regions. Persisted constraints/parameters are replaced with application-owned
+values. Invalid or infeasible geometry falls back to the default; **Reset layout**
+restores the default. An owned `ResizeObserver` ignores zero-sized hidden workspaces,
+so switching to Analytics or Settings cannot erase the saved proportions. A separate
+map observer remeasures projected labels after tile resizing.
+
+Splitters are focusable separators; arrow keys resize by 10px (Shift: 40px) through
+Dockview's constrained pointer-resize path, with visible focus. Below 901px, the adapter
+restores the original nodes to their original positions and disposes Dockview, keeping
+the stacked document flow. Returning to desktop restores the saved layout.
+
+Dockview is locally vendored and imported only by `tiling.js`; no CDN or external
+assets are required. `npm run vendor` copies the browser ESM and MIT licence and
+extracts the upstream CSS string verbatim without executing the UMD bundle.
 
 ## The map
 

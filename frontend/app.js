@@ -1,3 +1,4 @@
+import { initTiling } from "./tiling.js";
 import { setHtml } from "./render-lifecycle.js";
 import { layoutProjectedLabels } from "./map-label-layout.js";
 
@@ -1377,6 +1378,7 @@ async function bootRoomPicker() {
 
 function bootControlRoom() {
   document.querySelector(".app-shell").hidden = false;
+  initTiling({ onMapResize: () => scheduleProjectedLabelLayout(CAMERA_SETTLE_MS) });
   roomApi("/state").then(render).catch((error) => { reportClientError("initial_state_load", error); setHtml(elements.floor, `<p class="load-error">${escapeHtml(error.message)}</p>`); });
   setInterval(async () => { if (actionInFlight || pointerInteractionActive()) return; try { render(await roomApi("/state")); if (currentView === "analytics") await loadAnalytics(); } catch (error) { reportClientError("poll_state", error); } }, 1_500);
 }

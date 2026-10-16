@@ -14,7 +14,7 @@ test("Live controls, analytics, and Offline fallback complete without repair", a
   await expect(page.getByRole("heading", { name: "Workforce continuity" })).toBeVisible();
   await expect(page.getByLabel("Scenario preset")).toHaveValue("NORMAL");
   await expect(page.getByText(/caps actionable issues at 10/i)).toBeVisible();
-  await page.route("**/api/simulation/force-event", async (route) => {
+  await page.route("**/api/control-rooms/*/simulation/force-event", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     await route.continue();
   }, { times: 1 });

@@ -100,3 +100,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Darkened tertiary/muted tokens and routed warning, green and accent text through AA-safe inks; preserved brighter status marks. Added hermetic contrast coverage for paper-facing text tokens on all three paper backgrounds.
 - Analytics uses full-width chart rows, nonbreaking dates and whole-word completeness labels so seven Day bars fit at 1280px; long series retain local scrolling on mobile.
 - Pages updated: frontend/overview.md, operations/testing.md; design token table and docs/decisions.md also updated.
+
+## [2026-10-16] feature — Desktop Live Floor tiling with Dockview
+- Added pinned, locally vendored Dockview 8.3.1 and reproducible browser asset extraction. The existing map, issue list, event feed and context nodes become four constrained, movable desktop tiles with keyboard resizing, maximise/restore, validated local layout persistence and reset; narrow screens retain the original flow.
+- Added persisted-layout validation tests and six browser journeys; the contrast gate now resolves vendor text aliases to the shared tested inks without lowering AA thresholds. Repaired the existing activity-indicator test delay to match the current room-scoped force-event route, removing a timing race without changing assertions.
+- Pages updated: frontend/overview.md, operations/testing.md; docs/decisions.md and vendor provenance also updated.

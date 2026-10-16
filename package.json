@@ -10,12 +10,16 @@
     "test": "node --test backend/tests/*.test.mjs",
     "test:e2e": "playwright test",
     "test:all": "npm test && npm run test:e2e",
-    "measure:amd": "node --env-file-if-exists=.env scripts/measure-amd-models.mjs"
+    "measure:amd": "node --env-file-if-exists=.env scripts/measure-amd-models.mjs",
+    "vendor": "node scripts/vendor-frontend.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1"
+  },
+  "dependencies": {
+    "dockview-core": "8.3.1"
   }
 }

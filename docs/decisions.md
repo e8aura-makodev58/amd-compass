@@ -656,3 +656,21 @@ needed an ink variant because its original colour measured 4.27:1 on sunk paper.
 A hermetic CSS-token contrast test guards this boundary. Analytics charts use full-width
 desktop rows so seven Day bars fit at 1280px, retain dates without line breaks, and wrap
 completeness labels only between words; long narrow-screen series scroll locally.
+
+## 2026-10-16 — Dockview for the desktop Live Floor tiling grid
+
+Use the MIT-licensed `dockview-core@8.3.1`, pinned exactly, for shared desktop tiling
+rather than implementing a docking engine. Vendor its browser ESM as `.js`, its MIT
+licence and the exact CSS string extracted from the UMD build using `npm run vendor`;
+this fits the existing plain-module server without a bundler, MIME changes or CDN.
+Only `frontend/tiling.js` imports the library. Its tile chrome uses shared CSS tokens.
+
+Adopt the original map, issues, event-feed and context DOM regions, preserving all
+application references and handlers. Keep one panel per group; disable floating,
+pop-outs and centre merges. Users resize adjoining tiles, drag to edges and maximise
+or restore; arrow-key splitters use the same constrained library resize path. Below
+901px restore the original nodes and stacked layout. Per-browser persistence validates
+version, size, known components and grid membership before deserialisation; application
+constraints replace stored values. Corrupt or infeasible layouts fall back to the default.
+Ignore zero-size hidden-workspace resize events so non-floor tabs cannot damage saved
+proportions; remeasure the map's projected labels when its tile changes size.

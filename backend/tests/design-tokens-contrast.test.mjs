@@ -27,6 +27,11 @@ test("all paper-facing text tokens meet WCAG AA normal-text contrast on every pa
   const tokens = new Map([...source.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map((match) => [match[1], match[2].trim()]));
   const textTokens = new Set(["--ink", "--ink-2", "--ink-3", "--muted", "--accent-ink", "--warn-ink", "--ok-ink", "--info"]);
   const css = await readFrontendCss();
+  // Dockview's paper-facing text variables must alias our tested text inks.
+  // Resolve those aliases without excluding vendor text from the AA gate.
+  for (const match of css.matchAll(/(--dv-[\w-]+)\s*:\s*var\((--[\w-]+)\)\s*;/g)) {
+    if (tokens.has(match[2])) tokens.set(match[1], tokens.get(match[2]));
+  }
   for (const match of css.matchAll(/(?:^|[;{])\s*color\s*:\s*var\((--[\w-]+)\)/g)) {
     // Paper-coloured text is the explicit inverse treatment on dark buttons.
     if (!match[1].startsWith("--paper")) textTokens.add(match[1]);
