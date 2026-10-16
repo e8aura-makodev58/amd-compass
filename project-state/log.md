@@ -120,3 +120,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Added pinned, locally vendored Dockview 8.3.1 and reproducible browser asset extraction. The existing map, issue list, event feed and context nodes become four constrained, movable desktop tiles with keyboard resizing, maximise/restore, validated local layout persistence and reset; narrow screens retain the original flow.
 - Added persisted-layout validation tests and six browser journeys; the contrast gate now resolves vendor text aliases to the shared tested inks without lowering AA thresholds. Repaired the existing activity-indicator test delay to match the current room-scoped force-event route, removing a timing race without changing assertions.
 - Pages updated: frontend/overview.md, operations/testing.md; docs/decisions.md and vendor provenance also updated.
+
+## [2026-10-16] feature — Modern light theme and local UI fonts
+- Completed Gemini's theme WIP: cool-grey/white surfaces, indigo controls, clear status inks, rounded cards and restrained elevation. Isolated dashboard stacking so tile dividers stay behind the search palette. Added reproducible Latin Inter/JetBrains Mono font vendoring, normal/italic faces and the current design spec.
+- Contrast checks retain AA 4.5:1 across all five light surfaces and inverse button backgrounds. Updated the responder hover/selection colour expectations and made the tiling outbound-request check use the configured agent test origin.
+- Pages updated: frontend/overview.md, operations/testing.md; docs/design/modern-light.md and docs/decisions.md added/updated, Engineering print marked superseded.

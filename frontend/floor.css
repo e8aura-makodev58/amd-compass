@@ -1,5 +1,5 @@
 /* Modern light. Live Floor: map, legend, building scene, overlay labels, issue list, event feed. */
-.dashboard { min-height: 680px; border: 1px solid var(--rule); border-radius: 14px; overflow: hidden; background: var(--paper-raised); box-shadow: var(--shadow-sm); }
+.dashboard { isolation: isolate; min-height: 680px; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; background: var(--paper-raised); box-shadow: var(--shadow-sm); }
 .floor-section { flex: 1 1 68%; min-width: 0; padding: 24px; border-right: 1px solid var(--rule); }
 .section-heading { align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .legend { gap: 14px; color: var(--ink-2); font-size: .78rem; font-weight: 500; }.legend span { display: inline-flex; gap: 6px; align-items: center; }

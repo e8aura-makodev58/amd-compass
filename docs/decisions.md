@@ -674,3 +674,20 @@ version, size, known components and grid membership before deserialisation; appl
 constraints replace stored values. Corrupt or infeasible layouts fall back to the default.
 Ignore zero-size hidden-workspace resize events so non-floor tabs cannot damage saved
 proportions; remeasure the map's projected labels when its tile changes size.
+
+## 2026-10-16 — Modern light theme with locally served variable fonts
+
+Replace Engineering print with white/cool-grey surfaces, an indigo selection/action
+accent, soft borders, restrained elevation, 6–10px corners and segmented controls.
+Keep `--paper*` / `--ink*` token names so layout and Dockview continue to consume the
+same theme interface. Status colours retain distinct meanings; their text variants
+meet AA across all light surfaces. White inverse button text is checked against its
+actual accent backgrounds, with the normal-text 4.5:1 threshold unchanged.
+
+Use pinned Fontsource Inter Variable and JetBrains Mono Variable 5.3.0 under SIL OFL 1.1.
+Vendor only Latin variable-weight normal/italic WOFF2 faces, CSS and licences through
+`scripts/vendor/fonts.mjs`, loaded by tokens.css from our own server. The existing
+`.woff2` MIME support and vendor runner are retained. No CDN, external font request,
+app identifiers, ARIA changes or simulation behavior changes are introduced.
+The Engineering print spec remains as a superseded historical reference. Codex completed
+Gemini's WIP at the user's explicit request, resolving its unfinished master merge first.

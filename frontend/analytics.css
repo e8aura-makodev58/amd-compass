@@ -43,7 +43,7 @@ body.busy button { cursor: wait; }
 .metric-grid strong { font-size: .82rem; line-height: 1.5; }
 .dashboard-kpis small, .metric-grid small { color: var(--ink-2); font-size: .7rem; font-weight: 400; }
 .dashboard-kpis button:hover, .metric-grid button:hover, button.analytics-chart:hover { border-color: var(--accent); background: var(--paper-raised); box-shadow: var(--shadow-md); }
-.analytics-panel { min-width: 0; margin-top: 20px; padding: 20px; border: 1px solid var(--rule); border-radius: 14px; background: var(--paper-raised); box-shadow: var(--shadow-sm); }
+.analytics-panel { min-width: 0; margin-top: 20px; padding: 20px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow-sm); }
 .analytics-panel h3 { margin-bottom: 12px; }
 .panel-title { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
 .panel-title > div { min-width: 0; }

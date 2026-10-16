@@ -25,7 +25,7 @@ test("WCAG sRGB contrast calculation matches reference extremes and linear segme
 test("all paper-facing text tokens meet WCAG AA normal-text contrast on every paper", async () => {
   const source = await readFile(new URL("../../frontend/tokens.css", import.meta.url), "utf8");
   const tokens = new Map([...source.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map((match) => [match[1], match[2].trim()]));
-  const textTokens = new Set(["--ink", "--ink-2", "--ink-3", "--muted", "--accent-ink", "--warn-ink", "--ok-ink", "--info"]);
+  const textTokens = new Set(["--ink", "--ink-2", "--ink-3", "--muted", "--accent-ink", "--warn-ink", "--ok-ink", "--info", "--danger-ink"]);
   const css = await readFrontendCss();
   // Dockview's paper-facing text variables must alias our tested text inks.
   // Resolve those aliases without excluding vendor text from the AA gate.
@@ -33,12 +33,16 @@ test("all paper-facing text tokens meet WCAG AA normal-text contrast on every pa
     if (tokens.has(match[2])) tokens.set(match[1], tokens.get(match[2]));
   }
   for (const match of css.matchAll(/(?:^|[;{])\s*color\s*:\s*var\((--[\w-]+)\)/g)) {
-    // Paper-coloured text is the explicit inverse treatment on dark buttons.
-    if (!match[1].startsWith("--paper")) textTokens.add(match[1]);
+    // Inverse button text is checked against its actual accent backgrounds below.
+    if (!match[1].startsWith("--paper") && match[1] !== "--on-accent") textTokens.add(match[1]);
+  }
+  for (const background of ["--accent", "--accent-ink"]) {
+    const ratio = contrast(tokens.get("--on-accent"), tokens.get(background));
+    assert.ok(ratio >= 4.5, `--on-accent on ${background}: ${ratio.toFixed(3)}:1; normal text needs 4.5:1`);
   }
   for (const name of textTokens) {
     assert.ok(tokens.has(name), `Missing text token ${name}`);
-    for (const paper of ["--paper", "--paper-raised", "--paper-sunk"]) {
+    for (const paper of ["--paper", "--paper-raised", "--paper-sunk", "--accent-wash", "--danger-wash"]) {
       const ratio = contrast(tokens.get(name), tokens.get(paper));
       assert.ok(ratio >= 4.5, `${name} on ${paper}: ${ratio.toFixed(3)}:1; normal text needs 4.5:1`);
     }
