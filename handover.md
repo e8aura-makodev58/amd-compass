@@ -92,7 +92,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 3 task open) |
+| codex | STOP (no task) |
 | gemini | RUN (round 3 task open) |
 | codebuddy | RUN (round 2 task open) |
 | claude | RUN (round 2 task open) |
@@ -106,7 +106,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | Tiling panel layout for the Live Floor (Dockview) | 3 |
+| codex | none (tiling merged `8e5f211`) | — |
 | gemini | Modern clean light theme (replaces "Engineering print") | 3 |
 | codebuddy | Header regression E2E + saved-model check at boot | 2 |
 | claude | AMD rate limiting, 429 retry, circuit breaker; **next:** ranking-validity fix (prompt + one repair retry) | 2 |
@@ -151,79 +151,6 @@ its LICENSE.
   `dockview-core/dist/dockview-core.js` (CSS source), and
   `@fontsource-variable/{inter,jetbrains-mono}/files/*-latin-wght-{normal,italic}.woff2`. The same shared rules as
 round 2 apply.
-
-- **codex — Tiling panel layout for the Live Floor (desktop).**
-  - **Behaviour:** like Omarchy/Zellij tiling. On the desktop Live Floor (≥901px wide) these
-    panels are tiles that always fill the frame with no gaps or overlaps:
-    - map (`.floor-section`);
-    - issue list (`#issue-list`);
-    - event feed (`#event-feed`);
-    - dispatch/context panel (`.context-panel`).
-    Dragging a divider resizes both neighbours, so tiles stay locked together. A tile can be
-    moved (dragged to another edge/position) and maximised/restored. Every tile has a minimum
-    size, so no tile can be dragged to zero.
-  - **Library: Dockview** (`dockview-core`, vanilla, MIT). The user's other Compass app
-    ("Polaris", a folder you must not open under rule 11) already runs `dockview-core@8.3.1`
-    in production, so use the same version unless a newer 8.x is clearly better. Golden
-    Layout 2 is the fallback only if Dockview cannot do the job. Record the choice in
-    `docs/decisions.md`. Facts the main agent learned from that app:
-    - **Vendoring:** the ESM build is `dist/package/main.esm.min.mjs`. Serve it as `.js` (or
-      add an `.mjs` MIME type), because our static server types by extension.
-    - **CSS:** the package ships **no `.css` file**, and the ESM build does not inject styles.
-      The stylesheet is the CSS string that `dist/dockview-core.js` injects at load. Extract
-      it verbatim into `frontend/vendor/dockview/dockview.css` (with a provenance header) in
-      the vendor script. Add a `README.md` there with the version, the source paths and
-      `LICENCE.md`.
-    - **Imports:** keep the library import in exactly one module (`frontend/tiling.js`).
-    - **Adopting the page:** that app moves the page's existing DOM regions into Dockview
-      panels (a region map of panel id → node selectors, resolved once before any node moves),
-      so every element ID and handler keeps working. Do the same here.
-    - **Initial layout:** build it with `api.addPanel({ id, component, title, position:
-      { referencePanel, direction } , initialWidth/initialHeight })`, for example:
-      - map left;
-      - the context panel to its right (about 440px wide);
-      - the issue list below the map, with the event feed to its right.
-    - **Stored layouts:** validate them before `api.fromJSON` and fall back to the default
-      on any error:
-      - a version field;
-      - a size cap (that app uses 200,000 chars);
-      - only known panel ids/components.
-      Save on `api.onDidLayoutChange` (debounced).
-    - **What makes those panels "detached":** that app enables floating groups
-      (`addFloatingGroup`, a "Float" toggle) and "Move to new window" pop-outs.
-      **Do not enable either here.** No floating groups, no popouts, no
-      `getTabContextMenuItems` entries for float/new-window: the user wants every panel
-      locked into the tiling grid, Omarchy/Zellij style.
-    - **Theme:** that app uses `themeDark`. Use a light Dockview theme (for example
-      `themeLight`), overridden with our CSS tokens so it follows gemini's new theme.
-    - **Controls:** maximise/restore of a group is fine (Dockview's `group.api.maximize()`).
-  - **Persistence:** the layout persists per browser in `localStorage`, wrapped in
-    try/catch; a corrupt or old value falls back to the default. A visible "Reset layout"
-    control restores the default.
-  - **Keyboard:** dividers are keyboard-resizable with focus visible (spec rule 9), using the
-    library's support or a small addition.
-  - **Narrow screens:** below 901px, keep today's stacked document flow (no tiling).
-  - **Don't break the app:**
-    - Keep every element ID, class and ARIA attribute that `app.js`/tests use. Move the
-      existing DOM nodes into tiles rather than re-creating them, because `app.js` holds
-      references and the render lifecycle (`render-lifecycle.js`) must keep working.
-    - The map must re-fit when its tile resizes; use a `ResizeObserver`.
-  - **Files:** you own `frontend/layout.css`, a new `frontend/tiling.js` (+ `tiling.css` if
-    needed), `frontend/vendor/<tiling lib>/`, and the `index.html` lines that load them. In
-    `app.js`, only add the minimal wiring (init call, resize hooks). gemini is restyling all
-    other CSS this round, so don't edit `tokens.css` / `base.css` / `floor.css` / `panel.css`
-    / `ops.css` / `analytics.css`. Style the tiling chrome (dividers, tile headers) with
-    tokens only, so it picks up gemini's theme.
-  - **Tests:** add `e2e/tiling.spec.mjs` with these assertions:
-    - the tiles fill the frame with no gap;
-    - dragging a divider grows one tile and shrinks its neighbour by the same amount;
-    - minimum sizes hold;
-    - the layout persists across reload, and Reset restores it;
-    - no outbound requests;
-    - below 901px the page stacks.
-    Existing E2E tests must still pass, so update selectors only where the DOM really moved,
-    and say so in your handoff.
-  - **Docs:** update `project-state/frontend/overview.md` (layout section).
 
 - **gemini — Modern clean light theme (replaces "Engineering print").**
   - **Look:** white and cool-grey surfaces, subtle rounded corners (6–10px), soft 1px borders,
@@ -334,6 +261,7 @@ round 2 apply.
 
 ### Merge log
 
+- 2026-10-16 — **codex** `e67c40a` → merge `8e5f211`: Dockview tiling for the desktop Live Floor (round 3). Vendoring reconciled into `scripts/vendor/dockview.mjs`. `npm test` 234/234, E2E 38/38. Handoff archived.
 - 2026-10-16 — **codex** `051998d` → merge `08af6b7`: text contrast fix (AA text inks, contrast test) and Analytics period labels (round 2). Append conflicts in `docs/decisions.md` / `project-state/log.md` kept both. `npm test` 232/232, E2E 32/32; `docs/assets` regenerated. Handoff archived.
 - 2026-10-16 — **gemini** `0cc8040` → merge `05596b2`: documentation accuracy pass (round 2). `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
 - 2026-10-16 — **codex** `f7358fb` → merge `3576882`: Analytics Engineering print restyle. `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
@@ -344,16 +272,16 @@ round 2 apply.
 
 ## codex
 
-- **Status:** READY FOR MERGE
-- **Updated:** 2026-10-16
-- **Task:** Round 3 — Dockview tiling for the desktop Live Floor.
-- **Head commit:** This handoff's commit on `codex` (see `git log -1 codex`).
-- **Changes:** Vendored pinned MIT `dockview-core@8.3.1` browser ESM, exact extracted upstream CSS, licence and provenance; added reproducible `npm run vendor`. `tiling.js` adopts the original map, issues, events and context nodes into four edge-movable desktop tiles (≥901px), with constrained pointer/keyboard dividers, maximise/restore and Reset layout. No floats, pop-outs, close buttons or centre merges. Validates version, size, components and grid membership before restoring localStorage; strips stored parameters/constraints and replaces them with application-owned values. Corrupt or infeasible layouts fall back to default. Ignores zero-size hidden-workspace resizes; preserves base layout through maximisation. Below 901px, restores original node positions and handlers. Very short desktop windows scroll to keep tile minimums reachable. Map dimensions remain responsive and ResizeObserver refreshes projected labels.
-- **Files changed:** `frontend/tiling.js`, `frontend/tiling.css`, `frontend/vendor/dockview/{dockview.js,dockview.css,LICENCE.md,README.md}`, `frontend/index.html` (two stylesheet links), `frontend/app.js` (import + one init call only), `scripts/vendor-frontend.mjs`, `package.json`, `package-lock.json`, `backend/tests/tiling-layout.test.mjs`, `backend/tests/design-tokens-contrast.test.mjs`, `e2e/tiling.spec.mjs`, `e2e/control-room.spec.mjs` (delay route matcher only), `project-state/frontend/overview.md`, `project-state/operations/testing.md`, `project-state/log.md`, `docs/decisions.md`, `handover.md` (this section only).
-- **Verification:** `npm test` — 234/234 passed; `LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 38/38 passed; `git diff --check` clean. Six new E2E journeys cover gap/overlap-free coverage at 1440/1280/920px (including 720px height), equal neighbour resizing, keyboard focus/arrows, minimum sizes, reload/view-switch persistence, reset, edge moves, maximise/restore, corrupt/blocked storage, zero outbound requests and breakpoint restoration preserving node identity. The 480px-height scrolling check passed. Vendored JS/CSS/licence regenerate byte-for-byte. Screenshots inspected. No existing E2E assertions changed; the shared journey's delay matcher now uses the actual room-scoped force-event route, fixing its transient-activity timing race. No live AMD calls. Contrast gate resolves Dockview text aliases to the shared inks while keeping AA 4.5:1.
-- **project-state pages updated:** frontend/overview.md (new layout section and file catalog), operations/testing.md, log.md.
-- **Risks / follow-ups:** Reconcile `package.json`/lockfile, `scripts/vendor-frontend.mjs` and documentation additions with Gemini's font/theme branch; the vendor runner must retain both Dockview and font steps. Tiling chrome uses existing shared tokens and owns its overrides in `tiling.css`; `layout.css` and all Gemini-owned area stylesheets are unchanged. Existing E2E assertions remain intact; only the stale force-event delay route was corrected. Do not merge the stale main-agent/other-agent sections from this branch's handover; preserve their latest master versions. No generated screenshot assets committed.
-- **Questions for main:** None.
+- **Status:** IDLE
+- **Updated:** —
+- **Task:** —
+- **Head commit:** —
+- **Changes:** —
+- **Files changed:** —
+- **Verification:** `npm test` — · E2E —
+- **project-state pages updated:** —
+- **Risks / follow-ups:** —
+- **Questions for main:** —
 
 ---
 
