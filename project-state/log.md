@@ -105,3 +105,13 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - `playwright.config.mjs` reads `COMPASS_E2E_PORT` (default 3012) and uses a per-port data folder, so agents can run E2E in parallel. `handover.md` gains a **Ports** table (E2E and manual-preview port per agent; free them right after testing) and `AGENTS.md` rule 9 points to it.
 - Added `npm run vendor` (`scripts/vendor-frontend.mjs` + one module per library in `scripts/vendor/`), pinned `dockview-core@8.3.1` and `@fontsource-variable/{inter,jetbrains-mono}@5.3.0` as devDependencies, and taught the static server `.mjs` and `.woff2`, ahead of the round-3 tiling and theme work.
 - Pages updated: none beyond this log (operations/testing.md is owned by codebuddy this round; the main agent adds the port note there at merge).
+
+## [2026-10-16] chore — Live AMD model measurement (service busy, rankings mostly invalid)
+- `npm run measure:amd`, 3 samples each, sequential:
+  - **MiMo-V2.6-Flash (none):** rankings 1/3, median 28.5s; planner 3/3, 4.5s.
+  - **GLM-5.3-Flash (low):** rankings 0/3, planner 0/3; timeouts and HTTP 429 "at its concurrency limit (16)".
+  - **Qwen3.8-Flash-Next (none):** rankings 0/3, all timed out at 90s; planner 3/3, 27.5s.
+  - **DeepSeek-V4-Flash (none):** rankings 0/3; planner 3/3, 6.7s.
+  - **MiniCPM5-2B:** rankings 0/3, planner 0/3; schema and eligibility errors.
+- Dominant ranking rejection: digits in rationale prose (responder IDs or numbers), which `containsNumericLeakage` forbids. Not an outage: every request was answered or rate-limited, so the model work stays active. Queued for claude: prompt hardening plus one bounded, revalidated repair attempt. The deterministic fallback kept dispatch working throughout.
+- Pages updated: none yet (backend/model-providers.md is owned by claude/codebuddy this round; the main agent updates its model table after their merges).

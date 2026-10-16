@@ -109,7 +109,7 @@ and stops once no agent has an open assignment.
 | codex | Tiling panel layout for the Live Floor (Dockview) | 3 |
 | gemini | Modern clean light theme (replaces "Engineering print") | 3 |
 | codebuddy | Header regression E2E + saved-model check at boot | 2 |
-| claude | AMD rate limiting, 429 retry, circuit breaker | 2 |
+| claude | AMD rate limiting, 429 retry, circuit breaker; **next:** ranking-validity fix (prompt + one repair retry) | 2 |
 
 Finished tasks are recorded in **Merge log** below, never as "none" lines here.
 
@@ -285,6 +285,28 @@ round 2 apply.
     - breaker open → fail-fast → half-open → close.
   - Update `project-state/backend/model-providers.md` (remove these from "Not yet built")
     and add a `docs/decisions.md` entry.
+
+- **claude — NEXT, after the limiter is READY FOR MERGE: raise AMD ranking validity.**
+  - Live measurement on 2026-10-16 (main agent, `npm run measure:amd`, 3 samples each):
+    - **rankings:** only 1 of 15 valid across MiMo, GLM-5.3, Qwen3.8-Flash-Next, DeepSeek-V4-Flash
+      and MiniCPM5-2B;
+    - **planner:** MiMo 3/3 in about 4.5s, DeepSeek 3/3 in about 7s.
+  - **Main failure:** `prose introduces numeric evidence`. `containsNumericLeakage` in
+    `agent.mjs` rejects any digit, and models write responder IDs (`Engr028`) or numbers in
+    their rationale.
+  - **Do, in order:**
+    1. Harden `SYSTEM_INSTRUCTION`: no digits anywhere in prose, including responder IDs;
+       say "this candidate", "the nearer candidate", and so on. Add one short compliant
+       example.
+    2. Add **one** bounded repair attempt: on `validation-failed`, re-ask once with the
+       validator's error list. It must fit the remaining deadline and use the limiter, and
+       it counts toward the retry budget. The result is still fully revalidated; never
+       accept unvalidated output.
+  - **Do not** loosen `containsNumericLeakage` or any validator (`AGENTS.md` rule 3) without
+    asking the main agent first.
+  - Hermetic tests with fake fetch: a numeric-prose reply triggers exactly one repair; a
+    second failure falls back; the repair is skipped when the deadline is too short.
+  - Record it in `docs/decisions.md`. The main agent re-measures live afterwards.
 
 - **codebuddy — Header regression E2E + saved-model check at boot.**
   - **E2E.** Add `e2e/header-layout.spec.mjs`. At 920, 1024, 1280 and 1440px, in Live and in
