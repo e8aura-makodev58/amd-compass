@@ -25,6 +25,11 @@ continuity, the map/label layout, render lifecycle, store-failure recovery, and 
 text colour at 4.5:1 against all three paper surfaces, including tokens used by the linked
 area stylesheets. It uses local file reads and WCAG sRGB luminance calculations only.
 
+`tiling-layout.test.mjs` validates persisted layouts without a DOM or network: accepted
+panels, schema/version/size limits, injected parameters/constraints, duplicate/missing
+regions and forbidden floating/pop-out layouts. The contrast test resolves Dockview's
+text-variable aliases to the shared inks, retaining the 4.5:1 gate for vendor text.
+
 ## End-to-end — Playwright
 
 ```sh
@@ -40,6 +45,12 @@ nothing. It runs against an isolated `/tmp` data root, not real `backend/data/`.
 E2E journeys cover the audit trail, the building/floor view and camera, the control-room
 search palette, the live floor and staffing actions, the room picker and multi-room state
 isolation, the override dropdown, and the provider-settings form.
+
+`e2e/tiling.spec.mjs` covers desktop frame coverage, pointer and keyboard resizing,
+minimum sizes, reload and view-switch persistence, reset, edge moves, maximise/restore,
+invalid/unavailable storage, zero outbound requests, and desktop/mobile transitions
+that preserve the original DOM nodes and handlers. The shared control-room journey delays
+the room-scoped force-event route so its transient activity-indicator assertion is stable.
 
 ## Discipline
 

@@ -115,3 +115,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
   - **MiniCPM5-2B:** rankings 0/3, planner 0/3; schema and eligibility errors.
 - Dominant ranking rejection: digits in rationale prose (responder IDs or numbers), which `containsNumericLeakage` forbids. Not an outage: every request was answered or rate-limited, so the model work stays active. Queued for claude: prompt hardening plus one bounded, revalidated repair attempt. The deterministic fallback kept dispatch working throughout.
 - Pages updated: none yet (backend/model-providers.md is owned by claude/codebuddy this round; the main agent updates its model table after their merges).
+
+## [2026-10-16] feature — Desktop Live Floor tiling with Dockview
+- Added pinned, locally vendored Dockview 8.3.1 and reproducible browser asset extraction. The existing map, issue list, event feed and context nodes become four constrained, movable desktop tiles with keyboard resizing, maximise/restore, validated local layout persistence and reset; narrow screens retain the original flow.
+- Added persisted-layout validation tests and six browser journeys; the contrast gate now resolves vendor text aliases to the shared tested inks without lowering AA thresholds. Repaired the existing activity-indicator test delay to match the current room-scoped force-event route, removing a timing race without changing assertions.
+- Pages updated: frontend/overview.md, operations/testing.md; docs/decisions.md and vendor provenance also updated.
