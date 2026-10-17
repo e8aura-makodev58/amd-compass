@@ -189,3 +189,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] docs — submission drafts
 - Added `docs/submission/` with the form answers (page 1 text, technologies, cover image prompt), pitch deck content (10 slides with notes) and a 3:00 demo video script. Drafts by the main agent, sent to codex for factual review (round 7).
+
+## [2026-10-17] docs — Review submission form, deck and video against implementation
+- Corrected fix-recommendation scope, dispatch/assistance guarantees, model-measurement context, month event counts, retention/latency claims and historical provider provenance. Replaced timing-dependent video steps with a saved-history walkthrough; verified form limits and narration budget.
+- Pages updated: docs/submission/form-answers.md, docs/submission/pitch-deck.md, docs/submission/demo-video-script.md; own handover section records evidence and remaining user choices. Application, seeds and running deployment unchanged.

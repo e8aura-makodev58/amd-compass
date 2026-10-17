@@ -2,7 +2,7 @@
 
 Slide-by-slide content for the required PDF deck, 16:9, 10 slides. Each slide has the
 on-slide text (keep it short) and speaker notes. Screenshots come from the running app with
-the month-long e8-aura-p1 history. Status: **draft, awaiting codex review**.
+the month-long e8-aura-p1 history. Status: **reviewed draft; user approval and PDF production pending**.
 
 Style: match the cover image and the app's light theme (Inter, dark navy text, teal accent,
 amber for alerts, off-white background). No company logos.
@@ -13,7 +13,7 @@ amber for alerts, off-white background). No company logos.
 
 **On slide**
 - ResponseCompass
-- The right responder. The right fix. Learned from every past repair.
+- Choose the responder. Understand why.
 - Visual: the cover image.
 
 **Notes**
@@ -24,9 +24,9 @@ ResponseCompass is a dispatch agent for operations control rooms, built on AMD T
 ## 2. The problem
 
 **On slide**
-- When a machine fails, control rooms send whoever is **closest** or **free**.
+- When equipment fails, **closest** or **free** may be an incomplete answer.
 - The nearest technician may never have fixed this kind of fault.
-- Every wrong dispatch costs downtime, a reopened issue, or a second trip.
+- A poor match can mean downtime, reopening or another trip.
 - The knowledge of who fixes what, and how, lives in people's heads and old tickets.
 
 **Notes**
@@ -40,9 +40,9 @@ and what they are already doing.
 
 **On slide**
 - For every new issue, Compass **ranks the eligible responders** and explains the tradeoffs.
-- Offers go out automatically; responders accept or reject; complex work pulls in a second responder.
-- Central command can override any decision, and every step is audited.
-- Each issue carries a **response action**; next, Compass recommends the fix from past resolutions.
+- Offers go out automatically; responders accept or reject; complex work can receive a second responder.
+- Central command can override pending dispatch, and every step is audited.
+- Each issue carries a **response action**; recommendations from past fixes are **planned**.
 - Visual: Live Floor screenshot (floor map, selected issue, Compass recommendation).
 
 **Notes**
@@ -61,8 +61,9 @@ system dispatches automatically with a human able to step in.
 - Visual: the boundary diagram (Clock → Scheduler → Context → Compass / Baselines → Dispatch → Store).
 
 **Notes**
-The model never invents facts and never mutates state. That makes it safe to run unattended
-and easy to audit: if the model is wrong or unavailable, dispatch keeps going.
+The ranker receives application-owned evidence. The planner proposes synthetic incidents;
+code validates proposals and owns all mutations. Model failure triggers deterministic
+fallback; code remains responsible for every eligibility check and mutation.
 
 ---
 
@@ -70,14 +71,14 @@ and easy to audit: if the model is wrong or unavailable, dispatch keeps going.
 
 **On slide**
 - Each responder's **true skill is hidden** simulation truth: no model, UI or analytics sees it.
-- Outcomes are simulated from that hidden skill, so results reflect real fit, not what the model was told.
+- Outcomes are simulated from that hidden skill, independently of the model's claims about skill.
 - Two transparent baselines (nearest, naive score) run alongside; disagreements are flagged.
 - Analytics show denominators, suppress thin samples, and are not an employee leaderboard.
 - Excluded from ranking: pay, seniority, demographics, fatigue, HR data.
 
 **Notes**
 We wanted the demo to be able to show Compass being wrong as well as right. Hidden truth plus
-baselines make its added value measurable rather than assumed.
+baselines make its choices inspectable. Disagreement alone does not prove better outcomes.
 
 ---
 
@@ -86,14 +87,18 @@ baselines make its added value measurable rather than assumed.
 **On slide**
 - OpenAI-compatible API, `json_object` output, our validators as the contract.
 - Default model **MiMo-V2.6-Flash**; ranking and event planner can use different models.
-- Provider controls: 10 requests/min, 2 concurrent, retry only on 429 (honouring Retry-After), circuit breaker.
-- Measured live, 10 samples per model: MiMo **9/10** valid rankings, **10/10** valid event plans.
-- Ranking time limit 90 s; a timeout falls back without blocking dispatch.
+- Local defaults: 10 requests/min, 2 concurrent; bounded 429 retries; circuit breaker.
+- Recorded MiMo check: **9/10** valid rankings, **10/10** valid event plans.
+- Ranking deadline: 90 s including repair; timeout → deterministic fallback.
 
 **Notes**
 We measured several Token Factory models against the same scenario and chose the default
 per role from the data. Ranking is the heavier task; the provider controls keep us within
-AMD's limits even under load.
+our configured request budget. These are small-sample validation results, not outcome
+accuracy or uptime guarantees. The 10-sample check used 60s ranking / 30s planner
+timeouts; the ranking default was subsequently raised to 90s. One ranking repair shares
+that deadline. Retry defaults: at most two retries, only on 429. Five consecutive service
+failures open the breaker; one probe is allowed after 60s.
 
 ---
 
@@ -101,14 +106,14 @@ AMD's limits even under load.
 
 **On slide**
 - Live Floor: three floors, 2D map with 2.5D overview, issues and responders in real time.
-- Compass recommendation with rationale; offer, accept, reject; second responder for complex work.
+- Compass recommendation with rationale; offer, accept, reject; assistance for complex work.
 - Override and force-resolve controls; one-click audit trail per issue.
 - Two independent control rooms (e8-aura-p1, e8-aura-p2).
 - Visual: 2–3 screenshots (issue audit trail, Compass rationale, event feed disagreement marker).
 
 **Notes**
-Point out the disagreement marker in the event feed: that is where Compass chose differently
-from the nearest-responder baseline, and why.
+Point out the disagreement marker in the event feed: it marks disagreement with either baseline, not necessarily nearest.
+Open the recommendation record to identify which baseline and read the rationale.
 
 ---
 
@@ -116,15 +121,23 @@ from the nearest-responder baseline, and why.
 
 **On slide**
 - e8-aura-p1 runs a full simulated month: **3,531 issues** from 1 September to 6 October.
-- September: **2,978 raised, 2,998 resolved**, median under 15 minutes from raised to resolved.
+- September: **2,978 raised / 2,998 resolved events** (08:00 UTC boundaries).
 - Day, week and month analytics; Compass-vs-baseline comparison; equipment and responder views.
-- Seven-day history retention keeps the live state small: views load in under 0.2 s.
+- Seven-day detail retention: **16.8 MB live file; 56 ms state response** in one local check.
 - Visual: Analytics tab screenshot (Month view with September complete).
 
 **Notes**
 This history was generated with the app's own engine, offline and deterministically, so every
 record is one the app itself would produce. Retention archives older detail without changing
-any analytics number.
+any analytics number. These counts come from lifecycle events, not distinct issue IDs.
+The month extension used deterministic fallbacks; the original week includes historical
+non-AMD model records. This is not an AMD-only benchmark or a controlled comparison
+of model versus baseline outcomes. No per-month raised-to-resolved median is supplied
+by the period endpoint.
+
+Latency is a local point measurement, not a guarantee: HTTP full analytics 239ms; first
+DAY/WEEK/MONTH 317/54/44ms; cold plant-1 1.47s; fresh two-room bootstrap 2.39s.
+Exact observations, compact facts and other canonical evidence still grow.
 
 ---
 
@@ -145,11 +158,11 @@ provider failures to prove the fallbacks.
 ## 10. What's next
 
 **On slide**
-- **Recommended fixes:** Compass suggests the response action from similar past resolutions.
+- **Planned fixes:** rank response actions retrieved from comparable past resolutions.
 - Learn from outcomes: feed accepted and successful fixes back into the evidence.
 - Connect to real CMMS / ticketing systems in place of the simulated floor.
 - Long-run storage: compact the remaining growing history for year-long runs.
-- Closing line: **The right responder. The right fix.**
+- Closing line: **Choose the responder. Understand why.**
 
 **Notes**
 The dispatch half is built and measured. The next step uses the same boundary for actions:
