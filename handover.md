@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no open task) |
+| codex | RUN (round 7 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none — round 6 merged `5db2ad4` | — |
+| codex | Review the submission drafts | 7 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -228,8 +228,41 @@ retention** first, then the month seed.
 - **codex — History retention for long-running rooms, then the month seed.** Done: merged
   `5db2ad4`. Month seed (1 Sep → 6 Oct) committed with its archive.
 
-- **main agent:** reviews and merges, installs the plant-1 seed and archive into the 3200 app
-  (backing up its current plant-1 directory first) and checks Analytics there.
+- **main agent:** merged round 6 and installed the month into the 3200 app. Done.
+
+**Round 7 (2026-10-17).** Submission materials. The main agent drafted the form answers, the
+pitch deck content and the demo video script in `docs/submission/`. The user asked codex to
+review them.
+
+- **codex — Review the submission drafts.** Start with `git merge master`; no server or
+  E2E run is needed unless you check a claim in the UI (then use 3121 with scratch data and
+  stop it after).
+  - **Files:** `docs/submission/form-answers.md`, `docs/submission/pitch-deck.md`,
+    `docs/submission/demo-video-script.md`.
+  - **1. Factual accuracy (most important).** Check every claim against the code and
+    `project-state/`: features, counts (machines, responders, floors, tests), model names,
+    provider-control numbers, measurement results (`project-state/backend/model-providers.md`),
+    the month figures (e8-aura-p1 seed: 3,531 issues; September 2,978 raised / 2,998
+    resolved), retention and latency numbers, and what each tab shows. Anything the app does
+    **not** do yet must be worded as future work. In particular, recommending a fix from past
+    resolutions is planned; today the event planner proposes a `responseAction` per issue and
+    the audit trail records the action taken. Nothing may expose or imply access to
+    `ResponderSkill`.
+  - **2. Form limits.** Title ≤50, short description 50–255, long description 600–2000
+    characters and ≥100 words. Report the final counts.
+  - **3. Clarity and fit.** Plain language for judges; short slide text; the video script fits
+    3:00 at a natural speaking pace (about 150 words per minute) and every step is
+    performable in the current UI in that order. Flag any step that cannot be shown.
+  - **4. Constraints.** Synthetic data only; no company logos; no other events or
+    competitions named; never show or mention the API key's value.
+  - **How:** edit the three files directly on your branch. Under *Changes* in your handoff,
+    list each factual correction with the evidence (file and line, or measurement); list
+    style edits briefly. Put anything that needs the user's decision under *Questions for
+    main*.
+  - **Do not touch:** application code, tests, seeds, `backend/data/`, port 3200.
+  - Add a `project-state/log.md` entry. No `docs/decisions.md` entry needed.
+
+- **main agent:** reviews and merges, then passes the final text to the user.
 
 ### Merge log
 

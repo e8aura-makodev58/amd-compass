@@ -186,3 +186,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] feature — Archive closed Live history and regenerate corrected month
 - Added deterministic seven-day retention, durable archive-first recovery, retained exact decision/analytics evidence, bounded public state and paginated station history with archived audits. Regenerated plant-1 to 6 October with companion archives and staged bootstrap; plant-2 and metadata unchanged. Documented residual growth and measured target misses.
 - Pages updated: backend/control-rooms.md, backend/domain-model.md, backend/live-runtime.md, backend/overview.md, backend/http-api.md, frontend/overview.md, concepts/analytics-and-ethics.md, operations/running-and-config.md, operations/testing.md. Reader inventory and reproduction: docs/history-retention.md, docs/demo-history.md.
+
+## [2026-10-17] docs — submission drafts
+- Added `docs/submission/` with the form answers (page 1 text, technologies, cover image prompt), pitch deck content (10 slides with notes) and a 3:00 demo video script. Drafts by the main agent, sent to codex for factual review (round 7).
