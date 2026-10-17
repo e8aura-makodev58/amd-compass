@@ -211,7 +211,8 @@ fall back, so these controls needed no caller changes.
 
 ## Not yet built
 
-Catalog validation of the saved model at boot (assigned to codex, 2026-10-17).
+Nothing from the integration guide's runtime list remains open. Catalog validation at
+boot is described under Selection & discovery.
 
 ## Frontend
 

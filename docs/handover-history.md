@@ -4,6 +4,21 @@
 
 ## Merged handoffs
 
+### 2026-10-17 — codex → master (branch commit `6fb0b72`, merge `a2dad5b`)
+
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-17
+- **Task:** Header regression E2E + saved-model check at boot (reassigned from CodeBuddy).
+- **Head commit:** This handoff on `codex`, based on `faf777e`.
+- **Changes:** Eight header geometry checks at 920/1024/1280/1440px in Live and Offline assert all view tabs and the activity indicator/dot stay unclipped, with no topbar overflow or tab-bar scrolling. Production boot starts background model discovery after settings load, without awaiting the network; test-mode server boot disables it. `modelValidation` reports saved/effective model and status. Confirmed missing saved models log `provider_saved_model_missing` and use the default model/effort for both request purposes, preserving the saved pin and file. Failed/malformed discovery preserves the saved selection. Credentials invalidate cached evidence and stale responses cannot overwrite it; concurrent initialization shares one check.
+- **Files changed:** `backend/src/provider-settings.mjs`, one server-entrypoint wiring line in `backend/src/server.mjs`, `backend/tests/provider-settings.test.mjs`, `e2e/header-layout.spec.mjs`, this section, and project-state pages below. Neither `model-provider.mjs` nor `agent.mjs` touched.
+- **Verification:** `npm test` 265/265; full Chromium E2E 46/46 on port 3021, forced provider failures and no API spend (focused header E2E also 8/8). Seven new settings tests use fake catalogs and scratch files. Merged master again before handoff: already up to date. Servers stopped; ports 3021/3121 free. No regenerated assets to restore.
+- **project-state pages updated:** `backend/model-providers.md` (Selection & discovery only), `operations/testing.md`, `log.md`.
+- **Risks / follow-ups:** Until background discovery completes, requests retain the saved choice. The saved model remains the UI selection; runtime fallback is exposed separately as `modelValidation.effectiveModelId`. No live AMD checks performed. Watcher remains stopped per user instruction.
+- **Questions for main:** None.
+
+**Main agent:** clean merge; reviewed `provider-settings.mjs` and the one `server.mjs` line (boot check is background-only and off under `NODE_ENV=test`). On master: `npm test` 265/265, E2E 46/46.
+
 ### 2026-10-17 — codex → master (branch commit `ed3af2e`, merge `80aa9e9`)
 
 - **Status:** READY FOR MERGE

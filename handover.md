@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 2 task open) |
+| codex | STOP (no task) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | Header regression E2E + saved-model check at boot — reassigned from codebuddy 2026-10-17 | 2 |
+| codex | none (header E2E + boot model check merged `a2dad5b`) | — |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -195,33 +195,14 @@ round 2 apply.
 - **codex — Raise AMD ranking validity.** Done: merged `80aa9e9`. Candidate names allowed in prose
   (main agent, `93272ec`), prompt hardened, one revalidated repair within the same deadline.
 
-- **codex — Header regression E2E + saved-model check at boot** (reassigned from codebuddy,
-  2026-10-17). Start with `git merge master` and `npm install`; use port 3021.
-  - **E2E.** Add `e2e/header-layout.spec.mjs`. At 920, 1024, 1280 and 1440px, in Live and in
-    Offline (Offline adds "Reset Offline"), assert:
-    - all four view tabs are fully visible (not clipped by the tab bar's scroll box);
-    - `.topbar` has no horizontal overflow;
-    - the activity indicator is not clipped.
-    Measure with `getBoundingClientRect` / `scrollWidth`. The fix being protected is the
-    `layout.css` header rules (901–1179px two-row header; activity text collapses to its
-    dot below 1360px).
-  - **Boot catalog check.** You own `backend/src/provider-settings.mjs` this round. When AMD
-    discovery succeeds and the saved model is not in the catalog, the settings must:
-    - report it (snapshot field and a log event);
-    - use `AMD_DEFAULT_MODEL_ID` for requests;
-    - keep the user's saved choice on disk.
-    When discovery fails, keep the saved model; never block startup and never call AMD at
-    boot in `npm test`. Use a mocked fetch in unit tests.
-  - Do not touch `model-provider.mjs` or `agent.mjs` (the main agent is changing the provider
-    path on master now). Merge master again before handing off.
-  - Update `project-state/backend/model-providers.md` (Selection & discovery section only)
-    and `project-state/operations/testing.md` for the new spec.
+- **codex — Header regression E2E + saved-model check at boot.** Done: merged `a2dad5b`.
 
 - **main agent:** reviews and merges. Measured live 2026-10-16 (see codex's bullet). Re-measures with more
   samples once the provider controls land (codex's validity fix is merged).
 
 ### Merge log
 
+- 2026-10-17 — **codex** `6fb0b72` → merge `a2dad5b`: header layout E2E and saved-model check at boot (round 2, reassigned from codebuddy). Clean merge. `npm test` 265/265, E2E 46/46. Handoff archived.
 - 2026-10-17 — **main agent** on master: AMD provider controls (limiter, 429 retry, circuit breaker; round 2, was claude's). `npm test` 258/258, E2E 38/38.
 - 2026-10-17 — **codex** `ed3af2e` → merge `80aa9e9`: one bounded, revalidated ranking repair and hardened prose prompt (round 2). Clean merge. `npm test` 241/241, E2E 38/38. Handoff archived.
 - 2026-10-17 — **gemini** `03780dd` (finished by codex in the gemini worktree after Gemini ran out of tokens) → merge `87b3a77`: modern light theme and local Inter/JetBrains Mono fonts (round 3). Clean merge. On master: `npm test` 234/234, E2E 38/38; `npm run vendor` regenerates the committed files byte-for-byte. Handoff archived. Gemini excluded from tasks from now on (user).
@@ -236,16 +217,16 @@ round 2 apply.
 
 ## codex
 
-- **Status:** READY FOR MERGE
-- **Updated:** 2026-10-17
-- **Task:** Header regression E2E + saved-model check at boot (reassigned from CodeBuddy).
-- **Head commit:** This handoff on `codex`, based on `faf777e`.
-- **Changes:** Eight header geometry checks at 920/1024/1280/1440px in Live and Offline assert all view tabs and the activity indicator/dot stay unclipped, with no topbar overflow or tab-bar scrolling. Production boot starts background model discovery after settings load, without awaiting the network; test-mode server boot disables it. `modelValidation` reports saved/effective model and status. Confirmed missing saved models log `provider_saved_model_missing` and use the default model/effort for both request purposes, preserving the saved pin and file. Failed/malformed discovery preserves the saved selection. Credentials invalidate cached evidence and stale responses cannot overwrite it; concurrent initialization shares one check.
-- **Files changed:** `backend/src/provider-settings.mjs`, one server-entrypoint wiring line in `backend/src/server.mjs`, `backend/tests/provider-settings.test.mjs`, `e2e/header-layout.spec.mjs`, this section, and project-state pages below. Neither `model-provider.mjs` nor `agent.mjs` touched.
-- **Verification:** `npm test` 265/265; full Chromium E2E 46/46 on port 3021, forced provider failures and no API spend (focused header E2E also 8/8). Seven new settings tests use fake catalogs and scratch files. Merged master again before handoff: already up to date. Servers stopped; ports 3021/3121 free. No regenerated assets to restore.
-- **project-state pages updated:** `backend/model-providers.md` (Selection & discovery only), `operations/testing.md`, `log.md`.
-- **Risks / follow-ups:** Until background discovery completes, requests retain the saved choice. The saved model remains the UI selection; runtime fallback is exposed separately as `modelValidation.effectiveModelId`. No live AMD checks performed. Watcher remains stopped per user instruction.
-- **Questions for main:** None.
+- **Status:** IDLE
+- **Updated:** —
+- **Task:** —
+- **Head commit:** —
+- **Changes:** —
+- **Files changed:** —
+- **Verification:** `npm test` — · E2E —
+- **project-state pages updated:** —
+- **Risks / follow-ups:** —
+- **Questions for main:** —
 
 ---
 
