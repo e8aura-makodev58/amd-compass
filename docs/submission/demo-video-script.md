@@ -38,7 +38,7 @@ before recording. All plant data is synthetic.
 | 1:50–2:00 | Analytics → Compass vs Baselines → Inspect records. | Here, recommendation records show agreement and disagreement with both baselines. This explains choices, rather than claiming a performance win. |
 | 2:00–2:25 | Month: complete September, then Week and Day; scroll to responder summaries. | September contains nearly three thousand issue-raised events and a complete month of simulated activity. Charts show activity and downtime. Observed responder summaries show resolution time and success with denominators, suppressing thin samples. This history tests the engine; it is not an AMD-only outcome experiment. |
 | 2:25–2:50 | Settings → API, cropped to two model controls; then Live Floor. No settings changes or key fields. | The current integration uses AMD Token Factory, with MiMo-V2.6-Flash as the default for both ranking and event planning. Code validates outputs. Local rate limits, bounded retries and a circuit breaker control requests. When a model fails or times out, deterministic fallback keeps dispatch available. |
-| 2:50–3:00 | Reviewed cover. | Next, we plan fix recommendations drawn from comparable past resolutions. ResponseCompass: choose the responder, understand why. |
+| 2:50–3:00 | Reviewed cover. | Next, we plan fix recommendations drawn from comparable past resolutions. ResponseCompass: the right responder, and next, the right fix. |
 
 ## Recording checks
 

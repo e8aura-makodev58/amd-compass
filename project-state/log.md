@@ -193,3 +193,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] docs — Review submission form, deck and video against implementation
 - Corrected fix-recommendation scope, dispatch/assistance guarantees, model-measurement context, month event counts, retention/latency claims and historical provider provenance. Replaced timing-dependent video steps with a saved-history walkthrough; verified form limits and narration budget.
 - Pages updated: docs/submission/form-answers.md, docs/submission/pitch-deck.md, docs/submission/demo-video-script.md; own handover section records evidence and remaining user choices. Application, seeds and running deployment unchanged.
+
+## [2026-10-17] docs — submission tagline kept; live AMD capture for the video
+- User kept "The right responder. The right fix. Learned from every past repair." as the cover/deck tagline (vision); deck slide 1 notes and the video close present fix recommendations as next. Codex's factual corrections otherwise stand.
+- The month data holds no successful AMD ranking (month extension ran with models forced off; the original week used earlier providers). By user decision the main agent runs plant-1 live on AMD in the 3200 app to capture genuine MiMo rankings for the video.

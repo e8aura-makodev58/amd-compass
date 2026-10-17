@@ -13,11 +13,14 @@ amber for alerts, off-white background). No company logos.
 
 **On slide**
 - ResponseCompass
-- Choose the responder. Understand why.
+- The right responder. The right fix. Learned from every past repair.
 - Visual: the cover image.
 
 **Notes**
 ResponseCompass is a dispatch agent for operations control rooms, built on AMD Token Factory.
+The tagline is the product vision (user decision, 2026-10-17): responder ranking is built
+today; recommending the fix from past repairs is the next step (slide 10). Say so when
+presenting this slide.
 
 ---
 
@@ -162,7 +165,7 @@ provider failures to prove the fallbacks.
 - Learn from outcomes: feed accepted and successful fixes back into the evidence.
 - Connect to real CMMS / ticketing systems in place of the simulated floor.
 - Long-run storage: compact the remaining growing history for year-long runs.
-- Closing line: **Choose the responder. Understand why.**
+- Closing line: **The right responder. The right fix.**
 
 **Notes**
 The dispatch half is built and measured. The next step uses the same boundary for actions:

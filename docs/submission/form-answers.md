@@ -68,21 +68,25 @@ Open: the form did not show the options. Pick after the user pastes them.
 
 ### Cover image prompt (ChatGPT, 16:9)
 
+The tagline is the product vision, kept by user decision (2026-10-17) after codex flagged
+that fix recommendations are not built yet. The long description, deck (slide 10) and video
+present fix recommendations as the next step.
+
 ```
 Create a 16:9 landscape cover image (1920×1080) for a software project called "ResponseCompass".
 
-Concept: an AI agent in an operations control room that, for each equipment issue, ranks eligible responders using observed operational history and explains the tradeoffs. Fix recommendations from past repairs are future work; do not depict them as a current feature.
+Concept: an AI agent in an operations control room that, for each equipment issue, recommends both the best responder to send and the best action to fix it, learned from past repair records.
 
 LAYOUT: split composition. The left 45% is a clean text panel; the right 55% is the illustration.
 
 TEXT (most important element; must be large and legible from a thumbnail):
 - Title "ResponseCompass": very large, bold geometric sans-serif (like Inter Bold), dark navy. It should span almost the full width of the left panel, roughly 12–14% of the image height. Write it as one word with a capital C.
 - Tagline on two short lines below it, about half the title's size, medium weight, slate grey with the key words in teal:
-  "Choose the responder. Understand why."
-  "Dispatch informed by observed history."
+  "The right responder. The right fix."
+  "Learned from every past repair."
 - Spell all text exactly as written. No other text anywhere in the image.
 
-ILLUSTRATION (right side): a light, top-down digital floor plan of a stylised factory, with soft grey machine outlines and walkways. One machine glows with a small amber alert. Several responder markers (simple circular avatars, no faces) are spread across the floor. The nearest marker is greyed out. A smooth glowing teal route line curves from a farther marker to the alert, showing the better choice. Beside the alert, a floating card shows candidate markers and abstract comparison bars, representing the responder ranking. Behind it, a faint stack of record cards with a small history/clock icon represents past repair history feeding the recommendation. A subtle compass rose sits behind the chosen route. Use abstract bars and placeholder lines on the cards, never readable text.
+ILLUSTRATION (right side): a light, top-down digital floor plan of a stylised factory, with soft grey machine outlines and walkways. One machine glows with a small amber alert. Several responder markers (simple circular avatars, no faces) are spread across the floor. The nearest marker is greyed out. A smooth glowing teal route line curves from a farther marker to the alert, showing the better choice. Beside the alert, a floating card shows a short checklist with a check mark and a small wrench icon, representing the recommended fix. Behind it, a faint stack of record cards with a small history/clock icon represents past repair history feeding the recommendation. A subtle compass rose sits behind the chosen route. Use abstract bars and placeholder lines on the cards, never readable text.
 
 STYLE: modern product illustration, flat-to-soft 3D, light theme. Off-white to very pale cool-grey background. Palette: dark navy, teal accent, one amber alert colour, soft greys. Crisp, professional and calm; not sci-fi, no neon, no dark background. Keep the illustration lighter in visual weight than the text so the title dominates.
 
