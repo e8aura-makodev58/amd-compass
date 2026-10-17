@@ -344,7 +344,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // root.  Docker mounts it at /app/data; local installs retain backend/data.
   const dataRoot = resolveCompassDataRoot();
   const logger = createApplicationLogger(createApplicationLogStore(compassDataPath("application-events.json")), console);
-  const settingsService = createProviderSettingsService({ filePath: compassDataPath("provider-settings.json") });
+  const settingsService = createProviderSettingsService({ filePath: compassDataPath("provider-settings.json"), logger, checkModelsOnBoot: process.env.NODE_ENV !== "test" });
   await settingsService.initialize();
   const manager = await createControlRoomManager({
     // This is deliberately narrower than COMPASS_DATA_DIR: it is a test-only

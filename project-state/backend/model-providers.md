@@ -130,6 +130,18 @@ samples: re-measure before relying on these numbers.
   models only (drops OCR-only models such as MinerU), and attaches each model's documented
   reasoning levels via `reasoningEffortsForModel` (DeepSeek-V4, GLM, MiMo, Qwen3.8 families;
   unknown models offer only `default`, since an unsupported value is an HTTP 422).
+- **Boot validation.** The server enables a background catalog check after settings and
+  credentials load; startup never awaits the network. `NODE_ENV=test` disables this boot
+  check. Service-level callers opt in with `checkModelsOnBoot` (tests supply fake fetch).
+  Snapshots retain the saved `modelId` and expose `modelValidation` with `status`
+  (`UNCHECKED`, `CHECKING`, `VALID`, `MISSING`, `UNAVAILABLE`), `savedModelId`, and
+  `effectiveModelId`. A successful catalog missing the saved chat model emits
+  `provider_saved_model_missing` to the application log. Both ranking and planner request
+  options then use `AMD_DEFAULT_MODEL_ID` and its default reasoning effort, leaving the
+  user's saved file untouched. Failed/malformed discovery keeps the saved choice; a later
+  successful refresh can restore it. Confirmed fallback remains active during a pending
+  refresh. Changing credentials invalidates catalog evidence,
+  and stale in-flight responses cannot override the new credential's status.
 - **`requestOptions(purpose)`** returns `{ mode, provider: "amd", apiKey, modelId,
   reasoningEffort? }` for `agent.mjs` / `event-planner.mjs`. `mode` is `live` unless
   overridden by `COMPASS_LIVE_COMPASS_MODE` / `COMPASS_EVENT_PLANNER_MODE`.

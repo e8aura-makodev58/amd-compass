@@ -154,3 +154,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] measurement — AMD models after repair retry and provider controls
 - `npm run measure:amd`, 3 samples: MiMo rankings 2/3 (planner 3/3), DeepSeek rankings 3/3 (planner 1/3), Qwen3.8-Flash-Next and GLM-5.3-Flash rankings timed out. No digit-in-prose failures; every valid ranking picked `R-ENGR028`. The circuit breaker opened during GLM's failures as designed. Recorded in backend/model-providers.md.
+
+## [2026-10-17] fix — Validate saved model at boot and guard header layout
+- Added background boot catalog validation with snapshot status and application logging. Confirmed missing saved models use the default model/effort for requests without rewriting the saved pin; failed discovery retains the saved selection. Test-mode boot stays API-free, and stale responses after credential changes are ignored.
+- Added eight header geometry checks across Live/Offline and four desktop widths, plus hermetic settings coverage for boot concurrency, fallback (including pending refresh), persistence, outage, malformed catalogs and recovery.
+- Pages updated: backend/model-providers.md (Selection & discovery), operations/testing.md.
