@@ -92,7 +92,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no task) |
+| codex | RUN (round 2 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | RUN (round 2 task open) |
 | claude | RUN (round 2 task open) |
@@ -106,10 +106,10 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none (tiling merged `8e5f211`) | — |
+| codex | Ranking-validity fix (prompt hardening + one repair retry) — reassigned from claude 2026-10-17 | 2 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | Header regression E2E + saved-model check at boot | 2 |
-| claude | AMD rate limiting, 429 retry, circuit breaker; **next:** ranking-validity fix (prompt + one repair retry) | 2 |
+| claude | AMD rate limiting, 429 retry, circuit breaker | 2 |
 
 Finished tasks are recorded in **Merge log** below, never as "none" lines here.
 
@@ -158,8 +158,9 @@ round 2 apply.
   - Read `Compass_AMD_Token_Factory_Integration_Guide.md` §2, §5 and §9, and
     `project-state/backend/model-providers.md`.
   - Own `backend/src/model-provider.mjs` and a new module for the controls (for example
-    `backend/src/provider-limiter.mjs`). Touch `agent.mjs` / `event-planner.mjs` only if the
-    wiring requires it, and keep their validation/fallback contract unchanged. Do not touch
+    `backend/src/provider-limiter.mjs`). Put the limiter, retries and breaker **inside `callChatCompletion`** so
+    every caller gets them. Do **not** edit `agent.mjs` (codex owns it from 2026-10-17); touch
+    `event-planner.mjs` only if wiring requires it, keeping its validation/fallback contract. Do not touch
     `provider-settings.mjs` (codebuddy owns it this round).
   - **Local limiter.** One shared limiter for all AMD calls (agent + planner) across all
     control rooms: configurable RPM (default 10) and concurrency (default 2), a bounded wait
@@ -188,7 +189,14 @@ round 2 apply.
   - Update `project-state/backend/model-providers.md` (remove these from "Not yet built")
     and add a `docs/decisions.md` entry.
 
-- **claude — NEXT, after the limiter is READY FOR MERGE: raise AMD ranking validity.**
+- **codex — Raise AMD ranking validity** (reassigned from claude, 2026-10-17; runs in
+  parallel with claude's limiter). Start with `git merge master` and `npm install`.
+  - **Files:** you own `backend/src/agent.mjs` and its tests. Do **not** touch
+    `model-provider.mjs` (claude) or `provider-settings.mjs` (codebuddy). Make every model
+    call, including the repair, through the existing `callLiveModel` → `callChatCompletion`
+    path; claude's limiter, 429 retry and breaker land inside `callChatCompletion`, so the
+    repair inherits them after both merge. Validation rejections must stay out of the
+    breaker's failure count (claude's side; just don't report them as provider errors).
   - Live measurement on 2026-10-16 (main agent, `npm run measure:amd`, 3 samples each):
     - **rankings:** only 1 of 15 valid across MiMo, GLM-5.3, Qwen3.8-Flash-Next, DeepSeek-V4-Flash
       and MiniCPM5-2B;
@@ -201,8 +209,8 @@ round 2 apply.
        say "this candidate", "the nearer candidate", and so on. Add one short compliant
        example.
     2. Add **one** bounded repair attempt: on `validation-failed`, re-ask once with the
-       validator's error list. It must fit the remaining deadline and use the limiter, and
-       it counts toward the retry budget. The result is still fully revalidated; never
+       validator's error list. It is one extra request that must fit the **same** overall
+       deadline (skip it if too little time remains). The result is still fully revalidated; never
        accept unvalidated output.
   - **Do not** loosen `containsNumericLeakage` or any validator (`AGENTS.md` rule 3) without
     asking the main agent first.
@@ -230,9 +238,8 @@ round 2 apply.
   - Update `project-state/backend/model-providers.md` (Selection & discovery section only)
     and `project-state/operations/testing.md` for the new spec.
 
-- **main agent:** reviews and merges. Re-measuring the AMD models live with `npm run measure:amd` now (user request), again after claude's limiter merges (more samples;
-  also the new `MiniCPM5-2B`) after claude's limiter is merged, so measurement runs through
-  the limiter.
+- **main agent:** reviews and merges. Measured live 2026-10-16 (see codex's bullet). Re-measures with more
+  samples once claude's limiter and codex's validity fix are both merged.
 
 ### Merge log
 
