@@ -182,3 +182,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] fix — resolution stall on a short due event; month seed withdrawn
 - `attempt-engine.mjs`: resolution due times round up to the next ms. `resolution-engine.mjs`: a `NOT_COMPLETE` finalize replans instead of stalling until the next roster change. Regression test added.
 - plant-1 seed restored to the original week; the merged month seed had been built on the defect. A fixed month is 74 MB and too slow to load (~21s room load, ~4.5s `/state`), so it is not committed. Pages updated: backend/control-rooms.md; `docs/decisions.md` entry.
+
+## [2026-10-17] feature — Archive closed Live history and regenerate corrected month
+- Added deterministic seven-day retention, durable archive-first recovery, retained exact decision/analytics evidence, bounded public state and paginated station history with archived audits. Regenerated plant-1 to 6 October with companion archives and staged bootstrap; plant-2 and metadata unchanged. Documented residual growth and measured target misses.
+- Pages updated: backend/control-rooms.md, backend/domain-model.md, backend/live-runtime.md, backend/overview.md, backend/http-api.md, frontend/overview.md, concepts/analytics-and-ethics.md, operations/running-and-config.md, operations/testing.md. Reader inventory and reproduction: docs/history-retention.md, docs/demo-history.md.

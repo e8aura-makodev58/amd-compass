@@ -104,3 +104,12 @@ application log as the backend events.
 The picker defaults to `e8-aura-p1` (`/rooms/plant-1`) and `e8-aura-p2`
 (`/rooms/plant-2`). Audit and station-history views use the shared `responseAction`
 issue field and recorded resolution actions.
+
+## Retained station history
+
+Live Floor polling consumes a bounded operational snapshot. Station history loads
+`/equipment/:id/issues` pages on demand, retains the total count, and offers “Show older
+records” for the next page. Selecting an archived summary fetches the existing issue audit
+endpoint to restore full detail. Cache identity checks prevent delayed responses from
+replacing a newer selection; switching modes or resetting clears the history cache.
+The current operational search uses the bounded snapshot. Offline remains API-free.

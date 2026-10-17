@@ -33,8 +33,21 @@ outcome. See [../concepts/agent-boundary.md](../concepts/agent-boundary.md).
 
 ## Persistence & concurrency
 
-- `live-store.mjs` writes the whole state atomically (temp file then `rename`) on every
-  mutation, bumping `revision`. There is exactly one writer per room per process.
+- `live-store.mjs` writes the retained live state atomically (synced temp file, rename,
+  synced directory) on every mutation, bumping `revision`. There is exactly one writer
+  per room per process. At daily simulated boundaries and on load, closed detail older
+  than `COMPASS_HISTORY_RETENTION_DAYS` (default seven) moves to per-room daily archives.
+  Archive files are synced **before** the live commit, and insert-only by issue ID;
+  retrying after a crash neither drops nor duplicates records. Reset starts a new archive
+  epoch and leaves old epoch files intact. See [docs/history-retention.md](../../docs/history-retention.md).
+- Exact `resolutionHistory` and workforce state stay canonical. Compact issue/lifecycle/
+  recommendation facts and ID/token floors preserve analytics and engine decisions.
+  Detail is available on demand via archived issue audits and paginated station history.
+  `/state` contains open work, at most one hundred recent closed issues plus issues linked
+  from the last hundred events, active rosters/attempts and bounded recent controls/feed.
+- Read-only analytics projections run on the serialized store queue without cloning
+  private detail; builders create their own derived output and never consult archives.
+  The timeline caches parsed bin boundaries, preserving arithmetic order and values.
 - `OperationalEvent`s are an audit log only; canonical state is the object itself, never
   rebuilt by replaying events.
 - Simulation time is derived from wall-clock deltas while `RUNNING`, so **time does not

@@ -9,6 +9,7 @@ import { migrateLiveState } from "../src/live-migration.mjs";
 import { createLiveSeed } from "../seed/live-simulation.mjs";
 import { assertNoResponderSkill } from "../src/live-schema.mjs";
 import { buildAnalytics, buildPeriodAnalytics } from "../src/analytics-service.mjs";
+import { originalLength } from "../src/history-retention.mjs";
 
 const repository = fileURLToPath(new URL("../../", import.meta.url));
 async function scratch(t) {
@@ -17,7 +18,7 @@ async function scratch(t) {
   return directory;
 }
 
-test("one day from the committed seed is byte-identical, offline, loadable and skill-safe", { timeout: 30_000 }, async (t) => {
+test("one day from the committed seed is byte-identical, offline, loadable and skill-safe", { timeout: 60_000 }, async (t) => {
   const directory = await scratch(t);
   const from = join(repository, "backend/seed/demo-control-rooms/plant-1.json");
   const input = JSON.parse(await readFile(from, "utf8"));
@@ -30,13 +31,13 @@ test("one day from the committed seed is byte-identical, offline, loadable and s
   }
   const first = await readFile(outputs[0], "utf8");
   assert.equal(first, await readFile(outputs[1], "utf8"));
-  const store = createLiveStore({ filePath: outputs[0] });
+  const store = createLiveStore({ filePath: outputs[0], archiveRoot: `${outputs[0]}.history` });
   const state = await store.snapshot();
   assert.deepEqual(migrateLiveState(state), state);
   assert.equal(state.simulationState.simulationTime, until);
   assert.equal(state.simulationState.status, "PAUSED");
   assert.deepEqual(state.responderSkills, input.responderSkills);
-  assert.ok(state.operationalEvents.length > input.operationalEvents.length);
+  assert.ok(originalLength(state, "operationalEvents") > originalLength(input, "operationalEvents"));
   const { responderSkills, ...nonSkillState } = state;
   assert.doesNotMatch(JSON.stringify(nonSkillState), /responderSkills|trueMedianMinutes|trueSuccessProbability/);
   assertNoResponderSkill(await store.publicSnapshot());

@@ -3,8 +3,8 @@
  * operational mutation changes where someone is working; there is no pretend
  * second-by-second tracking.
  */
-function nextId(entries, prefix) {
-  const highest = entries.reduce((max, entry) => Math.max(max, Number(new RegExp(`^${prefix}-(\\d+)$`).exec(entry.id)?.[1] ?? 0)), 0);
+function nextId(entries, prefix, highWater = 0) {
+  const highest = entries.reduce((max, entry) => Math.max(max, Number(new RegExp(`^${prefix}-(\\d+)$`).exec(entry.id)?.[1] ?? 0)), highWater);
   return `${prefix}-${String(highest + 1).padStart(3, "0")}`;
 }
 
@@ -24,7 +24,7 @@ function appendSnapshot(state, responder, issue, from, reason) {
   state.operationalEvents ??= [];
   const simulationTimestamp = state.simulationState?.simulationTime ?? null;
   state.operationalEvents.push({
-    id: nextId(state.operationalEvents, "event"),
+    id: nextId(state.operationalEvents, "event", state.historyRetention?.highWater?.operationalEvents ?? 0),
     simulationTimestamp,
     eventType: "RESPONDER_MOVED",
     equipmentId: issue?.equipmentId ?? null,

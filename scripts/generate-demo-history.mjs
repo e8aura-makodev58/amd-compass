@@ -12,7 +12,7 @@ export function generateDemoHistory(options, onProgress = () => {}) {
   // cannot replace globals in the application or the hermetic test runner.
   return new Promise((resolveResult, reject) => {
     const worker = new Worker(new URL(import.meta.url), {
-      workerData: { demoHistory: true, options }, env: { NODE_ENV: "test" },
+      workerData: { demoHistory: true, options }, env: { NODE_ENV: "test", COMPASS_HISTORY_RETENTION_DAYS: process.env.COMPASS_HISTORY_RETENTION_DAYS ?? "7" },
     });
     let result;
     worker.on("message", (message) => {
@@ -69,7 +69,14 @@ async function generate(options) {
   const { validateLiveState, createPublicLiveSnapshot, assertNoResponderSkill } = await import("../backend/src/live-schema.mjs");
   const { createLiveRuntime } = await import("../backend/src/live-runtime.mjs");
   const { createSimulationClock } = await import("../backend/src/simulation-clock.mjs");
+  const { compactHistory, retentionDays } = await import("../backend/src/history-retention.mjs");
+  const { writeHistoryArchive, copyHistoryArchive, assertHistoryArchivePresent } = await import("../backend/src/history-archive.mjs");
+  const days = retentionDays(options.retentionDays ?? process.env.COMPASS_HISTORY_RETENTION_DAYS);
+  const archiveRoot = `${out}.history`;
+  if (`${from}.history` !== archiveRoot) await copyHistoryArchive(`${from}.history`, archiveRoot);
   state = migrateLiveState(state);
+  await assertHistoryArchivePresent(archiveRoot, state);
+  await writeHistoryArchive(archiveRoot, state, compactHistory(state, days, { force: true }));
   const started = Date.parse(state.simulationState.simulationTime);
   if (until <= started) throw new Error("--until must be later than the input simulation time");
 
@@ -82,6 +89,7 @@ async function generate(options) {
     async mutate(label, mutation) {
       const result = await mutation(state);
       state.revision += 1;
+      await writeHistoryArchive(archiveRoot, state, compactHistory(state, days));
       return { label, revision: state.revision, result: structuredClone(result) };
     },
   };
@@ -90,7 +98,7 @@ async function generate(options) {
   if (options.durableStorePath) {
     const { createLiveStore } = await import("../backend/src/live-store.mjs");
     await writeFile(options.durableStorePath, `${JSON.stringify(state, null, 2)}\n`);
-    store = createLiveStore({ filePath: options.durableStorePath });
+    store = createLiveStore({ filePath: options.durableStorePath, historyRetentionDays: days, archiveRoot });
   }
   const offline = { mode: "force-failure" };
   const runtime = createLiveRuntime({ store, plannerOptions: offline, agentOptions: offline });
@@ -125,17 +133,19 @@ async function generate(options) {
   }
   await clock.pause();
   if (options.durableStorePath) state = await store.snapshot();
+  await writeHistoryArchive(archiveRoot, state, compactHistory(state, days, { force: true }));
   validateLiveState(state);
   const { responderSkills, ...nonSkillState } = state;
   if (/responderSkills|trueMedianMinutes|trueSuccessProbability/.test(JSON.stringify(nonSkillState))) throw new Error("Hidden skill leaked outside responderSkills");
   assertNoResponderSkill(createPublicLiveSnapshot(state));
   if (fetchCalls || credentialReads) throw new Error(`Offline boundary violated: ${fetchCalls} fetch calls, ${credentialReads} credential reads`);
-  const bytes = `${JSON.stringify(state, null, 2)}\n`;
+  const bytes = `${JSON.stringify(state)}\n`;
   const temporary = `${out}.${process.pid}.tmp`;
   await writeFile(temporary, bytes);
   await rename(temporary, out);
   return { room, from, out, startedAt: new RealDate(started).toISOString(), until: state.simulationState.simulationTime,
-    bytes: Buffer.byteLength(bytes), ticks, issues: state.issues.length, resolutions: state.resolutionHistory.length,
+    bytes: Buffer.byteLength(bytes), ticks, issues: state.issues.length + (state.historyRetention?.facts.issues.length ?? 0), resolutions: state.resolutionHistory.length,
+    archiveRoot, archivedIssues: Object.keys(state.historyRetention?.archives ?? {}).length,
     sha256: createHash("sha256").update(bytes).digest("hex"), elapsedMs: performance.now() - startedReal,
     fetchCalls, credentialReads, memory: process.memoryUsage() };
 }
@@ -147,8 +157,8 @@ if (!isMainThread && workerData?.demoHistory) {
     const options = {};
     for (let index = 2; index < process.argv.length; index += 2) {
       const name = process.argv[index];
-      if (!["--room", "--until", "--from", "--out"].includes(name) || !process.argv[index + 1]) throw new Error("Usage: npm run generate:history -- --room plant-1 --until <ISO> [--from <seed.json>] [--out <file.json>]");
-      options[name.slice(2)] = process.argv[index + 1];
+      if (!["--room", "--until", "--from", "--out", "--retention-days"].includes(name) || !process.argv[index + 1]) throw new Error("Usage: npm run generate:history -- --room plant-1 --until <ISO> [--from <seed.json>] [--out <file.json>] [--retention-days N]");
+      options[name === "--retention-days" ? "retentionDays" : name.slice(2)] = process.argv[index + 1];
     }
     console.log(JSON.stringify(await generateDemoHistory(options, (progress) => console.error(JSON.stringify(progress))), null, 2));
   } catch (error) { console.error(error.message); process.exitCode = 1; }

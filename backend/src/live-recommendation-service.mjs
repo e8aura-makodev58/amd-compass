@@ -3,12 +3,12 @@ import { buildCandidatePacket, getNaiveScoreBaseline, getNearestAvailableBaselin
 import { BASELINE_CONFIG, assertNoResponderSkill } from "./live-schema.mjs";
 
 function nextRecommendationId(state) {
-  const highest = state.recommendations.reduce((max, entry) => Math.max(max, Number(/^live-rec-(\d+)$/.exec(entry.id)?.[1] ?? 0)), 0);
+  const highest = state.recommendations.reduce((max, entry) => Math.max(max, Number(/^live-rec-(\d+)$/.exec(entry.id)?.[1] ?? 0)), state.historyRetention?.highWater?.recommendations ?? 0);
   return `live-rec-${String(highest + 1).padStart(4, "0")}`;
 }
 
 function nextOperationalEventId(state) {
-  const highest = state.operationalEvents.reduce((max, event) => Math.max(max, Number(/^event-(\d+)$/.exec(event.id)?.[1] ?? 0)), 0);
+  const highest = state.operationalEvents.reduce((max, event) => Math.max(max, Number(/^event-(\d+)$/.exec(event.id)?.[1] ?? 0)), state.historyRetention?.highWater?.operationalEvents ?? 0);
   return `event-${String(highest + 1).padStart(3, "0")}`;
 }
 

@@ -1,15 +1,16 @@
+import { originalLength } from "./history-retention.mjs";
 import { buildCandidatePacket } from "./context-engine.mjs";
 import { activeRoster, createAttempt, replanAttempt, settleAttempt } from "./attempt-engine.mjs";
 import { moveResponderToIssue, returnResponderToDutyStation } from "./responder-location.mjs";
 
-function nextId(entries, prefix) {
-  const highest = entries.reduce((max, entry) => Math.max(max, Number(new RegExp(`^${prefix}-(\\d+)$`).exec(entry.id)?.[1] ?? 0)), 0);
+function nextId(entries, prefix, highWater = 0) {
+  const highest = entries.reduce((max, entry) => Math.max(max, Number(new RegExp(`^${prefix}-(\\d+)$`).exec(entry.id)?.[1] ?? 0)), highWater);
   return `${prefix}-${String(highest + 1).padStart(3, "0")}`;
 }
 
 function appendAssignmentEvent(state, issue, responder, decision) {
   state.operationalEvents.push({
-    id: nextId(state.operationalEvents, "event"),
+    id: nextId(state.operationalEvents, "event", state.historyRetention?.highWater?.operationalEvents ?? 0),
     simulationTimestamp: state.simulationState.simulationTime,
     eventType: decision === "OVERRIDDEN" ? "ASSIGNMENT_OVERRIDDEN" : "RESPONDER_ASSIGNED",
     equipmentId: issue.equipmentId,
@@ -30,7 +31,7 @@ function nextDispatchRandom(state) {
 
 function appendOfferEvent(state, eventType, issue, offer, payload = {}) {
   state.operationalEvents.push({
-    id: nextId(state.operationalEvents, "event"),
+    id: nextId(state.operationalEvents, "event", state.historyRetention?.highWater?.operationalEvents ?? 0),
     simulationTimestamp: state.simulationState.simulationTime,
     eventType,
     equipmentId: issue.equipmentId,
@@ -80,7 +81,7 @@ function rankedResponderIds(recommendation) {
 }
 
 function appendRosterEvent(state, eventType, issue, responderId, payload = {}) {
-  state.operationalEvents.push({ id: nextId(state.operationalEvents, "event"), simulationTimestamp: state.simulationState.simulationTime,
+  state.operationalEvents.push({ id: nextId(state.operationalEvents, "event", state.historyRetention?.highWater?.operationalEvents ?? 0), simulationTimestamp: state.simulationState.simulationTime,
     eventType, equipmentId: issue.equipmentId, issueId: issue.id, responderId, source: "STAFFING_ENGINE", payload,
     createdAtRealTime: new Date().toISOString() });
 }
@@ -112,7 +113,7 @@ function assignInState(state, { issueId, responderId, decision, eligibleResponde
   delete issue.offeredResponderId;
   delete issue.rematchNotBefore;
   const assignment = {
-    id: nextId(state.assignments, "assignment"),
+    id: nextId(state.assignments, "assignment", state.historyRetention?.highWater?.assignments ?? 0),
     issueId: issue.id,
     responderId: responder.id,
     createdAt: state.simulationState.simulationTime,
@@ -194,10 +195,10 @@ export function createLiveAssignmentService(store) {
         const acceptanceProbability = Math.max(0.35, Math.min(0.95, 0.83 - 0.06 * evidence.travelTimeMinutes + 0.03 * Math.max(0, 4 - rank)));
         const responseMinutes = 0.1 + nextDispatchRandom(state) * 0.15;
         const offer = {
-          id: nextId(state.dispatchOffers, "offer"), recommendationId, issueId: issue.id, responderId, rank,
+          id: nextId(state.dispatchOffers, "offer", state.historyRetention?.highWater?.dispatchOffers ?? 0), recommendationId, issueId: issue.id, responderId, rank,
           status: "PENDING", purpose, slot: purpose === "ASSISTANCE" ? "SUPPORT" : "PRIMARY", createdAt: state.simulationState.simulationTime,
           responseDueAt: new Date(Date.parse(state.simulationState.simulationTime) + responseMinutes * 60_000).toISOString(),
-          responseDueToken: `offer-response-${state.dispatchOffers.length + 1}`,
+          responseDueToken: `offer-response-${originalLength(state, "dispatchOffers") + 1}`,
           responseDispatchToken: null,
           acceptanceProbability,
         };
@@ -323,7 +324,7 @@ export function createLiveAssignmentService(store) {
         sourceAttempt.rosterVersion += 1; sourceAttempt.assistance = { status: "NONE", generation: sourceAttempt.assistance.generation + 1, trigger: null, cooldownUntil: new Date(Date.parse(state.simulationState.simulationTime) + 2 * 60_000).toISOString() }; replanAttempt(state, sourceAttempt);
         cancelPendingOffer(state, target, "CENTRAL_TRANSFER");
         const targetRoster = activeRoster(state, targetIssueId);
-        const joined = { id: nextId(state.assignments, "assignment"), issueId: targetIssueId, responderId, createdAt: state.simulationState.simulationTime,
+        const joined = { id: nextId(state.assignments, "assignment", state.historyRetention?.highWater?.assignments ?? 0), issueId: targetIssueId, responderId, createdAt: state.simulationState.simulationTime,
           status: "ACTIVE", attemptId: targetAttempt?.id ?? null, role: targetRoster.length ? "SUPPORT" : "PRIMARY", joinedAt: state.simulationState.simulationTime, endedAt: null, endReason: null,
           roleHistory: [{ role: targetRoster.length ? "SUPPORT" : "PRIMARY", startedAt: state.simulationState.simulationTime, endedAt: null }] };
         state.assignments.push(joined); target.status = "ASSIGNED";

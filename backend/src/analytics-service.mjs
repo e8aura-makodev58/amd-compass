@@ -1,4 +1,5 @@
 import { ISSUE_CLASSES, assertNoResponderSkill } from "./live-schema.mjs";
+import { analyticHistory } from "./history-retention.mjs";
 
 const ACTIVE_STATUSES = new Set(["PENDING", "RECOMMENDATION_READY", "OFFER_PENDING", "ASSIGNED"]);
 
@@ -193,6 +194,7 @@ function periodSummary(state, level, bounds, snapshotMs, historyStartMs = observ
 }
 
 export function buildPeriodAnalytics(state, { level = "DAY" } = {}) {
+  state = analyticHistory(state);
   if (!new Set(["HOUR", "DAY", "WEEK", "MONTH"]).has(level)) throw Object.assign(new Error("Invalid analytics period level"), { statusCode: 400 });
   const snapshotMs = Date.parse(state.simulationState.simulationTime);
   const historyStartMs = observedHistoryStart(state, snapshotMs);
@@ -207,10 +209,6 @@ function floorToBin(timestamp) {
   const date = new Date(timestamp);
   date.setUTCMinutes(Math.floor(date.getUTCMinutes() / BIN_MINUTES) * BIN_MINUTES, 0, 0);
   return date.toISOString();
-}
-
-function overlapMinutes(start, end, binStart, binEnd) {
-  return Math.max(0, (Math.min(Date.parse(end), binEnd) - Math.max(Date.parse(start), binStart)) / 60_000);
 }
 
 /**
@@ -233,19 +231,20 @@ function operationalTimeline(state, snapshotTime) {
     const endMs = Math.min(rawEndMs, snapshotMs);
     if (endMs > startMs) bins.push({ start: new Date(startMs).toISOString(), end: new Date(endMs).toISOString(), raised: 0, resolved: 0, reopened: 0, downtimeMinutes: 0 });
   }
+  const binBounds = bins.map((bin) => ({ bin, start: Date.parse(bin.start), end: Date.parse(bin.end) }));
   const eventToMetric = { ISSUE_RAISED: "raised", ISSUE_RESOLVED: "resolved", ISSUE_REOPENED: "reopened" };
   for (const event of state.operationalEvents) {
     const metric = eventToMetric[event.eventType];
     const eventMs = Date.parse(event.simulationTimestamp);
     if (!metric || !Number.isFinite(eventMs) || eventMs < windowStartMs || eventMs > snapshotMs) continue;
-    const bin = bins.find((entry, index) => eventMs >= Date.parse(entry.start) && (eventMs < Date.parse(entry.end) || (index === bins.length - 1 && eventMs === Date.parse(entry.end))));
-    if (bin) bin[metric] += 1;
+    const entry = binBounds.find((entry, index) => eventMs >= entry.start && (eventMs < entry.end || (index === binBounds.length - 1 && eventMs === entry.end)));
+    if (entry) entry.bin[metric] += 1;
   }
   for (const issue of state.issues) {
     const start = Date.parse(issue.downtimeStartedAt ?? issue.raisedAt);
     const end = Math.min(Date.parse(issue.resolvedAt ?? snapshotTime), snapshotMs);
     if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
-    for (const bin of bins) bin.downtimeMinutes += overlapMinutes(new Date(start).toISOString(), new Date(end).toISOString(), Date.parse(bin.start), Date.parse(bin.end));
+    for (const bounds of binBounds) bounds.bin.downtimeMinutes += Math.max(0, (Math.min(end, bounds.end) - Math.max(start, bounds.start)) / 60_000);
   }
   return {
     window: { kind: "ROLLING", durationMinutes: ROLLING_WINDOW_MINUTES, binMinutes: BIN_MINUTES, maxBins: bins.length, start: new Date(windowStartMs).toISOString(), end: snapshotTime, partial: windowStartMs < Date.parse(simulationStart(state)), finalBinPartial: Date.parse(bins.at(-1)?.end ?? snapshotTime) - Date.parse(bins.at(-1)?.start ?? snapshotTime) < binLengthMs },
@@ -278,6 +277,7 @@ function workforceAnalytics(state) {
 }
 
 export function buildAnalytics(state) {
+  state = analyticHistory(state);
   const snapshotTime = state.simulationState.simulationTime;
   const analytics = {
     schemaVersion: "1.0",

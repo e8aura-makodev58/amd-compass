@@ -1,3 +1,4 @@
+import { originalLength } from "./history-retention.mjs";
 /** Persistent v4 simulation clock. Real time is supplied explicitly by the
  * runtime loop; loading this module or reopening the store never advances it. */
 
@@ -10,7 +11,7 @@ function simulationMilliseconds(state) {
 }
 
 function eventId(state) {
-  return `event-${String(state.operationalEvents.length + 1).padStart(3, "0")}`;
+  return `event-${String(originalLength(state, "operationalEvents") + 1).padStart(3, "0")}`;
 }
 
 function appendEvent(state, eventType, payload = {}) {

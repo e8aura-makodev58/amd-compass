@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { ISSUE_CLASSES, assertNoResponderSkill } from "./live-schema.mjs";
+import { analyticHistory, recentHistoryEvents } from "./history-retention.mjs";
 import { AMD_DEFAULT_MODEL_ID, callChatCompletion, defaultReasoningEffortFor, readAmdApiKey } from "./model-provider.mjs";
 
 export const EVENT_PLANNER_SCHEMA_VERSION = "1.0";
@@ -41,13 +42,13 @@ function eligibleEquipment(state) {
 }
 
 export function buildEventPlannerPacket(state) {
-  const recentEvents = state.operationalEvents.slice(-12).map((event) => ({
+  const recentEvents = recentHistoryEvents(state, 12).map((event) => ({
     eventType: event.eventType,
     ...(event.equipmentId ? { equipmentId: event.equipmentId } : {}),
     ...(event.payload?.issueClass ? { issueClass: event.payload.issueClass } : {}),
   }));
   const recurrence = {};
-  for (const issue of state.issues) {
+  for (const issue of analyticHistory(state).issues) {
     const key = `${issue.equipmentId}:${issue.issueClass}`;
     recurrence[key] = (recurrence[key] ?? 0) + 1;
   }
@@ -110,6 +111,7 @@ function weightedPick(state, choices, weightFor) {
 }
 
 export function createFallbackEventProposal(state) {
+  state = analyticHistory(state);
   const equipmentChoices = eligibleEquipment(state);
   if (equipmentChoices.length === 0 || activeIssues(state).length >= state.simulationConfig.maxActiveIssues) return null;
   const recurrenceFor = (equipmentId, issueClass = null) => state.issues.filter((issue) => issue.equipmentId === equipmentId && (!issueClass || issue.issueClass === issueClass)).length;
@@ -181,12 +183,12 @@ export async function requestEventProposal(packet, options = {}) {
 }
 
 function nextIssueId(state) {
-  const highest = state.issues.reduce((max, issue) => Math.max(max, Number(/^ISS-(\d+)$/.exec(issue.id)?.[1] ?? 0)), 0);
+  const highest = state.issues.reduce((max, issue) => Math.max(max, Number(/^ISS-(\d+)$/.exec(issue.id)?.[1] ?? 0)), state.historyRetention?.highWater?.issues ?? 0);
   return `ISS-${String(highest + 1).padStart(3, "0")}`;
 }
 
 function nextOperationalEventId(state) {
-  const highest = state.operationalEvents.reduce((max, event) => Math.max(max, Number(/^event-(\d+)$/.exec(event.id)?.[1] ?? 0)), 0);
+  const highest = state.operationalEvents.reduce((max, event) => Math.max(max, Number(/^event-(\d+)$/.exec(event.id)?.[1] ?? 0)), state.historyRetention?.highWater?.operationalEvents ?? 0);
   return `event-${String(highest + 1).padStart(3, "0")}`;
 }
 
@@ -225,12 +227,12 @@ export function createEventPlanningService(store, { requestProposal = requestEve
   return {
     async handleEventDue(trigger) {
       const snapshot = await store.snapshot();
-      if (snapshot.operationalEvents.some((event) => event.payload?.dueEventToken === trigger.token)) return { status: "DUPLICATE", token: trigger.token };
+      if (snapshot.historyRetention?.eventTokens?.includes(trigger.token) || snapshot.operationalEvents.some((event) => event.payload?.dueEventToken === trigger.token)) return { status: "DUPLICATE", token: trigger.token };
       const packet = buildEventPlannerPacket(snapshot);
       const resolvedPlannerOptions = typeof plannerOptions === "function" ? await plannerOptions() : plannerOptions;
       const planned = await requestProposal(packet, resolvedPlannerOptions);
       return store.mutate("event-planner-persist", (state) => {
-        if (state.operationalEvents.some((event) => event.payload?.dueEventToken === trigger.token)) return { status: "DUPLICATE", token: trigger.token };
+        if (state.historyRetention?.eventTokens?.includes(trigger.token) || state.operationalEvents.some((event) => event.payload?.dueEventToken === trigger.token)) return { status: "DUPLICATE", token: trigger.token };
         let proposal = planned.status === "ok" ? planned.output : null;
         let source = "EVENT_PLANNER";
         if (!proposal || !validateEventProposal(state, proposal).valid) {

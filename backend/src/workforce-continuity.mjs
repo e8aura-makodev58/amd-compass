@@ -113,12 +113,12 @@ function promoteToPrimary(state, assignment, now) {
 }
 
 function nextAssignmentId(state) {
-  const highest = state.assignments.reduce((max, entry) => Math.max(max, Number(/^assignment-(\d+)$/.exec(entry.id)?.[1] ?? 0)), 0);
+  const highest = state.assignments.reduce((max, entry) => Math.max(max, Number(/^assignment-(\d+)$/.exec(entry.id)?.[1] ?? 0)), state.historyRetention?.highWater?.assignments ?? 0);
   return `assignment-${String(highest + 1).padStart(3, "0")}`;
 }
 
 function nextOperationalEventId(state) {
-  const highest = state.operationalEvents.reduce((max, event) => Math.max(max, Number(/^event-(\d+)$/.exec(event.id)?.[1] ?? 0)), 0);
+  const highest = state.operationalEvents.reduce((max, event) => Math.max(max, Number(/^event-(\d+)$/.exec(event.id)?.[1] ?? 0)), state.historyRetention?.highWater?.operationalEvents ?? 0);
   return `event-${String(highest + 1).padStart(3, "0")}`;
 }
 
@@ -360,7 +360,7 @@ export function applyWorkforceTrigger(state, trigger) {
     }
     const equipment = state.equipment.find((entry) => entry.id === repair.equipmentId);
     if (!equipment || equipment.status !== "NORMAL") { repair.status = "SCHEDULED"; repair.dueAt = plusHours(now, 15); return { status: "DEFERRED", trigger }; }
-    const number = state.issues.reduce((max, row) => Math.max(max, Number(/(\d+)$/.exec(row.id)?.[1] ?? 0)), 0) + 1;
+    const number = state.issues.reduce((max, row) => Math.max(max, Number(/(\d+)$/.exec(row.id)?.[1] ?? 0)), state.historyRetention?.highWater?.issues ?? 0) + 1;
     const id = `ISS-${String(number).padStart(3, "0")}`;
     state.issues.push({ id, equipmentId: repair.equipmentId, issueClass: repair.issueClass, complexity: "STANDARD", status: "PENDING", raisedAt: now, createdAt: now, downtimeStartedAt: now, description: "Temporary repair recurrence detected", responseAction: "Inspect the prior temporary repair and restore stable operation.", recurrenceContext: "TEMPORARY_REPAIR" });
     equipment.status = "ISSUE_ACTIVE"; repair.status = "RAISED";

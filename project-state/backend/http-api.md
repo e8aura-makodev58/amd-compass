@@ -30,9 +30,11 @@ returns `404`; a non-`READY` room returns `503` before any handler body runs.
 
 | Method | Tail path | Purpose |
 |--------|-----------|---------|
-| GET | `/state` | Public snapshot: issues, responders, equipment, assignments, recent events. |
+| GET | `/state` | Bounded public snapshot: open work, recent closed issues/events, responders, equipment and active assignments. |
 | POST | `/reset` | Reset the active mode to its seed. |
-| GET | `/issues`, `/responders`, `/events` | Individual resource lists. |
+| GET | `/issues` | LIVE history page, including archived issue summaries; `limit=1..100` (default 100), `before=<previous next>` cursor; returns `issues`, `total`, `next`. Offline retains its scripted list. |
+| GET | `/equipment/:equipmentId/issues` | LIVE station history with the same pagination. |
+| GET | `/responders`, `/events` | Individual resource lists; events are the recent public feed. |
 | GET | `/analytics` | Fixed-snapshot analytics. |
 | POST | `/mode` | Switch the room between `LIVE` and `OFFLINE`. |
 | POST | `/simulation/start`, `/pause`, `/resume` | Clock run-state. |
@@ -40,7 +42,7 @@ returns `404`; a non-`READY` room returns `503` before any handler body runs.
 | POST | `/simulation/reset` | Reset the clock. |
 | POST | `/simulation/force-event` | Immediately run the validated scheduler path (respects the active-issue ceiling). |
 | PATCH | `/demo/scenario` | Update the workforce-continuity scenario. |
-| GET | `/issues/:issueId/audit` | Full audit trail for one issue (Compass analysis, offers, overrides, resolution). |
+| GET | `/issues/:issueId/audit` | Full redacted audit trail for a hot or archived issue (Compass analysis, offers, overrides, resolution). |
 | POST | `/issues/:issueId/force-resolve` | Consume the selected issue's one-shot resolution token now. |
 | POST | `/issues/:issueId/assistance` | Request a second responder for an assigned issue. |
 | POST | `/issues/:issueId/responders/:responderId/release` | Release one member of a roster. |
@@ -69,3 +71,10 @@ for the `roomApi()` / `globalApi()` split on the client.
 The generic room paths use `plant-1` and `plant-2`; the directory presents
 `e8-aura-p1` and `e8-aura-p2` by default. `plant1` remains a compatibility alias
 for the first room, resolving to the same runtime and metadata.
+
+Live `/state` includes all open issues, the latest 100 closed issues and references from
+the latest 100 events; active assignments/attempts, recent 30 recommendations/offers plus
+pending/current-work references. Retention metadata and canonical observation rows stay
+private. History pages return at most 100 summaries; archived detail is fetched only by
+issue audit. Invalid page sizes or unknown cursors return 400. Analytics uses retained
+compact facts and exact observations, never archive I/O on requests.
