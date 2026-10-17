@@ -1,3 +1,4 @@
+import { originalLength } from "./history-retention.mjs";
 import { getPerformanceSummary } from "./context-engine.mjs";
 
 export const ATTEMPT_MODEL_VERSION = "team-resolution-v1";
@@ -112,7 +113,7 @@ export function replanAttempt(state, attempt, { at = state.simulationState.simul
 }
 
 export function createAttempt(state, issueId) {
-  const id = `attempt-${String(state.resolutionAttempts.length + 1).padStart(3, "0")}`;
+  const id = `attempt-${String(originalLength(state, "resolutionAttempts") + 1).padStart(3, "0")}`;
   const durationFactor = 0.70 + nextRandom(state) * 0.60;
   const attempt = {
     id, issueId, modelVersion: ATTEMPT_MODEL_VERSION, status: "ACTIVE",

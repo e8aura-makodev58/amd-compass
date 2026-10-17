@@ -48,6 +48,14 @@ runtime schema constants live in `backend/src/live-schema.mjs`.
 polls it to detect change. RNG streams are per-concern `uint32` seeds advanced by a
 32-bit LCG (`lcg32-v1`), which is what makes the whole simulation reproducible.
 
+An optional private `historyRetention` block records archive addresses/reset epoch,
+original ID high-water marks and length-based token counts, original analytic reduction
+order, compact closed-issue/lifecycle/recommendation facts and the last hundred events.
+It is removed entirely from public snapshots. Full closed detail lives in per-room
+`history-archive/<epoch>/<resolution-day>.json` bundles; exact resolution observations
+remain in canonical `resolutionHistory`. The public arrays contain current/recent work,
+not all historical detail. See [live-runtime.md](live-runtime.md#persistence--concurrency).
+
 ## Core entities
 
 | Entity | Key fields | Notes |

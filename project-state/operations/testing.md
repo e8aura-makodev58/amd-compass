@@ -100,3 +100,15 @@ Factory provider and settings tests stub every fetch, so `npm test` never contac
 **Live measurement is separate.** `npm run measure:amd` (see
 [../backend/model-providers.md](../backend/model-providers.md)) is the only script that
 calls AMD. Run it by hand, with a key, when model quality needs checking.
+
+## History retention regression coverage
+
+`backend/tests/history-retention.test.mjs` generates three simulated days with archiving
+disabled, enabled and repeated. It reconstructs every moved collection, compares exact
+observations, candidate/planner inputs, decisions, RNG and full/period analytics, and
+checks byte-identical live/archive output. It also checks archived audit privacy,
+pagination, pending-work protection, reset epochs, fresh-root archive bootstrap and
+recovery after an injected failure between archive durability and live-file commit.
+`e2e/station-issue-history.spec.mjs` includes an archived issue absent from `/state`,
+loaded through station history and inspected through audit. Generator tests use scratch
+roots and throwing network/credential guards, never the running deployment.

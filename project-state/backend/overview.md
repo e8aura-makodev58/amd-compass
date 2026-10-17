@@ -26,7 +26,9 @@ one TypeScript type file; there is no build step.
 | Module | Responsibility |
 |--------|----------------|
 | `live-runtime.mjs` | Orchestrates a room's Live simulation: scheduler tick → event planning → assignment lifecycle → resolution, plus agent-activity status and deferred-work tracking. Also exports `createApplicationRuntime` (the Live/Offline mode wrapper). |
-| `live-store.mjs` | Atomic single-process JSON persistence for Live state (temp-write-then-rename). `OperationalEvent`s are audit-only and never rebuild canonical state. |
+| `live-store.mjs` | Atomic retained JSON state, serialized mutation/read projections, archive-first commits and on-demand historical audits. `OperationalEvent`s remain audit-only. |
+| `history-retention.mjs` | Pure closed-issue retention planning, exact analytic facts, ID/token floors, recent-event context and protection of open/claimed work. |
+| `history-archive.mjs` | Insert-only daily issue bundles by reset epoch, durable atomic writes, portable archive copying and on-demand lookup. |
 | `live-schema.mjs` | Live state validation, migration entry, public-snapshot construction, and audit-record generation. Owns `LIVE_SCHEMA_VERSION`, `ISSUE_CLASSES`, `BASELINE_CONFIG`, and the `ResponderSkill` stripping. See [domain-model.md](domain-model.md). |
 | `live-migration.mjs` | Version-to-version migrations of persisted Live state. |
 | `live-assignment-service.mjs` | Assignment lifecycle in Live: offer/confirm, override, transfer, release — all roster-versioned. |

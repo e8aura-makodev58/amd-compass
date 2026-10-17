@@ -1,8 +1,8 @@
 import { attemptProbability, contributionShares, internalOutcomeProfile, replanAttempt, settleAttempt } from "./attempt-engine.mjs";
 import { returnResponderToDutyStation } from "./responder-location.mjs";
 
-function nextId(entries, prefix) {
-  const highest = entries.reduce((max, entry) => Math.max(max, Number(new RegExp(`^${prefix}-(\\d+)$`).exec(entry.id)?.[1] ?? 0)), 0);
+function nextId(entries, prefix, highWater = 0) {
+  const highest = entries.reduce((max, entry) => Math.max(max, Number(new RegExp(`^${prefix}-(\\d+)$`).exec(entry.id)?.[1] ?? 0)), highWater);
   return `${prefix}-${String(highest + 1).padStart(3, "0")}`;
 }
 
@@ -19,7 +19,7 @@ export function scheduleResolutionAttempt(state, assignment) {
 }
 
 function appendEvent(state, eventType, issue, responderId, payload) {
-  state.operationalEvents.push({ id: nextId(state.operationalEvents, "event"), simulationTimestamp: state.simulationState.simulationTime,
+  state.operationalEvents.push({ id: nextId(state.operationalEvents, "event", state.historyRetention?.highWater?.operationalEvents ?? 0), simulationTimestamp: state.simulationState.simulationTime,
     eventType, equipmentId: issue.equipmentId, issueId: issue.id, responderId, source: "RESOLUTION_ENGINE", payload,
     createdAtRealTime: new Date().toISOString() });
 }
@@ -57,7 +57,7 @@ export function finalizeResolutionAttemptState(state, attempt, forced = false) {
   const participants = [...participantsByResponder.values()];
   const primary = active.find((row) => row.role === "PRIMARY") ?? [...assignments].reverse().find((row) => row.roleHistory?.at(-1)?.role === "PRIMARY");
   const actionTaken = issue.responseAction ?? "Inspect the affected process, apply the required correction, and verify stable operation.";
-  const history = { id: nextId(state.resolutionHistory, "H"), issueId: issue.id, attemptId: attempt.id,
+  const history = { id: nextId(state.resolutionHistory, "H", state.historyRetention?.highWater?.resolutionHistory ?? 0), issueId: issue.id, attemptId: attempt.id,
     responderId: primary?.responderId, issueClass: issue.issueClass, resolutionMinutes: durationMinutes, success,
     reopened: !success, resolvedAt: state.simulationState.simulationTime, actionTaken, assisted: participants.length > 1, participants };
   state.resolutionHistory.push(history);

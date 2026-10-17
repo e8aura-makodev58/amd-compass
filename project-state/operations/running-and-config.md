@@ -38,6 +38,7 @@ baselines.
 | `COMPASS_PORT` (or `PORT`) | `3000` | HTTP listen port. |
 | `COMPASS_HOST` | `0.0.0.0` | HTTP listen host. |
 | `NODE_ENV` | — | `test` gates the test-only data-root override. |
+| `COMPASS_HISTORY_RETENTION_DAYS` | `7` | Archive closed detail at daily simulated boundaries, plus on load. `0` disables new archiving; existing archives/facts remain readable. Open/pending work and exact outcome evidence remain live. |
 | `COMPASS_CONTROL_ROOMS_DATA_ROOT` | — | **Test-only** multi-room data dir; requires `NODE_ENV=test`. Not a production relocation setting. |
 | `COMPASS_LIVE_STATE_PATH` | `backend/data/live-simulation.json` | Test-only single-room state path override. |
 
@@ -90,3 +91,9 @@ no server, settings/key load or provider calls are involved. See
   `room-metadata.json`, and the application log. The whole `backend/data/` tree is
   git-ignored.
 - Operational diagnostics: `GET /api/logs?limit=N` returns recent structured events.
+
+Retained generator outputs have a companion `<output>.history/` tree. Keep it alongside
+the JSON when resuming generation; install it as the room's `history-archive/` directory
+alongside `live-simulation.json`. `--retention-days` overrides the default seven simulated
+days; zero disables new archiving but does not restore already archived detail.
+See [demo-history.md](../../docs/demo-history.md) for reproduction and operator handoff.

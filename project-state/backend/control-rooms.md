@@ -62,13 +62,15 @@ and revision when read as `plant-1`.
 
 ## Committed demo history
 
-`backend/seed/demo-control-rooms/plant-1.json` holds one week of history (1–8 September
-2026). A month-long seed generated on 2026-10-17 was withdrawn: it was built before the
-resolution-stall fix (see `docs/decisions.md`), and at realistic volume a month is 74 MB,
-which makes room load ~21s and `/state` ~4.5s. A longer seed waits on history retention.
+`backend/seed/demo-control-rooms/plant-1.json` contains the corrected history from
+1 September to 6 October 2026, 08:00 UTC, LIVE + PAUSED. Its companion
+`plant-1.json.history/` contains immutable closed-issue bundles. Fresh-root bootstrap
+stages both room seeds, metadata and archives together before publishing the room root;
+an existing root is untouched. Plant-2 and metadata are unchanged.
 
-`npm run generate:history` resumes a seed using the shared Live engine with both provider
-roles forced onto deterministic fallbacks. It defaults to a scratch output, never installs
-into the running app, and preserves hidden skill boundaries. Bootstrap still seeds only
-a fresh data root; existing deployments are untouched. See [docs/demo-history.md](../../docs/demo-history.md)
-for exact reproduction, SHA-256, measurements and the sequential worker/store rationale.
+`npm run generate:history` uses the shared Live engine, deterministic provider fallbacks
+and the same retention planner. Copying a retained seed requires its companion archives;
+normal room storage places them at `plant-1/history-archive/`. Missing indexed day files
+fail room startup instead of silently losing audit history. See
+[demo-history.md](../../docs/demo-history.md) for reproduction and measurements, and
+[history-retention.md](../../docs/history-retention.md) for persistence and reader inventory.

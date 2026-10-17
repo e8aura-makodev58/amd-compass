@@ -5,6 +5,8 @@
  * reaches any UI or agent-facing boundary.
  */
 
+import { analyticHistory, recentHistoryEvents } from "./history-retention.mjs";
+
 export const LIVE_SCHEMA_VERSION = "2.1";
 export const ISSUE_CLASSES = ["A", "B", "C"];
 export const BASELINE_CONFIG = {
@@ -27,6 +29,15 @@ export function validateLiveState(state) {
   assert(state && typeof state === "object", "state must be an object");
   assert(state.schemaVersion === LIVE_SCHEMA_VERSION, "schemaVersion is unsupported");
   assert(Number.isInteger(state.revision) && state.revision >= 0, "revision must be a non-negative integer");
+  if (state.historyRetention) {
+    const history = state.historyRetention;
+    assert(history.version === 1 && Number.isInteger(history.epoch) && history.epoch >= 0, "history retention version/epoch is invalid");
+    assert(["issues", "events", "recommendations"].every((key) => Array.isArray(history.facts?.[key])), "history analytic facts are invalid");
+    assert(Object.values(history.archives).every((day) => /^\d{4}-\d{2}-\d{2}$/.test(day)), "history archive address is invalid");
+    assert(Object.values(history.highWater).every((value) => Number.isInteger(value) && value >= 0), "history ID floor is invalid");
+    assert(Object.values(history.removed).every((value) => Number.isInteger(value) && value >= 0), "history token count is invalid");
+    assertNoResponderSkill(history.facts);
+  }
   for (const key of ["equipment", "responders", "responderSkills", "issues", "assignments", "resolutionAttempts", "resolutionHistory", "recommendations", "operationalEvents"]) {
     assert(Array.isArray(state[key]), `${key} must be an array`);
   }
@@ -205,6 +216,7 @@ export function validateLiveState(state) {
 
 /** Return the only state shape allowed outside the simulation backend. */
 function stationMetrics(state) {
+  state = analyticHistory(state);
   const now = Date.parse(state.simulationState.simulationTime);
   const started = Date.parse(state.operationalEvents.find((event) => event.eventType === "SIMULATION_STARTED")?.simulationTimestamp ?? state.simulationState.simulationTime);
   const elapsedMinutes = Math.max(0, (now - started) / 60_000);
@@ -217,18 +229,42 @@ function stationMetrics(state) {
     return [station.id, { issueCount, uptime: rounded(uptimeMinutes), mtbf: issueCount ? rounded(elapsedMinutes / issueCount) : "No observed failures" }];
   }));
 }
-export function createPublicLiveSnapshot(state) {
-  validateLiveState(state);
-  const { responderSkills, resolutionHistory, ...publicState } = structuredClone(state);
+export function createPublicLiveSnapshot(state, { validated = false } = {}) {
+  if (!validated) validateLiveState(state);
+  // Select before cloning. Neither private history nor archived analytic facts
+  // belong in the polled payload, even transiently.
+  const { responderSkills, resolutionHistory, historyRetention, ...base } = state;
+  const openIssues = state.issues.filter((row) => row.status !== "RESOLVED");
+  const recentIssues = state.issues.filter((row) => row.status === "RESOLVED").sort((a, b) => Date.parse(b.resolvedAt) - Date.parse(a.resolvedAt)).slice(0, 100);
+  const issueIds = new Set([...openIssues, ...recentIssues].map((row) => row.id));
+  const eventTail = recentHistoryEvents(state);
+  for (const event of eventTail) if (event.issueId) issueIds.add(event.issueId);
+  const recommendationIds = new Set(state.recommendations.slice(-30).map((row) => row.id));
+  for (const row of state.dispatchOffers ?? []) if (row.status === "PENDING") recommendationIds.add(row.recommendationId);
+  for (const issue of openIssues) {
+    const latest = state.recommendations.findLast((row) => row.issueId === issue.id && ["READY", "UNAVAILABLE", "PENDING_MODEL"].includes(row.status));
+    if (latest) recommendationIds.add(latest.id);
+  }
+  const publicState = structuredClone({ ...base,
+    issues: [...state.issues.filter((row) => issueIds.has(row.id)), ...(state.historyRetention?.facts.issues ?? []).filter((row) => issueIds.has(row.id))],
+    assignments: state.assignments.filter((row) => row.status === "ACTIVE"),
+    resolutionAttempts: state.resolutionAttempts.filter((row) => row.status === "ACTIVE"),
+    recommendations: state.recommendations.filter((row) => recommendationIds.has(row.id)),
+    dispatchOffers: [...new Map([...(state.dispatchOffers ?? []).slice(-30), ...(state.dispatchOffers ?? []).filter((row) => row.status === "PENDING")].map((row) => [row.id, row])).values()],
+    operationalEvents: eventTail,
+  });
   if (publicState.workforceContinuity) {
     delete publicState.workforceContinuity.workforceProvisioningSeed;
     delete publicState.workforceContinuity.rotationAnchor;
+    publicState.workforceContinuity.staffingAudit = publicState.workforceContinuity.staffingAudit.slice(-30);
+    publicState.workforceContinuity.handovers = publicState.workforceContinuity.handovers.slice(-30);
+    publicState.workforceContinuity.staffingRechecks = publicState.workforceContinuity.staffingRechecks.slice(-30);
+    publicState.workforceContinuity.temporaryRepairs = publicState.workforceContinuity.temporaryRepairs.filter((row) => ["SCHEDULED", "CLAIMED"].includes(row.status));
   }
   const { dueEventToken, rngVersion, rngStreams, ...publicSimulationState } = publicState.simulationState;
   publicState.simulationState = publicSimulationState;
-  publicState.recommendations = publicState.recommendations.slice(-30);
   publicState.operationalEvents = publicState.operationalEvents.slice(-100).map(redactOperationalEvent);
-  publicState.dispatchOffers = (publicState.dispatchOffers ?? []).slice(-30).map((offer) => {
+  publicState.dispatchOffers = (publicState.dispatchOffers ?? []).map((offer) => {
     const { responseDueToken, responseDispatchToken, acceptanceProbability, ...publicOffer } = offer;
     return publicOffer;
   });
@@ -266,6 +302,11 @@ export function createIssueAuditRecord(state, issueId) {
     resolutionHistory: state.resolutionHistory.filter((entry) => entry.issueId === issueId),
     operationalEvents: state.operationalEvents.filter((entry) => entry.issueId === issueId),
   });
+  return redactIssueAuditRecord(record);
+}
+
+export function redactIssueAuditRecord(input) {
+  const record = structuredClone(input);
   record.dispatchOffers = record.dispatchOffers.map((offer) => {
     const { responseDueToken, responseDispatchToken, acceptanceProbability, ...publicOffer } = offer;
     return publicOffer;

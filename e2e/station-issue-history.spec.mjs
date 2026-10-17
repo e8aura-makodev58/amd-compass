@@ -59,3 +59,22 @@ test("Live: stations without records show an empty history and the event feed re
   await expect(page.locator("#recommendation-panel")).toContainText("Full issue chronology · ISS-103");
   await expect(page.locator("[data-feed-event-id='event-002']")).toHaveAttribute("aria-current", "true");
 });
+
+test("Live: archived station issues remain accessible outside the polled snapshot", async ({ page }) => {
+  const issue = { id: "ISS-ARCHIVED", equipmentId: "EQ-01", issueClass: "A", status: "RESOLVED", raisedAt: "2026-08-01T08:00:00Z", resolvedAt: "2026-08-01T08:10:00Z", description: "Archived station observation", responseAction: "Verified stable operation." };
+  await page.route("**/api/control-rooms/*/equipment/EQ-01/issues", (route) => route.fulfill({ json: { issues: [issue], next: null } }));
+  await page.route("**/api/control-rooms/*/issues/ISS-ARCHIVED/audit", (route) => route.fulfill({ json: {
+    issue, equipment: { id: "EQ-01", name: "Station 1" }, recommendations: [], dispatchOffers: [], assignments: [], resolutionAttempts: [], resolutionHistory: [], operationalEvents: [],
+  } }));
+  await page.goto("/rooms/plant-1");
+  await page.getByRole("button", { name: "Reset", exact: true }).click();
+  await openStations(page);
+  const healthy = page.locator("#station-list .healthy-stations");
+  await healthy.locator("summary").click();
+  await healthy.locator("[data-station-id='EQ-01']").click();
+  await page.locator("[data-station-history-issue-id='ISS-ARCHIVED']").click();
+  await expect(page.locator("#recommendation-panel")).toContainText("Station issue chronology · ISS-ARCHIVED");
+  await expect(page.locator("#issue-summary")).toContainText("Archived station observation");
+  await page.getByRole("button", { name: "Return to Station Status", exact: true }).click();
+  await expect(page.locator(".station-issue-history")).toContainText("ISS-ARCHIVED");
+});

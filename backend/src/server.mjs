@@ -78,6 +78,10 @@ async function readJsonBody(request) {
  * prefix existed).
  */
 async function handleRoomScopedRoute({ request, response, path, runtime, logger, url }) {
+  const stationHistoryMatch = /^\/equipment\/([^/]+)\/issues$/.exec(path);
+  if (request.method === "GET" && stationHistoryMatch) {
+    return sendJson(response, 200, await runtime.stationHistory(decodeURIComponent(stationHistoryMatch[1]), { before: url.searchParams.get("before"), limit: Number(url.searchParams.get("limit") ?? 100) }));
+  }
   if (request.method === "GET" && path === "/state") {
     return sendJson(response, 200, await runtime.snapshot());
   }
@@ -85,6 +89,7 @@ async function handleRoomScopedRoute({ request, response, path, runtime, logger,
     return sendJson(response, 200, await runtime.reset());
   }
   if (request.method === "GET" && ["/issues", "/responders", "/events"].includes(path)) {
+    if (path === "/issues" && runtime.mode === "LIVE" && runtime.stationHistory) return sendJson(response, 200, await runtime.stationHistory(null, { before: url.searchParams.get("before"), limit: Number(url.searchParams.get("limit") ?? 100) }));
     const state = await runtime.snapshot();
     const key = path === "/issues" ? "issues" : path === "/responders" ? "responders" : "operationalEvents";
     return sendJson(response, 200, { mode: state.mode, simulationTime: state.simulationState?.simulationTime ?? null, [key]: state[key] ?? [] });

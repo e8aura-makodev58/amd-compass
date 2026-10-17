@@ -5,10 +5,12 @@
  * its control-rooms directory. Existing state is never merged, replaced, or
  * otherwise touched, so pulling new code cannot overwrite a running demo.
  */
-import { access, copyFile, mkdir, readdir } from "node:fs/promises";
+import { access, copyFile, mkdir, readdir, rename, rm } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
+import { copyHistoryArchive } from "./history-archive.mjs";
 
 const defaultSeedRoot = fileURLToPath(new URL("../seed/demo-control-rooms/", import.meta.url));
 
@@ -25,14 +27,22 @@ export async function bootstrapDemoSeed({ dataRoot, seedRoot = defaultSeedRoot, 
   if (!seedFiles.includes("plant-1.json") || !seedFiles.includes("plant-2.json") || !seedFiles.includes("room-metadata.json")) {
     throw new Error("Demo seed is incomplete");
   }
+  const staging = join(dataRoot, `.control-rooms-bootstrap-${randomUUID()}`);
   const targets = [
-    ["plant-1.json", join(roomsRoot, "plant-1", "live-simulation.json")],
-    ["plant-2.json", join(roomsRoot, "plant-2", "live-simulation.json")],
-    ["room-metadata.json", join(roomsRoot, "room-metadata.json")],
+    ["plant-1.json", join(staging, "plant-1", "live-simulation.json")],
+    ["plant-2.json", join(staging, "plant-2", "live-simulation.json")],
+    ["room-metadata.json", join(staging, "room-metadata.json")],
   ];
-  for (const [source, target] of targets) {
-    await mkdir(dirname(target), { recursive: true });
-    await copyFile(join(seedRoot, source), target, constants.COPYFILE_EXCL);
+  try {
+    for (const [source, target] of targets) {
+      await mkdir(dirname(target), { recursive: true });
+      await copyFile(join(seedRoot, source), target, constants.COPYFILE_EXCL);
+    }
+    for (const room of ["plant-1", "plant-2"]) await copyHistoryArchive(join(seedRoot, `${room}.json.history`), join(staging, room, "history-archive"));
+    try { await rename(staging, roomsRoot); }
+    catch (error) { if (await exists(roomsRoot)) return { status: "EXISTING_RUNTIME_DATA" }; throw error; }
+  } finally {
+    await rm(staging, { recursive: true, force: true });
   }
   return { status: "SEEDED", seedRoot };
 }

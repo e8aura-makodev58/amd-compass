@@ -205,8 +205,8 @@ export function createLiveRuntime({
     mode: "LIVE",
     store,
     async snapshot() { return withState(null); },
-    async analytics() { return { mode: "LIVE", ...buildAnalytics(await store.snapshot()) }; },
-    async analyticsPeriod(query) { return { mode: "LIVE", ...buildPeriodAnalytics(await store.snapshot(), query) }; },
+    async analytics() { return { mode: "LIVE", ...(store.project ? await store.project(buildAnalytics) : buildAnalytics(await store.snapshot())) }; },
+    async analyticsPeriod(query) { return { mode: "LIVE", ...(store.project ? await store.project((state) => buildPeriodAnalytics(state, query)) : buildPeriodAnalytics(await store.snapshot(), query)) }; },
     async reset() {
       await store.reset();
       Object.assign(agentActivity.eventPlanner, { status: "IDLE", detail: "Waiting for the next event opportunity.", startedAtRealTime: null, completedAtRealTime: null });
@@ -233,7 +233,8 @@ export function createLiveRuntime({
       return withState(result);
     },
     async recommend(issueId) { return withState(await matchAndOffer(issueId)); },
-    async issueAudit(issueId) { return createIssueAuditRecord(await store.snapshot(), issueId); },
+    async issueAudit(issueId) { return store.issueAudit ? store.issueAudit(issueId) : createIssueAuditRecord(await store.snapshot(), issueId); },
+    async stationHistory(equipmentId, query) { return store.stationHistory(equipmentId, query); },
     async decide({ recommendationId, responderId, decision }) {
       const decided = await assignments.decideRecommendation({ recommendationId, responderId, decision });
       if (decided.result.status === "ASSIGNED" && decided.result.role === "PRIMARY") await requestComplexAssistanceIfNeeded(decided.result.issueId);
@@ -334,5 +335,6 @@ export function createApplicationRuntime({ liveRuntime, offlineRuntime, initialM
       requireMode("LIVE", "Issue audit records require Live mode");
       return liveRuntime.issueAudit(issueId);
     },
+    async stationHistory(equipmentId, query) { requireMode("LIVE", "Station history requires Live mode"); return liveRuntime.stationHistory(equipmentId, query); },
   };
 }

@@ -583,15 +583,34 @@ function renderResponders(state) {
 }
 
 function stationIssues(state, stationId) { return state.issues.filter((issue) => issue.equipmentId === stationId && issue.status !== "RESOLVED").sort((a, b) => String(a.raisedAt).localeCompare(String(b.raisedAt)) || a.id.localeCompare(b.id)); }
+const stationHistoryCache = new Map();
+function knownIssues(state) {
+  const rows = [...stationHistoryCache.values()].flatMap((entry) => entry.issues);
+  return [...new Map([...rows, ...state.issues, ...(stationHistoryAuditRecord?.issue?.status === "RESOLVED" ? [stationHistoryAuditRecord.issue] : [])].map((row) => [row.id, row])).values()];
+}
+function loadStationHistory(stationId, more = false) {
+  const previous = stationHistoryCache.get(stationId);
+  if (previous?.loading) return;
+  const entry = { issues: previous?.issues ?? [], next: previous?.next ?? null, total: previous?.total ?? null, loading: true };
+  stationHistoryCache.set(stationId, entry);
+  void roomApi(`/equipment/${encodeURIComponent(stationId)}/issues${more && entry.next ? `?before=${encodeURIComponent(entry.next)}` : ""}`).then((page) => {
+    if (stationHistoryCache.get(stationId) !== entry) return;
+    entry.issues = more ? [...entry.issues, ...page.issues] : page.issues;
+    entry.next = page.next; entry.total = page.total ?? entry.issues.length; entry.loading = false;
+    if (selectedStationId === stationId) render(currentState);
+  }).catch(() => { entry.loading = false; });
+}
 function stationIssueHistory(state, stationId) {
-  return state.issues.filter((issue) => issue.equipmentId === stationId).sort((left, right) => {
+  return knownIssues(state).filter((issue) => issue.equipmentId === stationId).sort((left, right) => {
     const leftTime = Date.parse(left.resolvedAt ?? left.raisedAt) || 0;
     const rightTime = Date.parse(right.resolvedAt ?? right.raisedAt) || 0;
     return rightTime - leftTime || right.id.localeCompare(left.id);
   });
 }
 function stationIssueHistoryMarkup(state, station) {
+  if (state.mode === "LIVE" && !stationHistoryCache.has(station.id)) loadStationHistory(station.id);
   const records = stationIssueHistory(state, station.id);
+  const total = Math.max(stationHistoryCache.get(station.id)?.total ?? 0, state.stationMetrics?.[station.id]?.issueCount ?? 0, records.length);
   const recent = records.slice(0, 5);
   const earlier = records.slice(5);
   const row = (issue) => {
@@ -600,7 +619,7 @@ function stationIssueHistoryMarkup(state, station) {
     return `<button type="button" class="station-history-row" data-station-history-issue-id="${escapeHtml(issue.id)}"><strong>${escapeHtml(issue.id)}</strong><span>${escapeHtml(result)} · ${escapeHtml(new Date(timestamp).toISOString().replace("T", " ").slice(0, 16))}</span><span>${escapeHtml(issue.description ?? `Class ${issue.issueClass} issue`)}</span></button>`;
   };
   const rows = recent.length ? recent.map(row).join("") : `<p class="workflow-prompt">No issues have been recorded for this station.</p>`;
-  return `<details class="station-issue-history" open><summary>Observed issues (${records.length})</summary><div class="station-history-scroll" role="list" aria-label="Recent issue records for ${escapeHtml(station.name)}">${rows}</div>${earlier.length ? `<details class="station-issue-history-earlier"><summary>Earlier issues (${earlier.length})</summary><div class="station-history-scroll" role="list" aria-label="Earlier issue records for ${escapeHtml(station.name)}">${earlier.map(row).join("")}</div></details>` : ""}</details>`;
+  return `<details class="station-issue-history" open><summary>Observed issues (${total})</summary><div class="station-history-scroll" role="list" aria-label="Recent issue records for ${escapeHtml(station.name)}">${rows}</div>${earlier.length ? `<details class="station-issue-history-earlier"><summary>Earlier issues (${Math.max(earlier.length, total - recent.length)})</summary><div class="station-history-scroll" role="list" aria-label="Earlier issue records for ${escapeHtml(station.name)}">${earlier.map(row).join("")}</div></details>` : ""}${stationHistoryCache.get(station.id)?.next ? `<button type="button" class="secondary-button" data-station-history-more>Show older records</button>` : ""}</details>`;
 }
 function clearStationHistorySelection() {
   selectedStationHistoryIssueId = null;
@@ -629,7 +648,7 @@ function requestStationHistoryAudit(issueId, signature) {
   });
 }
 function openStationHistoryIssue(issueId) {
-  const issue = currentState?.issues.find((entry) => entry.id === issueId && entry.equipmentId === selectedStationId);
+  const issue = currentState && knownIssues(currentState).find((entry) => entry.id === issueId && entry.equipmentId === selectedStationId);
   if (!issue) return;
   selectedIssueId = issue.id;
   clearEventSelection();
@@ -642,9 +661,10 @@ function openStationHistoryIssue(issueId) {
   render(currentState);
 }
 function bindStationIssueHistory(state) {
+  document.querySelector("[data-station-history-more]")?.addEventListener("click", () => loadStationHistory(selectedStationId, true));
   document.querySelectorAll("[data-station-history-issue-id]").forEach((button) => {
     button.onclick = () => {
-      const issue = state.issues.find((entry) => entry.id === button.dataset.stationHistoryIssueId && entry.equipmentId === selectedStationId);
+      const issue = knownIssues(state).find((entry) => entry.id === button.dataset.stationHistoryIssueId && entry.equipmentId === selectedStationId);
       if (!issue) return;
       if (issue.status === "RESOLVED") { openStationHistoryIssue(issue.id); return; }
       clearStationHistorySelection();
@@ -871,7 +891,7 @@ function renderStationHistoryIssueDetail(state, issue) {
 function renderLiveDecision(state, issue) {
   if (showingAuditTrail) { renderIssueAuditTrail(state, issue); return; }
   const station = state.equipment.find((entry) => entry.id === selectedStationId);
-  const historicalIssue = station && selectedStationHistoryIssueId ? state.issues.find((entry) => entry.id === selectedStationHistoryIssueId && entry.equipmentId === station.id && entry.status === "RESOLVED") : null;
+  const historicalIssue = station && selectedStationHistoryIssueId ? knownIssues(state).find((entry) => entry.id === selectedStationHistoryIssueId && entry.equipmentId === station.id && entry.status === "RESOLVED") : null;
   if (historicalIssue) { renderStationHistoryIssueDetail(state, historicalIssue); return; }
   if (selectedStationHistoryIssueId) clearStationHistorySelection();
   const stationIssue = station ? stationIssues(state, station.id)[0] : null;
@@ -992,7 +1012,7 @@ function renderOffline(state) {
 
 function render(state) {
   const previousMode = currentState?.mode;
-  if (previousMode && previousMode !== state.mode) { selectedIssueId = null; selectedStationId = null; selectedResponderId = null; clearEventSelection(); }
+  if (previousMode && previousMode !== state.mode) { stationHistoryCache.clear(); selectedIssueId = null; selectedStationId = null; selectedResponderId = null; clearEventSelection(); }
   currentState = state; const live = state.mode === "LIVE"; elements["simulation-controls"].hidden = !live; elements["control-room-search"].hidden = !live; if (!live && searchOpen) closeSearchPalette(); elements["offline-reset-button"].hidden = live; elements["live-mode-button"].classList.toggle("active", live); elements["offline-mode-button"].classList.toggle("active", !live); renderResponders(state); renderStations(state); renderSidebarTabs(); if (currentView === "settings" && currentSettingsTab === "demo") renderDemoContinuity(state);
   if (!live) { renderOffline(state); renderAgentActivity(state); return; }
   elements["simulation-time"].textContent = new Date(state.simulationState.simulationTime).toISOString().replace("T", " ").slice(0, 16); elements["simulation-status"].textContent = statusLabel(state.simulationState.status); elements["speed-select"].value = String(state.simulationState.speedMultiplier); elements["pause-resume-button"].textContent = state.simulationState.status === "RUNNING" ? "Pause" : "Resume";
@@ -1019,7 +1039,7 @@ function roomApi(path, options = {}) {
 function globalApi(path, options = {}) { return api(`/api${path}`, options); }
 function reportClientError(action, error) { fetch("/api/logs/client", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, message: error.message }) }).catch(() => {}); }
 /** `path` is room-relative (e.g. "/reset", "/simulation/pause") — every perform() call is a room-scoped mutation. */
-async function perform(path, body = null) { if (actionInFlight) return; actionInFlight = true; localAgentActivity = activityForUrl(path); const actionButton = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null; actionButton?.classList.add("is-loading"); document.body.classList.add("busy"); renderAgentActivity(currentState); try { const nextState = await roomApi(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }); if (["/reset", "/simulation/reset"].includes(path)) { selectedIssueId = null; clearEventSelection(); } render(nextState); } catch (error) { reportClientError(path, error); setHtml(elements["recommendation-panel"], `<p class="load-error">${escapeHtml(error.message)}</p>`); } finally { actionInFlight = false; localAgentActivity = null; actionButton?.classList.remove("is-loading"); document.body.classList.remove("busy"); renderAgentActivity(currentState); } }
+async function perform(path, body = null) { if (actionInFlight) return; actionInFlight = true; localAgentActivity = activityForUrl(path); const actionButton = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null; actionButton?.classList.add("is-loading"); document.body.classList.add("busy"); renderAgentActivity(currentState); try { const nextState = await roomApi(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }); if (["/reset", "/simulation/reset"].includes(path)) { stationHistoryCache.clear(); selectedIssueId = null; clearEventSelection(); } render(nextState); } catch (error) { reportClientError(path, error); setHtml(elements["recommendation-panel"], `<p class="load-error">${escapeHtml(error.message)}</p>`); } finally { actionInFlight = false; localAgentActivity = null; actionButton?.classList.remove("is-loading"); document.body.classList.remove("busy"); renderAgentActivity(currentState); } }
 
 elements["pause-resume-button"].addEventListener("click", () => perform(currentState.simulationState.status === "RUNNING" ? "/simulation/pause" : "/simulation/resume"));
 elements["speed-select"].addEventListener("change", () => perform("/simulation/speed", { speed: Number(elements["speed-select"].value) })); elements["force-event-button"].addEventListener("click", () => perform("/simulation/force-event")); elements["force-resolve-button"].addEventListener("click", () => { if (!selectedIssueId) return; perform(`/issues/${encodeURIComponent(selectedIssueId)}/force-resolve`); }); elements["reset-button"].addEventListener("click", () => perform("/reset")); elements["live-mode-button"].addEventListener("click", () => perform("/mode", { mode: "LIVE" })); elements["offline-mode-button"].addEventListener("click", () => perform("/mode", { mode: "OFFLINE" })); elements["control-room-tab"].addEventListener("click", () => switchView("control")); elements["analytics-tab"].addEventListener("click", () => switchView("analytics")); elements["settings-tab"].addEventListener("click", () => switchView("settings"));

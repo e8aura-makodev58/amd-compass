@@ -808,3 +808,29 @@ Gemini's WIP at the user's explicit request, resolving its unfinished master mer
   3,531 issues (~750/week, median resolve 0.2h) in 74 MB; cold room load ~21s, `/state`
   ~4.5s (6.5 MB), analytics 1.1–2.3s. A month-long demo seed needs history retention
   first; that decision is open with the user.
+
+## 2026-10-17 — Archive closed Live detail before committing retention
+
+Closed RESOLVED issue detail older than seven simulated days now moves into per-room,
+resolution-day JSON files under a reset epoch. Only rows without active/pending engine,
+scheduler or workforce references qualify. Synced immutable/idempotent archive additions
+precede the synced atomic live-file replacement; retry after an interrupted commit cannot
+lose or duplicate evidence. Missing indexed day files fail startup. Reset preserves earlier
+epochs. Bootstrap stages seed and archive together, leaving existing roots untouched.
+
+Keep exact resolution observations canonical, plus compact issue/lifecycle/disagreement
+facts in original reduction order. Preserve ID floors, original length-based tokens,
+recurrence inputs, duplicate tokens and recent context so pruning cannot change engine
+choices. Multi-day archived/unarchived equivalence and repeated-output tests cover these
+invariants. Public state selects bounded operational rows before cloning; station history
+uses summary pagination and the existing redacted audit for archived detail. Analytics
+never reads archive files. Cache numeric timeline bounds and avoid full-state clones for
+pure queued analytics projections to reduce month-scale request cost.
+
+Regenerated plant-1 reaches 6 October with 3,531 issues, 2,789 archived and a 16.8 MB live
+file; plant-2 and metadata stay unchanged. Detailed reader inventory, recovery contract,
+growth limits and tests: `docs/history-retention.md`. Reproduction and measured performance:
+`docs/demo-history.md`. Cold plant-1 is 1.47s, but full fresh-root two-room manager boot
+is 2.39s and one first HTTP DAY request was 317ms; these target misses are disclosed for
+main-agent review. Exact observations, compact indexes/facts, workforce history and
+unowned events remain growing canonical evidence, not a constant-space guarantee.

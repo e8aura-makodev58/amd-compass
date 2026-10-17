@@ -27,7 +27,10 @@ tool.
 
 ## Relationship to hidden truth
 
-Analytics are built from the **public** state only. The hidden `ResponderSkill` and the
+Analytics select **observed operational facts** from canonical state and compact retained
+facts. They never load archives on a request. Exact weighted evidence, reduction order,
+coverage boundaries, issue downtime intervals and disagreement facts survive archiving;
+retained/unretained engine runs are tested for exact analytics equality. The hidden `ResponderSkill` and the
 per-attempt hidden numbers never reach the analytics layer, exactly as they never reach the
 UI or the models. See
 [../backend/domain-model.md](../backend/domain-model.md#invariant-responderskill-is-hidden-truth)
