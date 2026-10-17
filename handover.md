@@ -11,8 +11,8 @@ merges finished work into `master`, and archives merged handoffs to
 | Main agent (Claude, unless the user says otherwise) | `/home/makodev58/amd-compass` | `master` |
 | Codex | `/home/makodev58/amd-compass-codex` | `codex` |
 | Gemini (**excluded from tasks** since 2026-10-17) | `/home/makodev58/amd-compass-gemini` | `gemini` |
-| CodeBuddy | `/home/makodev58/amd-compass-codebuddy` | `codebuddy` |
-| Claude | `/home/makodev58/amd-compass-claude` | `claude` |
+| CodeBuddy (**excluded from tasks** since 2026-10-17) | `/home/makodev58/amd-compass-codebuddy` | `codebuddy` |
+| Claude worker (**not used** since 2026-10-17; the main agent is Claude) | `/home/makodev58/amd-compass-claude` | `claude` |
 
 ## Protocol
 
@@ -22,7 +22,8 @@ edit, move, or delete anything in a folder without `amd` in its name (for exampl
 `/home/makodev58/compass` or `/home/makodev58/ResponseCompass`) unless the user explicitly
 asks. Exceptions: installed tooling and the read-only Chromium library path in rule 9.
 
-**Worker agents (codex, gemini, codebuddy, claude):**
+**Worker agents (codex; gemini and codebuddy are excluded and the claude worker is unused
+since 2026-10-17):**
 
 > Your **task** is your bullet under **Main agent → Assignments**. Your own section further
 > down (`## codex`, `## gemini`, …) is the empty report form you fill in when you hand back.
@@ -70,8 +71,8 @@ Each agent tests on **its own ports only** and frees them **immediately** after 
 | main agent | 3012 (default) | 3013 |
 | codex | 3021 | 3121 |
 | gemini | 3022 (excluded) | 3122 (excluded) |
-| codebuddy | 3023 | 3123 |
-| claude | 3024 | 3124 |
+| codebuddy | 3023 (excluded) | 3123 (excluded) |
+| claude | 3024 (not used) | 3124 (not used) |
 
 - **E2E:** run `COMPASS_E2E_PORT=<your port> LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e`.
   Playwright starts the server and stops it when the run ends, using its own
@@ -92,10 +93,10 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no task) |
+| codex | RUN (round 2 task open) |
 | gemini | STOP (excluded from tasks) |
-| codebuddy | RUN (round 2 task open) |
-| claude | RUN (round 2 task open) |
+| codebuddy | STOP (excluded from tasks) |
+| claude | STOP (task taken by the main agent) |
 
 Main agent watcher: polls every 300s for `READY FOR MERGE` / `BLOCKED` on each agent's branch
 and stops once no agent has an open assignment.
@@ -106,10 +107,10 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none (ranking repair merged `80aa9e9`) | — |
+| codex | Header regression E2E + saved-model check at boot — reassigned from codebuddy 2026-10-17 | 2 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
-| codebuddy | Header regression E2E + saved-model check at boot | 2 |
-| claude | AMD rate limiting, 429 retry, circuit breaker | 2 |
+| codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
+| claude | none — main agent builds the provider controls on master (user, 2026-10-17) | — |
 
 Finished tasks are recorded in **Merge log** below, never as "none" lines here.
 
@@ -154,14 +155,15 @@ round 2 apply.
 
 - **gemini — Modern clean light theme.** Done: merged `87b3a77` (completed by codex in the
   gemini worktree). Gemini is excluded from further tasks (user, 2026-10-17).
-- **claude — AMD rate limiting, 429 retry, circuit breaker.**
+- **main agent (was claude) — AMD rate limiting, 429 retry, circuit breaker.** Built by the
+  main agent directly on master (user, 2026-10-17).
   - Read `Compass_AMD_Token_Factory_Integration_Guide.md` §2, §5 and §9, and
     `project-state/backend/model-providers.md`.
   - Own `backend/src/model-provider.mjs` and a new module for the controls (for example
     `backend/src/provider-limiter.mjs`). Put the limiter, retries and breaker **inside `callChatCompletion`** so
     every caller gets them. Do **not** edit `agent.mjs` (codex owns it from 2026-10-17); touch
     `event-planner.mjs` only if wiring requires it, keeping its validation/fallback contract. Do not touch
-    `provider-settings.mjs` (codebuddy owns it this round).
+    `provider-settings.mjs` (codex owns it this round).
   - **Local limiter.** One shared limiter for all AMD calls (agent + planner) across all
     control rooms: configurable RPM (default 10) and concurrency (default 2), a bounded wait
     queue, and the caller's deadline still enforced. A request that cannot start before its
@@ -192,7 +194,8 @@ round 2 apply.
 - **codex — Raise AMD ranking validity.** Done: merged `80aa9e9`. Candidate names allowed in prose
   (main agent, `93272ec`), prompt hardened, one revalidated repair within the same deadline.
 
-- **codebuddy — Header regression E2E + saved-model check at boot.**
+- **codex — Header regression E2E + saved-model check at boot** (reassigned from codebuddy,
+  2026-10-17). Start with `git merge master` and `npm install`; use port 3021.
   - **E2E.** Add `e2e/header-layout.spec.mjs`. At 920, 1024, 1280 and 1440px, in Live and in
     Offline (Offline adds "Reset Offline"), assert:
     - all four view tabs are fully visible (not clipped by the tab bar's scroll box);
@@ -208,12 +211,13 @@ round 2 apply.
     - keep the user's saved choice on disk.
     When discovery fails, keep the saved model; never block startup and never call AMD at
     boot in `npm test`. Use a mocked fetch in unit tests.
-  - Do not touch `model-provider.mjs` (claude owns it this round).
+  - Do not touch `model-provider.mjs` or `agent.mjs` (the main agent is changing the provider
+    path on master now). Merge master again before handing off.
   - Update `project-state/backend/model-providers.md` (Selection & discovery section only)
     and `project-state/operations/testing.md` for the new spec.
 
 - **main agent:** reviews and merges. Measured live 2026-10-16 (see codex's bullet). Re-measures with more
-  samples once claude's limiter and codex's validity fix are both merged.
+  samples once the provider controls land (codex's validity fix is merged).
 
 ### Merge log
 

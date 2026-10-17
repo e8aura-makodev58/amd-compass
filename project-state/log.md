@@ -143,3 +143,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Hardened ranking instructions with qualitative alternatives and a compliant example. A validation-failed live ranking can be re-requested once through the shared provider path with bounded validator feedback and the same packet, using only the original deadline's remaining budget. All validators and offline behavior are preserved.
 - Added hermetic fake-fetch/clock/timer coverage for successful repair, repeat rejection, feedback bounds, skipping near-expired deadlines, and shared-deadline abort/late-result rejection. Live quality re-measurement belongs to the main agent.
 - Pages updated: backend/model-providers.md, concepts/agent-boundary.md; docs/decisions.md records the policy and one-second minimum repair window.
+
+## [2026-10-17] process — Agent roster narrowed
+- By user direction: CodeBuddy is excluded from tasks; its header E2E and boot catalog check go to Codex. The main agent (Claude) builds the AMD provider controls itself on master; the separate Claude worker is no longer used.
