@@ -704,3 +704,21 @@ Gemini's WIP at the user's explicit request, resolving its unfinished master mer
   `ResponderSkill`. This replaces the 2026-09 rule that forbade IDs and display codes in prose.
 - Impact: Fewer live rankings fall back for a harmless reason. Rules 3 and 4 are unchanged:
   numbers in prose (distances, counts, rates) are still rejected.
+
+## 2026-10-17 — One ranking repair within the original deadline
+
+- Harden the ranking prompt with explicit bans on copying counts, rates, distances and
+  minutes into prose, qualitative alternatives and a short compliant example. The supplied
+  candidate-name exception and all validators remain unchanged.
+- On a parsed live ranking's validation failure, allow exactly one replacement through
+  `callLiveModel` → `callChatCompletion`, preserving the provider controls shared with the
+  planner. Send the authoritative packet and the first eight validator errors, each capped
+  at 256 characters; omit rejected output so repair input cannot grow with malformed prose.
+- Use one monotonic deadline for the complete ranking operation. Skip repair below one
+  second remaining (a conservative minimum useful request window); pass only remaining time
+  to the replacement and reject even valid late responses. A second rejection remains
+  `validation-failed`, without turning validation into a provider service error. No repair
+  for provider errors, fixture mode or forced-failure mode.
+- Hermetic fake-fetch/clock/timer tests cover repair success, continued numeric leakage,
+  candidate validation failure, feedback bounds, insufficient time, and shared-deadline
+  abort. Main-agent live re-measurement remains necessary to quantify validity improvement.

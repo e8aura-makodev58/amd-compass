@@ -29,8 +29,10 @@ Exactly two bounded jobs:
 
 ## Never trust the model
 
-Every model result passes through a strict validator. On any failure — missing credential,
-HTTP error, timeout, invalid or malformed output — the caller resolves to an explicit
+Every model result passes through a strict validator. A live ranking rejected by validation
+may be re-requested once using the same packet and bounded validator feedback, within the
+original deadline; the replacement must pass the same full validator. On a remaining
+failure — missing credential, HTTP error, timeout, invalid or malformed output — the caller resolves to an explicit
 `{ status: "unavailable" }` and the system falls back to a **deterministic baseline**
 (nearest-available and the auditable naive score). Dispatch always continues. A model
 outage degrades explanation quality, never correctness or availability.

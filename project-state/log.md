@@ -138,3 +138,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - `agent.mjs`: the no-digits prose check now ignores the supplied candidates' `responderId` / `displayName`; the system instruction allows naming candidates that way. Other digits and unsupplied IDs are still rejected. Test added in `wp5-agent.test.mjs`.
 - Pages updated: concepts/agent-boundary.md, backend/model-providers.md; `docs/decisions.md` entry.
 - Live re-check after the change (rankings only, 3 samples): MiMo-V2.6-Flash 3/3 valid (was 1/3); DeepSeek-V4-Flash 1/3, now failing on incomplete rankings rather than digits.
+
+## [2026-10-17] fix — Bounded revalidated ranking repair
+- Hardened ranking instructions with qualitative alternatives and a compliant example. A validation-failed live ranking can be re-requested once through the shared provider path with bounded validator feedback and the same packet, using only the original deadline's remaining budget. All validators and offline behavior are preserved.
+- Added hermetic fake-fetch/clock/timer coverage for successful repair, repeat rejection, feedback bounds, skipping near-expired deadlines, and shared-deadline abort/late-result rejection. Live quality re-measurement belongs to the main agent.
+- Pages updated: backend/model-providers.md, concepts/agent-boundary.md; docs/decisions.md records the policy and one-second minimum repair window.

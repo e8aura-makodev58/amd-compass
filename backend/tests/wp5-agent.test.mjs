@@ -284,26 +284,172 @@ test("live mode fails closed when the provider returns an invalid result", async
   const packet = scenarioAPacket();
   const invalid = validAgentResult();
   invalid.rankedCandidates[0].responderId = "R-UNKNOWN";
-  const fetchImpl = async () => ({
-    ok: true,
-    status: 200,
-    json: async () => ({ choices: [{ message: { content: JSON.stringify(invalid) } }] }),
-  });
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ choices: [{ message: { content: JSON.stringify(invalid) } }] }),
+    };
+  };
 
   const outcome = await requestAgentRecommendation(packet, { mode: "live", apiKey: "test-key", fetchImpl });
   assert.equal(outcome.status, "unavailable");
   assert.equal(outcome.reason, "validation-failed");
   assert.ok(outcome.errors.length > 0);
+  assert.equal(calls, 2, "a failed repair must not trigger another attempt");
+});
+
+test("numeric prose triggers exactly one repair with bounded validator feedback and the original packet", async () => {
+  const packet = scenarioAPacket();
+  const invalid = validAgentResult({ uncertaintyNote: "Based on 12 records." });
+  const bodies = [];
+  const repaired = validAgentResult();
+  const outcome = await requestAgentRecommendation(packet, {
+    mode: "live", apiKey: "test-key", modelId: "pinned-model", reasoningEffort: "none",
+    fetchImpl: async (_url, init) => {
+      bodies.push(JSON.parse(init.body));
+      const result = bodies.length === 1 ? invalid : repaired;
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(result) } }] }) };
+    },
+  });
+  assert.equal(outcome.status, "ok");
+  assert.deepEqual(outcome.result, repaired);
+  assert.equal(bodies.length, 2);
+  const feedback = JSON.parse(bodies[1].messages[1].content);
+  assert.deepEqual(feedback.candidatePacket, packet);
+  assert.deepEqual(feedback.repair.validationErrors, validateAgentResult(packet, invalid).errors);
+  assert.equal(JSON.stringify(feedback).includes("Based on 12 records."), false);
+  assert.deepEqual(bodies[1].messages[0], bodies[0].messages[0]);
+  assert.equal(bodies[1].model, "pinned-model");
+  assert.equal(bodies[1].reasoning_effort, "none");
+  assert.deepEqual(bodies[1].response_format, bodies[0].response_format);
+});
+
+test("repair feedback is capped even for oversized validation errors", async () => {
+  const invalid = validAgentResult();
+  invalid.rankedCandidates = Array.from({ length: 20 }, (_, index) => ({
+    ...invalid.rankedCandidates[0], responderId: `${index}-${"x".repeat(1_000)}`,
+  }));
+  let calls = 0;
+  const outcome = await requestAgentRecommendation(scenarioAPacket(), {
+    mode: "live", apiKey: "test-key",
+    fetchImpl: async (_url, init) => {
+      calls += 1;
+      if (calls === 2) {
+        const { validationErrors } = JSON.parse(JSON.parse(init.body).messages[1].content).repair;
+        assert.equal(validationErrors.length, 8);
+        assert.ok(validationErrors.every((error) => error.length <= 256));
+      }
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(invalid) } }] }) };
+    },
+  });
+  assert.equal(calls, 2);
+  assert.equal(outcome.reason, "validation-failed");
+});
+
+test("a repair that still leaks numbers falls back with the repair's validation errors", async () => {
+  const packet = scenarioAPacket();
+  let calls = 0;
+  const invalidRepair = validAgentResult();
+  invalidRepair.rankedCandidates[0].recommendationSummary = "Only 2 minutes away.";
+  const outcome = await requestAgentRecommendation(packet, {
+    mode: "live", apiKey: "test-key",
+    fetchImpl: async () => {
+      calls += 1;
+      const result = calls === 1 ? validAgentResult({ uncertaintyNote: "12 records." }) : invalidRepair;
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(result) } }] }) };
+    },
+  });
+  assert.equal(calls, 2);
+  assert.equal(outcome.reason, "validation-failed");
+  assert.deepEqual(outcome.errors, validateAgentResult(packet, invalidRepair).errors);
+  assert.equal(outcome.result, undefined);
+});
+
+test("repair is skipped when less than a second remains in the overall deadline", async () => {
+  let elapsed = 0;
+  let calls = 0;
+  const outcome = await requestAgentRecommendation(scenarioAPacket(), {
+    mode: "live", apiKey: "test-key", timeoutMs: 10_000, now: () => elapsed,
+    fetchImpl: async () => {
+      calls += 1;
+      elapsed = 9_500;
+      const invalid = validAgentResult({ uncertaintyNote: "Based on 12 records." });
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(invalid) } }] }) };
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(outcome.reason, "validation-failed");
+  assert.ok(outcome.errors.some((error) => error.includes("numeric evidence")));
+});
+
+test("repair receives only the remaining deadline and aborts at that boundary", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let elapsed = 0;
+  let calls = 0;
+  let repairSignal;
+  let started;
+  const repairStarted = new Promise((resolve) => { started = resolve; });
+  const request = requestAgentRecommendation(scenarioAPacket(), {
+    mode: "live", apiKey: "test-key", timeoutMs: 15_000, now: () => elapsed,
+    fetchImpl: async (_url, init) => {
+      calls += 1;
+      if (calls === 1) {
+        elapsed = 5_000;
+        const invalid = validAgentResult({ uncertaintyNote: "Based on 12 records." });
+        return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(invalid) } }] }) };
+      }
+      repairSignal = init.signal;
+      started();
+      return new Promise((_resolve, reject) => {
+        init.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+      });
+    },
+  });
+  await repairStarted;
+  elapsed = 14_999;
+  t.mock.timers.tick(9_999);
+  assert.equal(repairSignal.aborted, false);
+  elapsed = 15_000;
+  t.mock.timers.tick(1);
+  const outcome = await request;
+  assert.equal(calls, 2);
+  assert.equal(outcome.reason, "timeout");
+  assert.equal(repairSignal.aborted, true);
+});
+
+test("even a valid repair arriving after the overall deadline is unavailable", async () => {
+  let elapsed = 0;
+  let calls = 0;
+  const outcome = await requestAgentRecommendation(scenarioAPacket(), {
+    mode: "live", apiKey: "test-key", timeoutMs: 10_000, now: () => elapsed,
+    fetchImpl: async () => {
+      calls += 1;
+      elapsed = calls === 1 ? 4_000 : 10_001;
+      const result = calls === 1 ? validAgentResult({ uncertaintyNote: "12 records." }) : validAgentResult();
+      return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(result) } }] }) };
+    },
+  });
+  assert.equal(calls, 2);
+  assert.equal(outcome.reason, "timeout");
+  assert.equal(outcome.result, undefined);
 });
 
 test("live mode surfaces the provider's own error body in the unavailable outcome", async () => {
   const packet = scenarioAPacket();
   const providerBody = '{"error":{"message":"Invalid schema for response_format \'compass_agent_result\': In context=(\'properties\',\'rankedCandidates\',\'items\'), \'required\' is required to be supplied and to be an array including every key in properties. Missing \'tradeoff\'."}}';
-  const fetchImpl = async () => ({ ok: false, status: 400, text: async () => providerBody });
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    return { ok: false, status: 400, text: async () => providerBody };
+  };
 
   const outcome = await requestAgentRecommendation(packet, { mode: "live", apiKey: "test-key", fetchImpl });
   assert.equal(outcome.status, "unavailable");
   assert.equal(outcome.reason, "provider-error");
+  assert.equal(calls, 1, "service errors must not trigger a validation repair");
   assert.match(outcome.message, /400/);
   assert.match(outcome.message, /Missing 'tradeoff'/);
   assert.ok(outcome.message.length < 600, "provider detail must stay bounded");
