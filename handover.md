@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no open task) |
+| codex | RUN (round 5 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none — no open task (round 4 merged `eee2b80`) | — |
+| codex | One month of offline simulation history for e8-aura-p1 | 5 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -201,39 +201,8 @@ round 2 apply.
 ranked 3/3 but planned 1/3; MiMo-V2.6-Flash planned 3/3 and ranked 2/3. The user asked the
 main agent to choose next work for codex and itself.
 
-- **codex — Separate model per role (ranking vs event planner).** Start with `git merge
-  master` and `npm install`; use port 3021.
-  - **Goal:** the operator can pick one model + reasoning level for Compass rankings and
-    another for the event planner. Default: both MiMo-V2.6-Flash / `none` (no behaviour
-    change until someone chooses).
-  - **Settings shape** (`backend/src/provider-settings.mjs`, you own it): store a selection
-    per role, e.g. `models.amd = { compass: {modelId, reasoningEffort}, eventPlanner: {…} }`
-    (your call on naming). **Backward compatible:** an existing
-    `provider-settings.json` with the old single `{modelId, reasoningEffort}` must load and
-    apply to both roles, and must not be rewritten until the operator saves. Keep the
-    owner-only credential file untouched.
-  - `requestOptions("compass")` / `requestOptions("event-planner")` return their own role's
-    model. The boot catalog check (`modelValidation`) must cover each role separately; a
-    missing model falls back to `AMD_DEFAULT_MODEL_ID` for that role only, keeping the
-    saved choice and logging `provider_saved_model_missing` with the role.
-  - **Env seed:** keep `AMD_TOKEN_FACTORY_MODEL` / `_REASONING_EFFORT` as the seed for both
-    roles; add optional `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` /
-    `AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT` that override the planner seed only.
-    Add them to `.env.example` and `project-state/operations/running-and-config.md`.
-  - **API:** the settings save route accepts a role and validates model + reasoning level
-    against the cached catalog as today. Snapshot shows both roles. Reject unknown roles.
-  - **UI** (Settings → API in `frontend/app.js`, and its styles if needed): two labelled
-    pickers, "Ranking (Compass)" and "Event planner", each with model + reasoning level and
-    its own validation status. Keep existing IDs working or update their tests' setup, never
-    their assertions' intent. Must fit at 375px and 1280px with no horizontal overflow.
-  - **Tests:** unit tests for old-file migration, per-role save/validation, per-role boot
-    fallback, env planner override; extend `e2e/provider-settings.spec.mjs` for the two
-    pickers. No live AMD calls (fake fetch / mocked catalog).
-  - **Do not touch:** `model-provider.mjs`, `provider-controls.mjs`, `agent.mjs`,
-    `event-planner.mjs` (callers already take `modelId` from `requestOptions`; if wiring
-    truly needs a change there, ask first), `scripts/measure-amd-models.mjs` (main agent).
-  - Update `project-state/backend/model-providers.md` (**Selection & discovery** section
-    only), add a `docs/decisions.md` entry and a `project-state/log.md` entry.
+- **codex — Separate model per role (ranking vs event planner).** Done: merged `eee2b80`
+  (planner seed-effort fix `b8c570a`).
 
 - **main agent — Larger live measurement at the app's real timeouts.** 10 samples per model,
   60s ranking / 30s planner timeouts (the app defaults), through the provider controls, to
@@ -241,8 +210,57 @@ main agent to choose next work for codex and itself.
   for both roles (rankings 9/10, planner 10/10; DeepSeek 8/10 and 3/10). Codex: keep both
   role defaults at MiMo.
 
-- **main agent:** reviews and merges. Measured live 2026-10-16 (see codex's bullet). Re-measures with more
-  samples once the provider controls land (codex's validity fix is merged).
+**Round 5 (2026-10-17).** The user is happy with the current feature set and wants demo data:
+**at least a month of simulated history on e8-aura-p1 (`plant-1`)**, generated offline, so
+Analytics has full periods to show.
+
+- **codex — One month of offline simulation history for e8-aura-p1.** Start with `git merge
+  master` and `npm install`; use port 3021.
+  - **Today:** the committed seed `backend/seed/demo-control-rooms/plant-1.json` (7.5 MB)
+    covers simulation time 2026-09-01 → 2026-09-08 (459 issues, 581 history rows). Analytics
+    (`backend/src/analytics-service.mjs`) shows up to 7 DAY / 4 WEEK / 3 MONTH periods and
+    counts only `COMPLETE` ones, so a week of data leaves the Week and Month views empty.
+  - **Goal:** a plant-1 state whose simulation clock has run continuously from the seed's
+    start to **at least 2026-10-03**, so September is a complete month and there are at least
+    4 complete weeks and 7 complete days. Leave the room `LIVE + PAUSED` (the new-room default).
+  - **How:** add a reusable script, e.g. `scripts/generate-demo-history.mjs` plus an
+    `npm run` entry, that advances the **real simulation engine** (scheduler, dispatch,
+    resolution, attempts, workforce continuity, event planner) in-process at fast-forward
+    using the **deterministic offline paths only**: no network, no AMD calls, no API key read
+    (force the Compass agent and event planner onto their deterministic fallback/fixture
+    paths; assert that `fetch` is never called). Do not write state by hand or fabricate rows
+    outside the engine, so every record is one the app itself would produce, and keep
+    `ResponderSkill` hidden exactly as at runtime. Seeded RNG: the same inputs must produce a
+    byte-identical file. Options at least `--room`, `--until <ISO>`, `--from <seed file>`,
+    `--out <file>`; never write to `backend/data/` by default.
+  - **Output:** regenerate `backend/seed/demo-control-rooms/plant-1.json` with the script.
+    Leave `plant-2.json` and `room-metadata.json` unchanged. **Do not touch `backend/data/`**
+    or port 3200: the main agent installs the new seed into the running app.
+  - **Size and long-run behaviour** (AGENTS.md rule 8): history currently has no retention,
+    so a month will be roughly 35 MB. Measure and report: file size, cold load time of the
+    room, `/analytics` response time at each period level, and memory. If any of these is
+    poor (for example, a page takes seconds), **do not add pruning or change retention on
+    your own**: report the numbers under *Questions for main* and the main agent decides.
+  - **Verify the result:** Analytics DAY/WEEK/MONTH each show complete periods with non-zero
+    issues, resolutions and coverage; the Live Floor, Issues and Responders views load for the
+    room. Check in a preview server on 3121 with `NODE_ENV=test`, a scratch
+    `COMPASS_CONTROL_ROOMS_DATA_ROOT` / `COMPASS_DATA_DIR` seeded from the new file, both
+    `COMPASS_*_MODE=force-failure`, and stop it afterwards.
+  - **Tests:** a hermetic unit test that runs the generator for a short span (for example
+    one simulated day) from the current seed into a temp file, checks determinism (two runs
+    are identical), checks that the output loads through the normal store and migration, and
+    checks that no hidden skill appears in any non-skill field. `npm test` must stay fast;
+    do not run the month-long generation inside it. E2E unchanged unless the seed change
+    breaks an existing spec, in which case fix the spec's setup, not its intent.
+  - **Do not touch:** `model-provider.mjs`, `provider-controls.mjs`, `agent.mjs`,
+    `provider-settings.mjs`, `scripts/measure-amd-models.mjs`. If the engine itself needs a
+    change to fast-forward (for example a wall-clock dependency), keep it minimal, explain it
+    in the handoff, and add a `docs/decisions.md` entry.
+  - Update `project-state/backend/control-rooms.md` (seed section), the testing/running pages
+    for the new script, and add a `project-state/log.md` entry.
+
+- **main agent:** reviews and merges, then installs the new plant-1 seed into the 3200 app
+  (backing up its current `plant-1/live-simulation.json` first) and checks Analytics there.
 
 ### Merge log
 
