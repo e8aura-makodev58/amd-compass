@@ -3,7 +3,7 @@
 //
 //   npm run measure:amd -- --models MiMo-V2.6-Flash,GLM-5.3-Flash:low --samples 3
 //
-// Timeouts default to the app's own: 60s for a ranking (COMPASS_AGENT_TIMEOUT_MS)
+// Timeouts default to the app's own: 90s for a ranking (COMPASS_AGENT_TIMEOUT_MS)
 // and 30s for a planner proposal (COMPASS_EVENT_PLANNER_TIMEOUT_MS).
 //
 // Each model is "<id>" or "<id>:<reasoning effort>". Calls go through the same
@@ -26,7 +26,7 @@ const { values } = parseArgs({
     samples: { type: "string", default: "3" },
     "skip-planner": { type: "boolean", default: false },
     "skip-ranking": { type: "boolean", default: false },
-    "timeout-ms": { type: "string", default: "60000" },
+    "timeout-ms": { type: "string", default: "90000" },
     "planner-timeout-ms": { type: "string", default: "30000" },
   },
 });
@@ -37,7 +37,7 @@ if (!apiKey) {
   process.exit(1);
 }
 const samples = Math.max(1, Number.parseInt(values.samples, 10) || 1);
-const timeoutMs = Number.parseInt(values["timeout-ms"], 10) || 60000;
+const timeoutMs = Number.parseInt(values["timeout-ms"], 10) || 90000;
 const plannerTimeoutMs = Number.parseInt(values["planner-timeout-ms"], 10) || 30000;
 const models = values.models.split(",").map((entry) => entry.trim()).filter(Boolean).map((entry) => {
   const [modelId, effort] = entry.split(":");

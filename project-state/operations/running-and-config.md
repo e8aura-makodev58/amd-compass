@@ -48,7 +48,7 @@ baselines.
 | `COMPASS_LIVE_COMPASS_MODE` | `live` | Compass-agent mode: `live` / `fixture` / `force-failure`. |
 | `COMPASS_EVENT_PLANNER_MODE` | `live` | Event-planner mode. |
 | `COMPASS_DEMO_INFERENCE_MODE` | `fixture` | Default agent mode when not otherwise set (the Offline path). |
-| `COMPASS_AGENT_TIMEOUT_MS` | `60000` | Compass-agent request timeout (ms). An AMD ranking takes about 20–40s. |
+| `COMPASS_AGENT_TIMEOUT_MS` | `90000` | Compass-agent budget (ms) covering queueing, the ranking and its one repair attempt. An AMD ranking takes about 25–60s. |
 | `COMPASS_EVENT_PLANNER_TIMEOUT_MS` | `30000` | Event-planner request timeout (ms). |
 
 ### AMD Token Factory

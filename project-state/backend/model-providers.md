@@ -74,7 +74,7 @@ repeats for the leaders. Validity means `validateAgentResult` accepted the outpu
 It runs one call at a time and prints a Markdown table. It spends the shared team quota, so
 it is manual and never part of `npm test`. Options: `--models id[:effort],…` (default
 `AMD_DEFAULT_MODEL_ID`), `--samples N` (default 3), `--skip-planner`, `--skip-ranking`,
-`--timeout-ms` (ranking, default 60000) and `--planner-timeout-ms` (default 30000); the
+`--timeout-ms` (ranking, default 90000) and `--planner-timeout-ms` (default 30000); the
 timeout defaults match the app's own. Repeated failures are grouped with a count. (Runs
 before 2026-10-17 05:30 UTC used one 90s timeout for both roles.) The expected Scenario A top pick is `R-ENGR028`.
 
@@ -123,12 +123,12 @@ agent timeout is 60s, shorter than this run's 90s.
 retry it is now the most reliable ranker as well as the planner. DeepSeek is no better at
 ranking and much worse at planning. All remaining ranking failures are timeouts, not
 invalid answers: MiMo's ranking latencies ran 24–60s (median 42s, some including a repair),
-so the 60s agent timeout is tight. Per-role selection (codex, round 4) stays useful for
+so the 60s agent timeout was tight; it is now 90s (user decision, 2026-10-17). Per-role selection (codex, round 4) stays useful for
 operators, but needs no different defaults. The planner is
 reliable on MiMo and DeepSeek. Re-measure after that fix and the provider limiter merge.
 
-Output speed is roughly 25 tokens/s, so a ranking takes 20–40s; the agent timeout defaults
-to 60s and the planner to 30s. The service has no SLA and was fully down (HTTP 500/502)
+Output speed is roughly 25 tokens/s, so a ranking takes 20–60s; the agent timeout defaults
+to 90s (60s before 2026-10-17) and the planner to 30s. The service has no SLA and was fully down (HTTP 500/502)
 later the same day, so the deterministic fallback is a normal operating path. Small
 samples: re-measure before relying on these numbers.
 
@@ -184,7 +184,7 @@ each at most 256 characters), without echoing the rejected model output. It uses
 model, reasoning setting and output contract, and passes the full unchanged validator.
 Supplied candidate names remain the only digit-bearing prose allowed.
 
-Both calls share the original monotonic deadline (default 60 seconds). Repair starts only
+Both calls share the original monotonic deadline (default 90 seconds). Repair starts only
 with at least one second remaining and gets only the remaining timeout, so provider
 queueing/retries also consume that budget. Even a valid result arriving after the deadline
 is unavailable. A second validation failure stays `validation-failed`; provider errors do

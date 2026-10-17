@@ -82,10 +82,10 @@ export const AGENT_RESULT_JSON_SCHEMA = {
 };
 
 // Bounds a hung connection, not normal latency. Measured on AMD Token Factory
-// with the Scenario A packet: about 20s to 40s end to end (roughly 25 output
-// tokens per second). AMD's own ten-minute server timeout is far too long for
-// interactive dispatch.
-const DEFAULT_TIMEOUT_MS = 60_000;
+// with the Scenario A packet (10 samples, 2026-10-17): 24s to 60s end to end,
+// median 42s, including any repair attempt. 90s leaves room for the repair;
+// AMD's own ten-minute server timeout is far too long for interactive dispatch.
+const DEFAULT_TIMEOUT_MS = 90_000;
 const MIN_REPAIR_TIME_MS = 1_000;
 const scenarioAFixtureUrl = new URL("../../fixtures/agent-result-scenario-a.json", import.meta.url);
 

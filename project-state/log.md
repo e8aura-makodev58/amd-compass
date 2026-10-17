@@ -162,3 +162,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] measurement — 10-sample model choice at app timeouts
 - MiMo-V2.6-Flash (none): rankings 9/10, planner 10/10. DeepSeek-V4-Flash: rankings 8/10, planner 3/10 (default or none). MiMo stays the default for both roles. Remaining failures are ranking timeouts (MiMo median 42s vs 60s timeout). Recorded in backend/model-providers.md.
+
+## [2026-10-17] config — Compass agent timeout 90s
+- `COMPASS_AGENT_TIMEOUT_MS` default 60000 → 90000 (user decision). `measure:amd` ranking timeout default follows. Pages updated: operations/running-and-config.md, backend/model-providers.md; `docs/decisions.md` entry.

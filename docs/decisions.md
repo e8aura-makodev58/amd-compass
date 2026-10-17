@@ -739,3 +739,14 @@ Gemini's WIP at the user's explicit request, resolving its unfinished master mer
 - Impact: Compass stays within a cautious share of the shared team quota, handles AMD's
   "concurrency limit" 429s instead of failing at once, and stops calling a failing service
   for a minute at a time. Callers and their validation/fallback contract are unchanged.
+
+## 2026-10-17 — Compass agent timeout raised from 60s to 90s
+
+- Decision: `COMPASS_AGENT_TIMEOUT_MS` defaults to 90000 (code, `.env.example`, local `.env`).
+  The event planner stays at 30s.
+- Reason: User decision after the 10-sample measurement: MiMo-V2.6-Flash rankings took
+  24–60s (median 42s, some including the one repair attempt), and every remaining ranking
+  failure was a timeout rather than an invalid answer.
+- Impact: More live recommendations complete. When AMD is slow or down, the deterministic
+  fallback appears up to 30s later than before; the circuit breaker still fails fast after
+  repeated service failures.
