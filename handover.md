@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no open task) |
+| codex | RUN (round 6 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none — round 5 merged `781bb42`; month seed withdrawn pending retention decision | — |
+| codex | History retention for long-running rooms, then the month seed | 6 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -214,53 +214,73 @@ main agent to choose next work for codex and itself.
 **at least a month of simulated history on e8-aura-p1 (`plant-1`)**, generated offline, so
 Analytics has full periods to show.
 
-- **codex — One month of offline simulation history for e8-aura-p1.** Start with `git merge
-  master` and `npm install`; use port 3021.
-  - **Today:** the committed seed `backend/seed/demo-control-rooms/plant-1.json` (7.5 MB)
-    covers simulation time 2026-09-01 → 2026-09-08 (459 issues, 581 history rows). Analytics
-    (`backend/src/analytics-service.mjs`) shows up to 7 DAY / 4 WEEK / 3 MONTH periods and
-    counts only `COMPLETE` ones, so a week of data leaves the Week and Month views empty.
-  - **Goal:** a plant-1 state whose simulation clock has run continuously from the seed's
-    start to **at least 2026-10-03**, so September is a complete month and there are at least
-    4 complete weeks and 7 complete days. Leave the room `LIVE + PAUSED` (the new-room default).
-  - **How:** add a reusable script, e.g. `scripts/generate-demo-history.mjs` plus an
-    `npm run` entry, that advances the **real simulation engine** (scheduler, dispatch,
-    resolution, attempts, workforce continuity, event planner) in-process at fast-forward
-    using the **deterministic offline paths only**: no network, no AMD calls, no API key read
-    (force the Compass agent and event planner onto their deterministic fallback/fixture
-    paths; assert that `fetch` is never called). Do not write state by hand or fabricate rows
-    outside the engine, so every record is one the app itself would produce, and keep
-    `ResponderSkill` hidden exactly as at runtime. Seeded RNG: the same inputs must produce a
-    byte-identical file. Options at least `--room`, `--until <ISO>`, `--from <seed file>`,
-    `--out <file>`; never write to `backend/data/` by default.
-  - **Output:** regenerate `backend/seed/demo-control-rooms/plant-1.json` with the script.
-    Leave `plant-2.json` and `room-metadata.json` unchanged. **Do not touch `backend/data/`**
-    or port 3200: the main agent installs the new seed into the running app.
-  - **Size and long-run behaviour** (AGENTS.md rule 8): history currently has no retention,
-    so a month will be roughly 35 MB. Measure and report: file size, cold load time of the
-    room, `/analytics` response time at each period level, and memory. If any of these is
-    poor (for example, a page takes seconds), **do not add pruning or change retention on
-    your own**: report the numbers under *Questions for main* and the main agent decides.
-  - **Verify the result:** Analytics DAY/WEEK/MONTH each show complete periods with non-zero
-    issues, resolutions and coverage; the Live Floor, Issues and Responders views load for the
-    room. Check in a preview server on 3121 with `NODE_ENV=test`, a scratch
-    `COMPASS_CONTROL_ROOMS_DATA_ROOT` / `COMPASS_DATA_DIR` seeded from the new file, both
-    `COMPASS_*_MODE=force-failure`, and stop it afterwards.
-  - **Tests:** a hermetic unit test that runs the generator for a short span (for example
-    one simulated day) from the current seed into a temp file, checks determinism (two runs
-    are identical), checks that the output loads through the normal store and migration, and
-    checks that no hidden skill appears in any non-skill field. `npm test` must stay fast;
-    do not run the month-long generation inside it. E2E unchanged unless the seed change
-    breaks an existing spec, in which case fix the spec's setup, not its intent.
-  - **Do not touch:** `model-provider.mjs`, `provider-controls.mjs`, `agent.mjs`,
-    `provider-settings.mjs`, `scripts/measure-amd-models.mjs`. If the engine itself needs a
-    change to fast-forward (for example a wall-clock dependency), keep it minimal, explain it
-    in the handoff, and add a `docs/decisions.md` entry.
-  - Update `project-state/backend/control-rooms.md` (seed section), the testing/running pages
-    for the new script, and add a `project-state/log.md` entry.
+- **codex — One month of offline simulation history for e8-aura-p1.** Generator merged
+  `781bb42`. The month seed was withdrawn: it exposed an engine stall (fixed by the main
+  agent, `afc2110`), and a corrected month is 74 MB and too slow. See round 6.
 
-- **main agent:** reviews and merges, then installs the new plant-1 seed into the 3200 app
-  (backing up its current `plant-1/live-simulation.json` first) and checks Analytics there.
+**Round 6 (2026-10-17).** With the stall fixed, a realistic month on plant-1 is 3,531 issues
+in **74 MB**: cold room load ~21s, `/state` ~4.5s (6.5 MB body), Issues ~4.5s, analytics
+1.1–2.3s. Size by array: recommendations 21 MB, operationalEvents 15 MB (41,899),
+resolutionAttempts 5.9 MB, resolutionHistory 2.8 MB, dispatchOffers 2.5 MB, assignments
+2.2 MB, issues 2.0 MB. Real use grows the same way, so the user chose **history
+retention** first, then the month seed.
+
+- **codex — History retention for long-running rooms, then the month seed.** Start with
+  `git merge master` and `npm install`; use port 3021.
+  - **Goal:** a room's live state stays small however long it runs, without losing
+    history. Closed detail older than a retention window moves out of
+    `live-simulation.json` into a per-room **archive** in the same room directory
+    (append-only, for example one file per simulated month; your call on format). The issue
+    audit trail (`/issues/:issueId/audit`) still works for archived issues by reading the
+    archive.
+  - **What moves:** only records of issues that are closed (`RESOLVED`, with no active
+    attempt, offer or assignment) and that resolved before `simulationTime − retention`. That
+    covers their recommendations, operational events, dispatch offers, attempts, assignments
+    and the issue row. Never archive anything an open issue, a pending scheduler token,
+    workforce continuity or the dispatch/attempt engines still read. **First list every
+    reader of each array** (engine, scheduler, analytics, UI projections, audit, migration)
+    and record the list in the handoff.
+  - **Engine outcomes must not change.** Anything the engine uses to decide (for example
+    `attempt-engine.mjs` observed-history evidence from `resolutionHistory`, ID counters
+    such as `nextId`, RNG streams) must give identical results after archiving. Keep a
+    compact form where needed, or keep those rows. Prove it with a test: the same seed run
+    for some simulated days with and without archiving gives identical engine decisions
+    (issues, assignments, outcomes, RNG state).
+  - **Analytics over the whole history:** DAY/WEEK/MONTH periods (3 months) and the
+    fixed-snapshot `/analytics` must give the **same numbers** with archiving as without.
+    Keep compact per-issue analytic facts (or per-period aggregates) in the live file so
+    analytics never reads the archive on a request. Test equality on a generated span.
+  - **`/state` and list payloads:** the Live Floor must not ship the whole history. Bound
+    `/state` to what the UI shows (open work plus recent events), and check what Issues,
+    Responders and the Engineering/Analytics views need. Keep UI behaviour unchanged; update
+    E2E setup if needed, never the intent.
+  - **When and how:** archive at a deterministic point (for example a daily simulated
+    boundary inside the normal mutation path, and once on load for an oversized legacy
+    file). Same input gives byte-identical live and archive files. Writes stay atomic: a
+    crash between writing the archive and the live file must neither lose nor duplicate
+    rows (write the archive first, idempotent by record ID, then the live file).
+    Configurable window `COMPASS_HISTORY_RETENTION_DAYS`, default **7**; document it in
+    `.env.example` and `operations/running-and-config.md`.
+  - **ResponderSkill** stays hidden: archived files are server-side only, and the archive
+    must never add skill-shaped fields to any payload.
+  - **Then the seed:** with the generator (it may archive while generating), regenerate
+    plant-1 from the original week (`git show 962ac7f:backend/seed/demo-control-rooms/plant-1.json`)
+    to **2026-10-06T08:00Z**. Commit the seed and its archive under
+    `backend/seed/demo-control-rooms/`, and extend `demo-seed-bootstrap.mjs` to copy the
+    archive too. Keep each committed file under **20 MB** (compact JSON, no indentation, is
+    fine). Leave plant-2 and room metadata unchanged.
+  - **Targets with the month seed** (report measured numbers, as in round 5): cold room load
+    under 2s, `/state` under 300ms, Issues/Responders under 500ms, each period under 300ms,
+    full `/analytics` under 1s. If a target is out of reach, report why under *Questions for
+    main* rather than lowering the bar silently.
+  - **Do not touch:** `model-provider.mjs`, `provider-controls.mjs`, `agent.mjs`,
+    `provider-settings.mjs`, `scripts/measure-amd-models.mjs`, `backend/data/`, port 3200.
+  - Update `project-state/` (control-rooms, the live-store/persistence page, analytics,
+    http-api if payloads change, running-and-config, testing, log) and add a
+    `docs/decisions.md` entry. Update `docs/demo-history.md` for the new seed.
+
+- **main agent:** reviews and merges, installs the plant-1 seed and archive into the 3200 app
+  (backing up its current plant-1 directory first) and checks Analytics there.
 
 ### Merge log
 
