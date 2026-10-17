@@ -43,6 +43,12 @@ nothing. It runs against an isolated `/tmp` data root, not real `backend/data/`.
 `LD_LIBRARY_PATH` prefix supplies Chromium's system libraries in this environment; plain
 `npm run test:e2e` works where those libraries are already present.
 
+**Port.** The server binds `COMPASS_E2E_PORT` (default `3012`), and its data root is
+`/tmp/compass-playwright-control-rooms-<port>`, so several worktrees can run the suite at
+the same time. Worker agents use their own port from the **Ports** table in `handover.md`.
+Playwright stops the server when the run ends; any manual preview server must be stopped
+right after use. Never bind 3000 or 3200 on this host (other running apps).
+
 E2E journeys cover the audit trail, the building/floor view and camera, the control-room
 search palette, the live floor and staffing actions, the room picker and multi-room state
 isolation, the override dropdown, and the provider-settings form.
@@ -66,3 +72,7 @@ Cleanup regression coverage checks generic room names, restored room paths and
 conflict handling, saved metadata/suggestion compatibility, and aggregate-only
 recommendation packets even when detailed historical actions exist. The AMD Token
 Factory provider and settings tests stub every fetch, so `npm test` never contacts AMD.
+
+**Live measurement is separate.** `npm run measure:amd` (see
+[../backend/model-providers.md](../backend/model-providers.md)) is the only script that
+calls AMD. Run it by hand, with a key, when model quality needs checking.

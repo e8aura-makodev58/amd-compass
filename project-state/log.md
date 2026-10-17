@@ -129,3 +129,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] process — Theme merged; Gemini excluded from tasks
 - Merged the modern light theme (`gemini` branch, finished by Codex after Gemini ran out of tokens) as `87b3a77`. `npm test` 234/234, E2E 38/38, vendored fonts and Dockview regenerate byte-for-byte.
 - By user direction, Gemini gets no further tasks: watcher set to STOP, ports retired, noted in `AGENTS.md` rule 10 and `handover.md`.
+
+## [2026-10-17] docs — Model measurement and E2E ports recorded
+- `backend/model-providers.md`: added the `npm run measure:amd` tool and its 2026-10-16 three-sample results (rankings mostly rejected for digits in prose; planner reliable on MiMo and DeepSeek).
+- `operations/testing.md`: documented `COMPASS_E2E_PORT`, the per-port data root, and that `measure:amd` is the only live-calling script.

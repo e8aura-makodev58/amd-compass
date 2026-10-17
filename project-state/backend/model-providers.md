@@ -65,6 +65,29 @@ repeats for the leaders. Validity means `validateAgentResult` accepted the outpu
 | Qwen3.8-27B (low) | 1/1 | 120s | Too slow for dispatch. |
 | DeepSeek-V4.1-Flash, Gemma-4-31B-IT | — | >150s | No reply. |
 
+### Repeat measurement — `npm run measure:amd` (2026-10-16, 3 samples each)
+
+`scripts/measure-amd-models.mjs` makes live calls through `requestAgentRecommendation` and
+`requestEventProposal`, so they pass the same provider limits and validators as the app.
+It runs one call at a time and prints a Markdown table. It spends the shared team quota, so
+it is manual and never part of `npm test`. Options: `--models id[:effort],…` (default
+`AMD_DEFAULT_MODEL_ID`), `--samples N` (default 3), `--skip-planner`, `--timeout-ms`
+(default 90000). The expected Scenario A top pick is `R-ENGR028`.
+
+| Model (reasoning) | Ranking valid | Ranking median | Planner valid | Planner median | Main failure |
+|---|---|---|---|---|---|
+| **MiMo-V2.6-Flash (none)** | 1/3 | 28.5s | 3/3 | 4.5s | Digits in rationale prose. |
+| GLM-5.3-Flash (low) | 0/3 | — | 0/3 | — | Timeouts; HTTP 429 "concurrency limit (16)". |
+| Qwen3.8-Flash-Next (none) | 0/3 | — | 3/3 | 27.5s | Ranking timed out at 90s. |
+| DeepSeek-V4-Flash (none) | 0/3 | — | 3/3 | 6.7s | Digits in rationale prose. |
+| MiniCPM5-2B (default) | 0/3 | — | 0/3 | — | Schema errors; unknown equipment. |
+
+The single valid MiMo ranking picked `R-ENGR028`. Most ranking failures come from
+`containsNumericLeakage` in `agent.mjs`: it rejects any digit, and models write responder
+IDs or numbers in their rationale. The validator stays strict (rules 3 and 4); the fix
+being built is prompt hardening plus one revalidated repair attempt. The planner is
+reliable on MiMo and DeepSeek. Re-measure after that fix and the provider limiter merge.
+
 Output speed is roughly 25 tokens/s, so a ranking takes 20–40s; the agent timeout defaults
 to 60s and the planner to 30s. The service has no SLA and was fully down (HTTP 500/502)
 later the same day, so the deterministic fallback is a normal operating path. Small
