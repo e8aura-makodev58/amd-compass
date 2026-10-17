@@ -92,7 +92,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 2 task open) |
+| codex | STOP (no task) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | RUN (round 2 task open) |
 | claude | RUN (round 2 task open) |
@@ -106,7 +106,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | Ranking-validity fix (prompt hardening + one repair retry) — reassigned from claude 2026-10-17 | 2 |
+| codex | none (ranking repair merged `80aa9e9`) | — |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | Header regression E2E + saved-model check at boot | 2 |
 | claude | AMD rate limiting, 429 retry, circuit breaker | 2 |
@@ -189,36 +189,8 @@ round 2 apply.
   - Update `project-state/backend/model-providers.md` (remove these from "Not yet built")
     and add a `docs/decisions.md` entry.
 
-- **codex — Raise AMD ranking validity** (reassigned from claude, 2026-10-17; runs in
-  parallel with claude's limiter). Start with `git merge master` and `npm install`.
-  - **Files:** you own `backend/src/agent.mjs` and its tests. Do **not** touch
-    `model-provider.mjs` (claude) or `provider-settings.mjs` (codebuddy). Make every model
-    call, including the repair, through the existing `callLiveModel` → `callChatCompletion`
-    path; claude's limiter, 429 retry and breaker land inside `callChatCompletion`, so the
-    repair inherits them after both merge. Validation rejections must stay out of the
-    breaker's failure count (claude's side; just don't report them as provider errors).
-  - Live measurement on 2026-10-16 (main agent, `npm run measure:amd`, 3 samples each):
-    - **rankings:** only 1 of 15 valid across MiMo, GLM-5.3, Qwen3.8-Flash-Next, DeepSeek-V4-Flash
-      and MiniCPM5-2B;
-    - **planner:** MiMo 3/3 in about 4.5s, DeepSeek 3/3 in about 7s.
-  - **Main failure:** `prose introduces numeric evidence`: models wrote responder IDs
-    (`Engr028`) or numbers in their rationale. **Already done on master (main agent,
-    2026-10-17, user decision):** the supplied candidates' `responderId` / `displayName` are
-    now allowed in prose (`candidateNamePattern` in `agent.mjs`); every other digit is still
-    rejected. Merge master first so you build on it.
-  - **Do, in order:**
-    1. Harden `SYSTEM_INSTRUCTION` against the remaining failure: no numbers in prose
-       (distances, counts, rates, minutes). Candidate names are fine. Add one short
-       compliant example.
-    2. Add **one** bounded repair attempt: on `validation-failed`, re-ask once with the
-       validator's error list. It is one extra request that must fit the **same** overall
-       deadline (skip it if too little time remains). The result is still fully revalidated; never
-       accept unvalidated output.
-  - **Do not** loosen `containsNumericLeakage` or any validator further (`AGENTS.md` rule 3)
-    without asking the main agent first.
-  - Hermetic tests with fake fetch: a numeric-prose reply triggers exactly one repair; a
-    second failure falls back; the repair is skipped when the deadline is too short.
-  - Record it in `docs/decisions.md`. The main agent re-measures live afterwards.
+- **codex — Raise AMD ranking validity.** Done: merged `80aa9e9`. Candidate names allowed in prose
+  (main agent, `93272ec`), prompt hardened, one revalidated repair within the same deadline.
 
 - **codebuddy — Header regression E2E + saved-model check at boot.**
   - **E2E.** Add `e2e/header-layout.spec.mjs`. At 920, 1024, 1280 and 1440px, in Live and in
@@ -245,6 +217,7 @@ round 2 apply.
 
 ### Merge log
 
+- 2026-10-17 — **codex** `ed3af2e` → merge `80aa9e9`: one bounded, revalidated ranking repair and hardened prose prompt (round 2). Clean merge. `npm test` 241/241, E2E 38/38. Handoff archived.
 - 2026-10-17 — **gemini** `03780dd` (finished by codex in the gemini worktree after Gemini ran out of tokens) → merge `87b3a77`: modern light theme and local Inter/JetBrains Mono fonts (round 3). Clean merge. On master: `npm test` 234/234, E2E 38/38; `npm run vendor` regenerates the committed files byte-for-byte. Handoff archived. Gemini excluded from tasks from now on (user).
 - 2026-10-16 — **codex** `e67c40a` → merge `8e5f211`: Dockview tiling for the desktop Live Floor (round 3). Vendoring reconciled into `scripts/vendor/dockview.mjs`. `npm test` 234/234, E2E 38/38. Handoff archived.
 - 2026-10-16 — **codex** `051998d` → merge `08af6b7`: text contrast fix (AA text inks, contrast test) and Analytics period labels (round 2). Append conflicts in `docs/decisions.md` / `project-state/log.md` kept both. `npm test` 232/232, E2E 32/32; `docs/assets` regenerated. Handoff archived.
@@ -257,16 +230,16 @@ round 2 apply.
 
 ## codex
 
-- **Status:** READY FOR MERGE
-- **Updated:** 2026-10-17
-- **Task:** Raise AMD ranking validity — prompt hardening and one bounded validated repair.
-- **Head commit:** This handoff on `codex`, based on `7d61d0a`.
-- **Changes:** Hardened qualitative-prose instructions with a compliant example. A parsed live ranking rejected by validation can be re-requested exactly once, through `callLiveModel` → `callChatCompletion`, with the original packet and bounded validator errors (eight errors, 256 characters each), without echoing rejected output. The replacement passes the full unchanged validator. Both requests share one monotonic deadline; repair requires at least one second remaining and gets only that remaining budget. Provider errors never trigger validation repair; repeated validation failures remain `validation-failed`. Fixture and forced-failure behavior unchanged.
-- **Files changed:** `backend/src/agent.mjs`, `backend/tests/wp5-agent.test.mjs`, `docs/decisions.md`, this section, and the project-state pages listed below. Neither `model-provider.mjs` nor `provider-settings.mjs` touched.
-- **Verification:** `npm test` 241/241; Chromium E2E 38/38 on assigned port 3021 (forced provider failures, no API spend). Fake fetch/clock/timer tests cover numeric-prose repair, second rejection, bounded feedback, insufficient remaining time, shared-deadline abort and late valid response rejection. Test server stopped; ports 3021/3121 free.
-- **project-state pages updated:** `backend/model-providers.md` (outside Selection & discovery), `concepts/agent-boundary.md`, `log.md`.
-- **Risks / follow-ups:** Main agent re-measures live validity after merging this and Claude's provider controls. Repairs inherit limiter/retries/breaker through the shared provider path; validation never enters service-failure counting. Watcher remains stopped per user instruction. No preview server started.
-- **Questions for main:** None.
+- **Status:** IDLE
+- **Updated:** —
+- **Task:** —
+- **Head commit:** —
+- **Changes:** —
+- **Files changed:** —
+- **Verification:** `npm test` — · E2E —
+- **project-state pages updated:** —
+- **Risks / follow-ups:** —
+- **Questions for main:** —
 
 ---
 
