@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 5 task open) |
+| codex | STOP (no open task) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | One month of offline simulation history for e8-aura-p1 | 5 |
+| codex | none — round 5 merged `781bb42`; month seed withdrawn pending retention decision | — |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -264,6 +264,7 @@ Analytics has full periods to show.
 
 ### Merge log
 
+- 2026-10-17 — **codex** `af6532d` → merge `781bb42`: offline history generator (round 5). Main agent found and fixed a resolution-stall engine defect the generator exposed (`afc2110`) and withdrew the month seed (built on the defect; a corrected month is 74 MB and too slow). `npm test` 274/274, E2E 48/48. Handoff archived.
 - 2026-10-17 — **codex** `1834326` → merge `eee2b80`: separate model per role, ranking vs event planner (round 4). Clean merge. Main agent fixed the planner-only seed effort on master (`b8c570a`). `npm test` 270/270, E2E 48/48. Handoff archived.
 - 2026-10-17 — **codex** `6fb0b72` → merge `a2dad5b`: header layout E2E and saved-model check at boot (round 2, reassigned from codebuddy). Clean merge. `npm test` 265/265, E2E 46/46. Handoff archived.
 - 2026-10-17 — **main agent** on master: AMD provider controls (limiter, 429 retry, circuit breaker; round 2, was claude's). `npm test` 258/258, E2E 38/38.
@@ -280,16 +281,9 @@ Analytics has full periods to show.
 
 ## codex
 
-- **Status:** READY FOR MERGE
+- **Status:** IDLE
 - **Updated:** 2026-10-17
-- **Task:** One month of offline simulation history for e8-aura-p1, round 5.
-- **Head commit:** This handoff on `codex`, based on `962ac7f`.
-- **Changes:** Added `npm run generate:history` with room/until/from/out options, default scratch output and live-data path rejection. An isolated worker runs the real scheduler/dispatch/resolution/attempt/workforce/planner pipeline with both roles forced to deterministic fallback, fetch/credential-read guards, pinned audit timestamps and seeded RNG. A single sequential in-memory store avoids per-mutation disk rewrites; no history rows are fabricated. Small runtime seam `advanceSimulation` factors out the existing cycle without a UI projection; normal ticks, production store and retention remain unchanged. Only plant-1 seed replaced, ending LIVE + PAUSED at 2026-10-06 08:00 UTC: full September and four complete operational weeks retained, 669 issues / 844 history rows, 15,509,844 bytes (14.79 MiB). Plant-2 and metadata unchanged.
-- **Files changed:** scripts/generate-demo-history.mjs, package.json, backend/src/live-runtime.mjs, backend/tests/demo-history-generator.test.mjs, backend/seed/demo-control-rooms/plant-1.json, docs/demo-history.md, docs/decisions.md, this section and project-state pages below. Forbidden provider/controls/agent/settings/measurement modules and backend/data untouched.
-- **Verification:** `npm test` 273/273; Chromium E2E unchanged, 48/48 on 3021. Short tests generate one day twice from the current seed, compare bytes, load/migrate through the normal store, check private/public privacy, and compare an engine run against the durable store. Two full regenerations also matched SHA-256 `b94fbb11d09b33882fa03375c3cb7946540f62b2060f1d85ce6b0193e126cd15`, with zero fetch calls and credential reads; timed run 20.3s / 41,764 cycles. Preview 3121 used scratch data roots and forced provider failures: Live Floor, Issues/Responders endpoints and Day/Week/Month loaded; September's complete/nonzero chart visually checked, no browser errors/outbound requests. Both ports free. Master rechecked, already current. No generated docs assets to restore.
-- **project-state pages updated:** backend/control-rooms.md, operations/running-and-config.md, operations/testing.md, log.md. docs/demo-history.md contains exact reproduction from the original week seed and measurements.
-- **Risks / follow-ups:** Main agent installs into the 3200 app; bootstrap still never replaces existing data. Worker audit timestamps use simulated time; application globals untouched. Existing dashboard windows include the current partial period: six complete days / three complete weeks / one complete month visible despite four complete weeks retained. Watcher remains stopped per user instruction.
-- **Questions for main:** Review cold normal-manager startup 1.82s and benchmark RSS 252.1 MiB / heap 143.8 MiB. HTTP: state 288–335ms (1.56 MB), Issues 258–294ms, Responders 263–386ms, full analytics 363–499ms, DAY 127–168ms / WEEK 118–163ms / MONTH 123–226ms; Chromium Live Floor ready 509–531ms. The long-run fallback reaches the ten-actionable-issue cap, explaining lower throughput/file size than estimated. No pruning, retention or demand-policy changes made; please decide follow-ups separately.
+- **Task:** None. Round 5 merged; see `docs/handover-history.md`.
 
 ---
 
