@@ -722,3 +722,20 @@ Gemini's WIP at the user's explicit request, resolving its unfinished master mer
 - Hermetic fake-fetch/clock/timer tests cover repair success, continued numeric leakage,
   candidate validation failure, feedback bounds, insufficient time, and shared-deadline
   abort. Main-agent live re-measurement remains necessary to quantify validity improvement.
+
+## 2026-10-17 — AMD provider controls: limiter, 429 retry, circuit breaker
+
+- Decision: Add `backend/src/provider-controls.mjs` and run every `callChatCompletion` under
+  it: 10 RPM / 2 concurrent / 32 queued by default, HTTP 429 retried up to 2 times honouring
+  `Retry-After` within the caller's deadline, and a breaker that opens after 5 consecutive
+  service failures for 60s, then allows one probe. All five budgets are env-configurable.
+  Controls are scoped per transport, so the real `fetch` shares one process-wide set and
+  test transports are isolated.
+- Deviation from the handover brief: the brief also asked for bounded backoff retries of
+  502/503/network errors. The integration guide (§9) says to retry only 429 for the initial
+  integration and to fail over promptly on 502/503 and network errors. Per `AGENTS.md`
+  rule 1 the guide wins; the 2026-10-16 outages also showed that retrying a down service
+  only delays the fallback. Revisit only if AMD's guidance changes.
+- Impact: Compass stays within a cautious share of the shared team quota, handles AMD's
+  "concurrency limit" 429s instead of failing at once, and stops calling a failing service
+  for a minute at a time. Callers and their validation/fallback contract are unchanged.

@@ -32,7 +32,8 @@ terms are in [`Compass_AMD_Token_Factory_Integration_Guide.md`](../../Compass_AM
   of `choices[0].message.content`. It **throws on every failure**: missing credential,
   HTTP error (AMD's `{"error"}` and `{"detail":{"error"}}` wrappers are unwrapped into the
   message), timeout, `finish_reason: "length"` (truncation), or non-JSON content. Callers
-  catch broadly and fall back.
+  catch broadly and fall back. Errors carry `status`, `retryAfterMs` and `serviceFailure`
+  for the runtime controls below.
 
 ### Request shape
 
@@ -153,11 +154,38 @@ monotonic clock and mock timers to check successful repair, repeated rejection, 
 bounds, skipping a near-expired deadline and aborting at the shared deadline. The main agent
 must re-measure live validity after merging; these tests establish behavior, not model quality.
 
+## Runtime controls (`provider-controls.mjs`)
+
+Every `callChatCompletion` runs under one set of controls, so the agent, its repair attempt
+and the event planner in every control room share the same budget. Controls are kept per
+transport: the real `fetch` has a single process-wide set; each injected test `fetchImpl`
+gets its own, so hermetic tests never share limiter or breaker state. Env vars are in
+[../operations/running-and-config.md](../operations/running-and-config.md).
+
+- **Limiter.** At most `AMD_TOKEN_FACTORY_APP_CONCURRENCY` (2) in flight and
+  `AMD_TOKEN_FACTORY_APP_RPM` (10) starts per rolling minute, with up to 32 waiting in a
+  FIFO queue. A full queue fails at once (`code: "queue-full"`). A request that cannot
+  start before its deadline fails as a timeout (`AbortError`, `code: "deadline"`).
+- **Deadline.** `timeoutMs` covers queueing, every attempt and every retry wait; each
+  attempt's `AbortController` gets only the time left.
+- **Retries.** Only HTTP 429 is retried, following the guide (§9): wait `Retry-After`
+  (seconds or HTTP date), or back off exponentially with jitter from 1s when it is absent.
+  Retry only while the wait fits the deadline and `AMD_TOKEN_FACTORY_MAX_RETRIES` (2) is not
+  used up. 502/503, network errors and other 4xx fail at once so the caller falls back.
+- **Circuit breaker.** `AMD_TOKEN_FACTORY_BREAKER_THRESHOLD` (5) consecutive service
+  failures (429, 5xx, network errors, timeouts) open it. While open, calls fail at once
+  (`code: "circuit-open"`, message names the breaker). After
+  `AMD_TOKEN_FACTORY_BREAKER_COOLDOWN_MS` (60s) one probe is allowed; success closes it,
+  failure reopens it. Any response from a reachable service (including 4xx, truncation or
+  bad JSON) resets the count. Validation rejections happen in the callers and never reach
+  the breaker.
+
+Callers already map `AbortError` to `timeout` and anything else to `provider-error`, then
+fall back, so these controls needed no caller changes.
+
 ## Not yet built
 
-From the integration guide, still open: a local rate limiter (AMD allows ~30 RPM per team
-key, shared by the whole team), bounded retry of HTTP 429 honoring `Retry-After`, a circuit
-breaker, and catalog validation of the saved model at boot.
+Catalog validation of the saved model at boot (assigned to codex, 2026-10-17).
 
 ## Frontend
 

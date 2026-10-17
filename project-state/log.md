@@ -146,3 +146,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] process — Agent roster narrowed
 - By user direction: CodeBuddy is excluded from tasks; its header E2E and boot catalog check go to Codex. The main agent (Claude) builds the AMD provider controls itself on master; the separate Claude worker is no longer used.
+
+## [2026-10-17] feature — AMD rate limiting, 429 retry, circuit breaker
+- New `backend/src/provider-controls.mjs`; `callChatCompletion` runs every request under it with one deadline covering queueing and retries. Only 429 is retried (guide §9). Five new `AMD_TOKEN_FACTORY_*` env vars.
+- Tests: `backend/tests/provider-controls.test.mjs` (fake clock and timers).
+- Pages updated: backend/model-providers.md, backend/overview.md, operations/running-and-config.md; `.env.example`; `docs/decisions.md` entry.

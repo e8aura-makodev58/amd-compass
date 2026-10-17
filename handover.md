@@ -110,7 +110,7 @@ and stops once no agent has an open assignment.
 | codex | Header regression E2E + saved-model check at boot — reassigned from codebuddy 2026-10-17 | 2 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
-| claude | none — main agent builds the provider controls on master (user, 2026-10-17) | — |
+| claude | none — provider controls built by the main agent on master | — |
 
 Finished tasks are recorded in **Merge log** below, never as "none" lines here.
 
@@ -155,8 +155,9 @@ round 2 apply.
 
 - **gemini — Modern clean light theme.** Done: merged `87b3a77` (completed by codex in the
   gemini worktree). Gemini is excluded from further tasks (user, 2026-10-17).
-- **main agent (was claude) — AMD rate limiting, 429 retry, circuit breaker.** Built by the
-  main agent directly on master (user, 2026-10-17).
+- **main agent (was claude) — AMD rate limiting, 429 retry, circuit breaker.** **Done** on
+  master by the main agent (2026-10-17): `backend/src/provider-controls.mjs`. Only 429 is
+  retried, following guide §9 rather than this brief (see `docs/decisions.md`).
   - Read `Compass_AMD_Token_Factory_Integration_Guide.md` §2, §5 and §9, and
     `project-state/backend/model-providers.md`.
   - Own `backend/src/model-provider.mjs` and a new module for the controls (for example
@@ -221,6 +222,7 @@ round 2 apply.
 
 ### Merge log
 
+- 2026-10-17 — **main agent** on master: AMD provider controls (limiter, 429 retry, circuit breaker; round 2, was claude's). `npm test` 258/258, E2E 38/38.
 - 2026-10-17 — **codex** `ed3af2e` → merge `80aa9e9`: one bounded, revalidated ranking repair and hardened prose prompt (round 2). Clean merge. `npm test` 241/241, E2E 38/38. Handoff archived.
 - 2026-10-17 — **gemini** `03780dd` (finished by codex in the gemini worktree after Gemini ran out of tokens) → merge `87b3a77`: modern light theme and local Inter/JetBrains Mono fonts (round 3). Clean merge. On master: `npm test` 234/234, E2E 38/38; `npm run vendor` regenerates the committed files byte-for-byte. Handoff archived. Gemini excluded from tasks from now on (user).
 - 2026-10-16 — **codex** `e67c40a` → merge `8e5f211`: Dockview tiling for the desktop Live Floor (round 3). Vendoring reconciled into `scripts/vendor/dockview.mjs`. `npm test` 234/234, E2E 38/38. Handoff archived.

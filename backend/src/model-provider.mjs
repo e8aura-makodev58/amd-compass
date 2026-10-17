@@ -9,6 +9,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { parseRetryAfter, providerControlsFor } from "./provider-controls.mjs";
 
 export const PROVIDER_IDS = Object.freeze(["amd"]);
 
@@ -110,9 +111,14 @@ function upstreamErrorDetail(text) {
  * back — it only parses the response envelope; the caller validates the
  * parsed content against its own contract before using it for anything.
  *
- * Throws on every failure (missing credential, HTTP error, timeout, truncated
- * or malformed envelope). Callers already catch broadly and fail closed to a
- * deterministic fallback, so this never needs its own fallback path.
+ * Runs under the shared provider controls (provider-controls.mjs): the local
+ * limiter, 429 retries and the circuit breaker. `timeoutMs` is the whole
+ * budget, including queueing and retries.
+ *
+ * Throws on every failure (missing credential, HTTP error, timeout, open
+ * breaker, full queue, truncated or malformed envelope). Callers already catch
+ * broadly and fail closed to a deterministic fallback, so this never needs its
+ * own fallback path.
  */
 export async function callChatCompletion({
   provider = "amd",
@@ -126,31 +132,52 @@ export async function callChatCompletion({
   jsonSchemaName,
   jsonSchema,
   errorLabel,
+  controls = providerControlsFor(fetchImpl),
+  now = () => performance.now(),
 }) {
   const def = providerDef(provider);
   if (!apiKey) throw new Error(`${def.apiKeyEnv} is not configured`);
+  const body = JSON.stringify(def.buildBody({
+    modelId,
+    reasoningEffort,
+    messages: [
+      { role: "system", content: systemMessageWithSchema(systemInstruction, jsonSchemaName, jsonSchema) },
+      { role: "user", content: userContent },
+    ],
+  }));
+  const deadline = now() + timeoutMs;
+  try {
+    return await controls.run(deadline, () => attemptChatCompletion({ def, apiKey, body, fetchImpl, errorLabel, timeoutMs: Math.max(0, deadline - now()) }));
+  } catch (error) {
+    if (error?.code === "circuit-open" || error?.code === "queue-full") error.message = `${errorLabel}: ${error.message}`;
+    else if (error?.code === "deadline") throw Object.assign(new Error(`${errorLabel} call timed out waiting for the request limiter`), { name: "AbortError", code: "deadline" });
+    throw error;
+  }
+}
+
+async function attemptChatCompletion({ def, apiKey, body, fetchImpl, errorLabel, timeoutMs }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let reachedService = false;
   try {
     const response = await fetchImpl(def.chatCompletionsUrl, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify(def.buildBody({
-        modelId,
-        reasoningEffort,
-        messages: [
-          { role: "system", content: systemMessageWithSchema(systemInstruction, jsonSchemaName, jsonSchema) },
-          { role: "user", content: userContent },
-        ],
-      })),
+      body,
       signal: controller.signal,
     });
+    reachedService = true;
     if (!response.ok) {
       // The provider's own words are the only thing that distinguishes a bad
       // parameter from a bad key from a retired model. Bounded, and never
       // includes the request body or headers.
       const detail = upstreamErrorDetail(await response.text().catch(() => ""));
-      throw new Error(`${errorLabel} responded with HTTP ${response.status}${detail ? `: ${detail.slice(0, 500)}` : ""}`);
+      throw Object.assign(new Error(`${errorLabel} responded with HTTP ${response.status}${detail ? `: ${detail.slice(0, 500)}` : ""}`), {
+        status: response.status,
+        retryAfterMs: parseRetryAfter(response.headers?.get?.("retry-after")),
+        // 429 and 5xx are the service failing; other 4xx are our configuration.
+        serviceFailure: response.status === 429 || response.status >= 500,
+      });
     }
     const payload = await response.json();
     const choice = payload?.choices?.[0];
@@ -162,8 +189,11 @@ export async function callChatCompletion({
     return JSON.parse(content);
   } catch (error) {
     if (controller.signal.aborted) {
-      throw Object.assign(new Error(`${errorLabel} call timed out`), { name: "AbortError" });
+      throw Object.assign(new Error(`${errorLabel} call timed out`), { name: "AbortError", serviceFailure: true });
     }
+    // A network error before any response is a service failure; a bad
+    // envelope from a reachable service is not.
+    if (error && typeof error === "object" && error.serviceFailure === undefined) error.serviceFailure = !reachedService;
     throw error;
   } finally {
     clearTimeout(timer);
