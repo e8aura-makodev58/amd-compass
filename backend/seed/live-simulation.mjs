@@ -1,3 +1,4 @@
+import { initializeFaults } from '../src/fault-truth.mjs';
 import { createInitialDemoState } from "../src/demo-state.mjs";
 import { BASELINE_CONFIG, LIVE_SCHEMA_VERSION } from "../src/live-schema.mjs";
 import { createWorkforceConfig, provisionWorkforce } from "../src/workforce-continuity.mjs";
@@ -30,7 +31,7 @@ export function createLiveSeed() {
     ...item,
     status: unresolvedEquipmentIds.has(item.id) ? "ISSUE_ACTIVE" : "NORMAL",
   }));
-  return provisionWorkforce({
+  return initializeFaults(provisionWorkforce({
     schemaVersion: LIVE_SCHEMA_VERSION,
     revision: 0,
     simulationState: {
@@ -102,5 +103,5 @@ export function createLiveSeed() {
       { id: "event-003", simulationTimestamp: "2026-09-01T07:46:00.000Z", eventType: "RESPONDER_ASSIGNED", equipmentId: "EQ-03", issueId: "ISS-103", responderId: "R-OPER142", source: "SEED", payload: {}, createdAtRealTime: simulationStart },
       { id: "event-004", simulationTimestamp: "2026-09-01T07:50:00.000Z", eventType: "ISSUE_RAISED", equipmentId: "EQ-04", issueId: "ISS-104", source: "SEED", payload: { issueClass: "B", description: "Material-flow interruption detected", responseAction: "Isolate the affected station, inspect and clear the flow path, then verify normal movement before restart." }, createdAtRealTime: simulationStart },
     ],
-  });
+  }));
 }

@@ -1,3 +1,4 @@
+import { ensureIssueFault } from './fault-truth.mjs';
 /**
  * Deterministic Workforce Continuity primitives.  This module intentionally
  * does not inspect resolution history or ResponderSkill: staffing and queue
@@ -363,6 +364,7 @@ export function applyWorkforceTrigger(state, trigger) {
     const number = state.issues.reduce((max, row) => Math.max(max, Number(/(\d+)$/.exec(row.id)?.[1] ?? 0)), state.historyRetention?.highWater?.issues ?? 0) + 1;
     const id = `ISS-${String(number).padStart(3, "0")}`;
     state.issues.push({ id, equipmentId: repair.equipmentId, issueClass: repair.issueClass, complexity: "STANDARD", status: "PENDING", raisedAt: now, createdAt: now, downtimeStartedAt: now, description: "Temporary repair recurrence detected", responseAction: "Inspect the prior temporary repair and restore stable operation.", recurrenceContext: "TEMPORARY_REPAIR" });
+    ensureIssueFault(state, state.issues.at(-1));
     equipment.status = "ISSUE_ACTIVE"; repair.status = "RAISED";
     state.operationalEvents.push({ id: nextOperationalEventId(state), simulationTimestamp: now, eventType: "ISSUE_RAISED", equipmentId: equipment.id, issueId: id, source: "WORKFORCE_CONTINUITY", payload: { issueClass: repair.issueClass, recurrenceContext: "TEMPORARY_REPAIR", dueToken: trigger.token }, createdAtRealTime: new Date().toISOString() });
     requestStaffingRecheck(state, "ISSUE_RAISED");

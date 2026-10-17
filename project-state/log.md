@@ -218,3 +218,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] docs — demo video extended to 2:17
 - Added search palette, tiles, the Offline dispatch loop (offer, override control, support, reopen), Compass-vs-baseline and issue-class analytics, and the Settings Demo tab. A slot remains for the round-8 fix recommendation segment (cap 3:00).
+
+## [2026-10-17] feature — Latent faults and measurable catalog fixes
+- Added engine-only seeded fault truth, overlapping public symptoms, public synthetic procedures, observed fix evidence and deterministic troubleshooting. Applied fixes scale attempt duration and success; legacy running attempts retain mechanics. Added privacy/migration/outcome tests and updated direct workforce test setup for the new invariant.
+- Pages updated: backend/simulation.md, backend/domain-model.md; own handoff records staged implementation.

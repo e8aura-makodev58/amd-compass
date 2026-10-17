@@ -1,3 +1,4 @@
+import { ensureIssueFault } from './fault-truth.mjs';
 import { readFileSync } from "node:fs";
 import { ISSUE_CLASSES, assertNoResponderSkill } from "./live-schema.mjs";
 import { analyticHistory, recentHistoryEvents } from "./history-retention.mjs";
@@ -209,6 +210,7 @@ function persistProposal(state, proposal, trigger, source) {
     contextReason: proposal.contextReason,
     complexity: proposal.issueClass === "C" ? "COMPLEX" : "STANDARD",
   });
+  ensureIssueFault(state, state.issues.at(-1));
   state.equipment.find((equipment) => equipment.id === proposal.equipmentId).status = "ISSUE_ACTIVE";
   state.operationalEvents.push({
     id: nextOperationalEventId(state),

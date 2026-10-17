@@ -1,3 +1,5 @@
+import { assertNoFaultTruth, validateFaultTruth } from './fault-truth.mjs';
+export { assertNoFaultTruth } from './fault-truth.mjs';
 /**
  * v4 Live Simulation contracts.
  * ResponderSkill is deliberately accepted only by this simulation schema and
@@ -27,6 +29,7 @@ function assertUnique(entries, key, label) {
 
 export function validateLiveState(state) {
   assert(state && typeof state === "object", "state must be an object");
+  validateFaultTruth(state);
   assert(state.schemaVersion === LIVE_SCHEMA_VERSION, "schemaVersion is unsupported");
   assert(Number.isInteger(state.revision) && state.revision >= 0, "revision must be a non-negative integer");
   if (state.historyRetention) {
@@ -233,7 +236,7 @@ export function createPublicLiveSnapshot(state, { validated = false } = {}) {
   if (!validated) validateLiveState(state);
   // Select before cloning. Neither private history nor archived analytic facts
   // belong in the polled payload, even transiently.
-  const { responderSkills, resolutionHistory, historyRetention, ...base } = state;
+  const { responderSkills, resolutionHistory, historyRetention, faultTruth, ...base } = state;
   const openIssues = state.issues.filter((row) => row.status !== "RESOLVED");
   const recentIssues = state.issues.filter((row) => row.status === "RESOLVED").sort((a, b) => Date.parse(b.resolvedAt) - Date.parse(a.resolvedAt)).slice(0, 100);
   const issueIds = new Set([...openIssues, ...recentIssues].map((row) => row.id));
@@ -275,7 +278,7 @@ export function createPublicLiveSnapshot(state, { validated = false } = {}) {
   // Application-owned, station-level observed facts only. These are derived
   // before returning the snapshot and never inspect ResponderSkill or attempts.
   publicState.stationMetrics = stationMetrics(state);
-  assertNoResponderSkill(publicState.stationMetrics);
+  assertNoResponderSkill(publicState);
   return publicState;
 }
 
@@ -322,6 +325,7 @@ export function redactIssueAuditRecord(input) {
 }
 
 export function assertNoResponderSkill(value) {
+  assertNoFaultTruth(value);
   const serialized = JSON.stringify(value);
   assert(!serialized.includes("responderSkills"), "ResponderSkill leaked from a public boundary");
   assert(!serialized.includes("trueSuccessProbability"), "hidden success probability leaked from a public boundary");
@@ -333,6 +337,7 @@ export function assertNoResponderSkill(value) {
 
 function redactResolutionHistory(record) {
   const safe = structuredClone(record);
+  safe.legacyFix = !safe.fixApplied;
   if (safe.participants) safe.participants = safe.participants.map(({ contributionShare, ...participant }) => participant);
   return safe;
 }

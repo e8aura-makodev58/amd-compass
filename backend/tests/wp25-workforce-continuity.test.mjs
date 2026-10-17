@@ -1,3 +1,4 @@
+import { initializeFaults } from '../src/fault-truth.mjs';
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createLiveSeed } from "../seed/live-simulation.mjs";
@@ -32,6 +33,7 @@ function withActiveAssignment(state, { responder, issueId, role = "PRIMARY", oth
       status: "ASSIGNED", raisedAt: now, createdAt: now, downtimeStartedAt: now, description: "test", responseAction: "test",
       assignedResponderId: role === "PRIMARY" ? responder.id : state.issues.find((row) => row.id === issueId)?.assignedResponderId });
   }
+  initializeFaults(state);
   return attempt;
 }
 

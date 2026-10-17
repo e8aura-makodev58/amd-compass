@@ -335,9 +335,11 @@ extends the demo video (other features) and will add the fix segment after this 
 
 ## codex
 
-- **Status:** IDLE
+- **Status:** IN PROGRESS
 - **Updated:** 2026-10-17
-- **Task:** None. Round 7 merged; see `docs/handover-history.md`.
+- **Task:** Round 8 — hidden faults, measurable fix ranking and month history. Merged master `11ba02c`; dependencies installed.
+- **Plan:** First commit catalog, latent fault privacy, migration and fix-dependent attempt outcomes; second commit bounded model/fallback ranking, runtime lane, UI/analytics and tests; final commit regenerated month plus evidence and handoff. Both suites at each step. Existing responseAction is retained as an incident note; applied catalog fixes become actionTaken for new attempts. Existing running attempts retain legacy mechanics.
+- **Progress:** Core implementation and regression verification underway; no live provider calls or running-deployment access.
 
 ---
 

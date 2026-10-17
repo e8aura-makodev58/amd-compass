@@ -162,7 +162,7 @@ export function createDemoRuntime(agentOptions = {}, auditStore = createAuditSto
       supportOfferDueAtRealTime = null;
       offlineRematchPromise = null;
     }
-    const { responderSkills, ...publicState } = structuredClone(demoState);
+    const { responderSkills, faultTruth, ...publicState } = structuredClone(demoState);
     const { rngStreams, ...publicSimulationState } = publicState.simulationState;
     publicState.simulationState = publicSimulationState;
     publicState.resolutionAttempts = publicState.resolutionAttempts.map(redactAttempt);
