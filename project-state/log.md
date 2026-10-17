@@ -151,3 +151,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - New `backend/src/provider-controls.mjs`; `callChatCompletion` runs every request under it with one deadline covering queueing and retries. Only 429 is retried (guide §9). Five new `AMD_TOKEN_FACTORY_*` env vars.
 - Tests: `backend/tests/provider-controls.test.mjs` (fake clock and timers).
 - Pages updated: backend/model-providers.md, backend/overview.md, operations/running-and-config.md; `.env.example`; `docs/decisions.md` entry.
+
+## [2026-10-17] measurement — AMD models after repair retry and provider controls
+- `npm run measure:amd`, 3 samples: MiMo rankings 2/3 (planner 3/3), DeepSeek rankings 3/3 (planner 1/3), Qwen3.8-Flash-Next and GLM-5.3-Flash rankings timed out. No digit-in-prose failures; every valid ranking picked `R-ENGR028`. The circuit breaker opened during GLM's failures as designed. Recorded in backend/model-providers.md.

@@ -93,7 +93,21 @@ one revalidated repair attempt is available as described below.
 A ranking-only re-check right after that change (2026-10-17, 3 samples): **MiMo-V2.6-Flash
 3/3 valid** (median 28.4s; it picked `R-ENGR028` in 1 of 3 and other eligible candidates
 otherwise). DeepSeek-V4-Flash (default reasoning) was 1/3: it left candidates out of the
-ranking. The planner is
+ranking.
+
+### After the repair retry and provider controls (2026-10-17, 3 samples, 90s timeout)
+
+| Model (reasoning) | Ranking valid | Picked `R-ENGR028` | Ranking median | Planner valid | Planner median | Failures |
+|---|---|---|---|---|---|---|
+| **MiMo-V2.6-Flash (none)** | 2/3 | 2/3 | 22.0s | 3/3 | 5.7s | One ranking timed out at 90s. |
+| DeepSeek-V4-Flash (default) | **3/3** | **3/3** | 27.9s | 1/3 | 6.9s | Planner: unknown equipment; description over 180 characters. |
+| Qwen3.8-Flash-Next (default) | 0/3 | — | — | 3/3 | 30.7s | Every ranking timed out. |
+| GLM-5.3-Flash (low) | 0/3 | — | — | 0/3 | — | Timeouts; the circuit breaker then opened and failed the last call at once. |
+
+Rankings went from 1 valid in 15 to 5 valid in 12 across comparable models, and every
+valid ranking picked the expected candidate. No digit-in-prose failures remained. MiMo
+stays the default: it is the only model valid on both roles. Small samples; the app's own
+agent timeout is 60s, shorter than this run's 90s. The planner is
 reliable on MiMo and DeepSeek. Re-measure after that fix and the provider limiter merge.
 
 Output speed is roughly 25 tokens/s, so a ranking takes 20–40s; the agent timeout defaults
