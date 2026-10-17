@@ -4,6 +4,21 @@
 
 ## Merged handoffs
 
+### 2026-10-17 — gemini (finished by codex) → master (branch commit `03780dd`, merge `87b3a77`)
+
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-16
+- **Task:** Round 3 — Modern clean light theme; completed by Codex in Gemini's worktree at the user's explicit request after Gemini ran out of tokens.
+- **Head commit:** Completion handoff commit on `gemini` (see `git log -1 gemini`); builds on WIP `fa790e1` and resolved master merge `99f8e92`.
+- **Changes:** Completed white/cool-grey surfaces, indigo selection/actions, semantic status inks, 6–10px corners, subtle shadows, segmented controls and focus styling. Preserved existing token names for layout/Dockview compatibility. Added per-library font vendor module for pinned Fontsource Inter/JetBrains Mono 5.3.0: Latin variable-weight normal/italic WOFF2, extracted local CSS, SIL OFL licences and provenance. Added Modern light spec; marked Engineering print superseded. Isolated dashboard stacking to keep tile divider handles behind the search palette. Resolved the existing unfinished master merge by retaining both `.mjs` and `.woff2` MIME support.
+- **Files changed:** Theme WIP includes `frontend/tokens.css`, `base.css`, `floor.css`, `panel.css`, `ops.css`, `analytics.css`, and `frontend/vendor/fonts/`. Completion adds `scripts/vendor/fonts.mjs`, font README/italic faces and regenerated CSS; `docs/design/modern-light.md`, `docs/design/engineering-print.md` (superseded banner), `docs/decisions.md` (append), `project-state/frontend/overview.md`, `project-state/operations/testing.md`, `project-state/log.md` (append), `backend/tests/design-tokens-contrast.test.mjs`, `e2e/building-view.spec.mjs`, `e2e/tiling.spec.mjs`, `handover.md` (this section only). Other staged files in merge `99f8e92` came from master; no net server, package, tiling, layout or app-controller change against master.
+- **Verification:** `npm test` — 234/234 passed; `COMPASS_E2E_PORT=3022 LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 38/38 passed; `git diff --check` clean. All eight views (picker, Live Floor, search, Control Rooms, Analytics, Settings API/Demo, Offline) checked at 1280×900 and 375×900 with locally loaded Inter/JetBrains Mono, no horizontal page overflow, no outbound requests or page errors. Palette hit-testing confirms dividers remain behind the dialog. Font assets regenerate byte-for-byte through `npm run vendor`. Preview server stopped and port 3122 verified free; E2E uses port 3022 and stops its own server.
+- **project-state pages updated:** frontend/overview.md, operations/testing.md, log.md.
+- **Risks / follow-ups:** Contrast threshold remains 4.5:1 for all five light surfaces, including selection/alert washes; white `--on-accent` is separately checked on both actual accent button backgrounds. Existing responder hover/selection assertions changed from warm-paper `rgb(234, 230, 220)` to `rgb(237, 240, 245)` / `rgb(238, 240, 255)`. The tiling no-outbound check now derives its origin from Playwright `baseURL`, so worker ports work without weakened assertions. No generated screenshots committed. Preserve latest master main-agent/other-agent handover sections when merging.
+- **Questions for main:** None.
+
+**Main agent:** clean merge; `scripts/vendor/fonts.mjs` slots into the shared runner unchanged. On master: `npm test` 234/234, E2E 38/38, `npm run vendor` byte-identical. Gemini excluded from further tasks (user, 2026-10-17).
+
 ### 2026-10-16 — codex → master (branch commit `e67c40a`, merge `8e5f211`)
 
 - **Status:** READY FOR MERGE

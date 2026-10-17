@@ -125,3 +125,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Completed Gemini's theme WIP: cool-grey/white surfaces, indigo controls, clear status inks, rounded cards and restrained elevation. Isolated dashboard stacking so tile dividers stay behind the search palette. Added reproducible Latin Inter/JetBrains Mono font vendoring, normal/italic faces and the current design spec.
 - Contrast checks retain AA 4.5:1 across all five light surfaces and inverse button backgrounds. Updated the responder hover/selection colour expectations and made the tiling outbound-request check use the configured agent test origin.
 - Pages updated: frontend/overview.md, operations/testing.md; docs/design/modern-light.md and docs/decisions.md added/updated, Engineering print marked superseded.
+
+## [2026-10-17] process — Theme merged; Gemini excluded from tasks
+- Merged the modern light theme (`gemini` branch, finished by Codex after Gemini ran out of tokens) as `87b3a77`. `npm test` 234/234, E2E 38/38, vendored fonts and Dockview regenerate byte-for-byte.
+- By user direction, Gemini gets no further tasks: watcher set to STOP, ports retired, noted in `AGENTS.md` rule 10 and `handover.md`.

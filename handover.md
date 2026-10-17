@@ -10,7 +10,7 @@ merges finished work into `master`, and archives merged handoffs to
 |---|---|---|
 | Main agent (Claude, unless the user says otherwise) | `/home/makodev58/amd-compass` | `master` |
 | Codex | `/home/makodev58/amd-compass-codex` | `codex` |
-| Gemini | `/home/makodev58/amd-compass-gemini` | `gemini` |
+| Gemini (**excluded from tasks** since 2026-10-17) | `/home/makodev58/amd-compass-gemini` | `gemini` |
 | CodeBuddy | `/home/makodev58/amd-compass-codebuddy` | `codebuddy` |
 | Claude | `/home/makodev58/amd-compass-claude` | `claude` |
 
@@ -69,7 +69,7 @@ Each agent tests on **its own ports only** and frees them **immediately** after 
 |---|---|---|
 | main agent | 3012 (default) | 3013 |
 | codex | 3021 | 3121 |
-| gemini | 3022 | 3122 |
+| gemini | 3022 (excluded) | 3122 (excluded) |
 | codebuddy | 3023 | 3123 |
 | claude | 3024 | 3124 |
 
@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 | Agent | Watcher |
 |---|---|
 | codex | STOP (no task) |
-| gemini | RUN (round 3 task open) |
+| gemini | STOP (excluded from tasks) |
 | codebuddy | RUN (round 2 task open) |
 | claude | RUN (round 2 task open) |
 
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 | Agent | Current task | Round |
 |---|---|---|
 | codex | none (tiling merged `8e5f211`) | — |
-| gemini | Modern clean light theme (replaces "Engineering print") | 3 |
+| gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | Header regression E2E + saved-model check at boot | 2 |
 | claude | AMD rate limiting, 429 retry, circuit breaker; **next:** ranking-validity fix (prompt + one repair retry) | 2 |
 
@@ -152,33 +152,8 @@ its LICENSE.
   `@fontsource-variable/{inter,jetbrains-mono}/files/*-latin-wght-{normal,italic}.woff2`. The same shared rules as
 round 2 apply.
 
-- **gemini — Modern clean light theme (replaces "Engineering print").**
-  - **Look:** white and cool-grey surfaces, subtle rounded corners (6–10px), soft 1px borders,
-    light elevation (very subtle shadows allowed), one accent colour, clear status colours,
-    modern controls (pill/segmented buttons, styled selects/inputs/checkboxes, visible focus
-    rings).
-  - **Fonts:** **Inter** for UI and **JetBrains Mono** (or Geist Mono) for figures/IDs.
-    Install via `@fontsource-variable/inter` and `@fontsource-variable/jetbrains-mono` (or
-    equivalents), vendor only the latin `woff2` files plus their CSS into
-    `frontend/vendor/fonts/`, and load them from `tokens.css`.
-  - **Spec:** write `docs/design/modern-light.md` (tokens, rules, ownership), modelled on
-    `docs/design/engineering-print.md`. Mark that file "Superseded by modern-light.md" at the
-    top; don't delete it.
-  - **Files:** you own `frontend/tokens.css`, `base.css`, `floor.css`, `panel.css`,
-    `ops.css` and `analytics.css`. Do **not** edit `layout.css`, `tiling.*` or `index.html`
-    (codex owns them this round). If you need a new stylesheet link, ask under "Questions
-    for main".
-  - **Contrast:** all text must still pass `backend/tests/design-tokens-contrast.test.mjs`
-    (AA 4.5:1 on every surface token). Update the test's surface/text token names if you
-    rename tokens; don't weaken the threshold.
-  - **Keep behaviour:** no ID/class/ARIA changes. Charts stay token-driven. The map's 3D
-    scene is untouched apart from colours.
-  - **Tests:** if an E2E test asserts an old colour (for example the responder-row hover
-    `rgb(234, 230, 220)`), update it and list it in your handoff.
-  - **Done when:** both suites pass, every view (Live Floor, Control Rooms, Analytics,
-    Settings, Offline, the room picker, the search palette) has been checked at 1280px and
-    375px with no leftover paper/ink colours, and `docs/decisions.md` has an entry (append).
-
+- **gemini — Modern clean light theme.** Done: merged `87b3a77` (completed by codex in the
+  gemini worktree). Gemini is excluded from further tasks (user, 2026-10-17).
 - **claude — AMD rate limiting, 429 retry, circuit breaker.**
   - Read `Compass_AMD_Token_Factory_Integration_Guide.md` §2, §5 and §9, and
     `project-state/backend/model-providers.md`.
@@ -261,6 +236,7 @@ round 2 apply.
 
 ### Merge log
 
+- 2026-10-17 — **gemini** `03780dd` (finished by codex in the gemini worktree after Gemini ran out of tokens) → merge `87b3a77`: modern light theme and local Inter/JetBrains Mono fonts (round 3). Clean merge. On master: `npm test` 234/234, E2E 38/38; `npm run vendor` regenerates the committed files byte-for-byte. Handoff archived. Gemini excluded from tasks from now on (user).
 - 2026-10-16 — **codex** `e67c40a` → merge `8e5f211`: Dockview tiling for the desktop Live Floor (round 3). Vendoring reconciled into `scripts/vendor/dockview.mjs`. `npm test` 234/234, E2E 38/38. Handoff archived.
 - 2026-10-16 — **codex** `051998d` → merge `08af6b7`: text contrast fix (AA text inks, contrast test) and Analytics period labels (round 2). Append conflicts in `docs/decisions.md` / `project-state/log.md` kept both. `npm test` 232/232, E2E 32/32; `docs/assets` regenerated. Handoff archived.
 - 2026-10-16 — **gemini** `0cc8040` → merge `05596b2`: documentation accuracy pass (round 2). `project-state/log.md` conflict resolved by keeping both entries. Handoff archived.
@@ -287,16 +263,16 @@ round 2 apply.
 
 ## gemini
 
-- **Status:** READY FOR MERGE
-- **Updated:** 2026-10-16
-- **Task:** Round 3 — Modern clean light theme; completed by Codex in Gemini's worktree at the user's explicit request after Gemini ran out of tokens.
-- **Head commit:** Completion handoff commit on `gemini` (see `git log -1 gemini`); builds on WIP `fa790e1` and resolved master merge `99f8e92`.
-- **Changes:** Completed white/cool-grey surfaces, indigo selection/actions, semantic status inks, 6–10px corners, subtle shadows, segmented controls and focus styling. Preserved existing token names for layout/Dockview compatibility. Added per-library font vendor module for pinned Fontsource Inter/JetBrains Mono 5.3.0: Latin variable-weight normal/italic WOFF2, extracted local CSS, SIL OFL licences and provenance. Added Modern light spec; marked Engineering print superseded. Isolated dashboard stacking to keep tile divider handles behind the search palette. Resolved the existing unfinished master merge by retaining both `.mjs` and `.woff2` MIME support.
-- **Files changed:** Theme WIP includes `frontend/tokens.css`, `base.css`, `floor.css`, `panel.css`, `ops.css`, `analytics.css`, and `frontend/vendor/fonts/`. Completion adds `scripts/vendor/fonts.mjs`, font README/italic faces and regenerated CSS; `docs/design/modern-light.md`, `docs/design/engineering-print.md` (superseded banner), `docs/decisions.md` (append), `project-state/frontend/overview.md`, `project-state/operations/testing.md`, `project-state/log.md` (append), `backend/tests/design-tokens-contrast.test.mjs`, `e2e/building-view.spec.mjs`, `e2e/tiling.spec.mjs`, `handover.md` (this section only). Other staged files in merge `99f8e92` came from master; no net server, package, tiling, layout or app-controller change against master.
-- **Verification:** `npm test` — 234/234 passed; `COMPASS_E2E_PORT=3022 LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` — 38/38 passed; `git diff --check` clean. All eight views (picker, Live Floor, search, Control Rooms, Analytics, Settings API/Demo, Offline) checked at 1280×900 and 375×900 with locally loaded Inter/JetBrains Mono, no horizontal page overflow, no outbound requests or page errors. Palette hit-testing confirms dividers remain behind the dialog. Font assets regenerate byte-for-byte through `npm run vendor`. Preview server stopped and port 3122 verified free; E2E uses port 3022 and stops its own server.
-- **project-state pages updated:** frontend/overview.md, operations/testing.md, log.md.
-- **Risks / follow-ups:** Contrast threshold remains 4.5:1 for all five light surfaces, including selection/alert washes; white `--on-accent` is separately checked on both actual accent button backgrounds. Existing responder hover/selection assertions changed from warm-paper `rgb(234, 230, 220)` to `rgb(237, 240, 245)` / `rgb(238, 240, 255)`. The tiling no-outbound check now derives its origin from Playwright `baseURL`, so worker ports work without weakened assertions. No generated screenshots committed. Preserve latest master main-agent/other-agent handover sections when merging.
-- **Questions for main:** None.
+- **Status:** IDLE — **excluded from tasks** (user, 2026-10-17). Do not pick up work.
+- **Updated:** 2026-10-17
+- **Task:** —
+- **Head commit:** —
+- **Changes:** —
+- **Files changed:** —
+- **Verification:** `npm test` — · E2E —
+- **project-state pages updated:** —
+- **Risks / follow-ups:** —
+- **Questions for main:** —
 
 ---
 
