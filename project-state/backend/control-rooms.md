@@ -62,11 +62,10 @@ and revision when read as `plant-1`.
 
 ## Committed demo history
 
-`backend/seed/demo-control-rooms/plant-1.json` contains real-engine, deterministic offline
-history from 1 September through 6 October 2026 at 08:00 UTC, ending LIVE + PAUSED.
-September and four complete operational weeks are retained. The existing visible period
-windows include the current partial period (six complete days / three complete weeks /
-one complete month visible at this endpoint). No retention or chart rules were changed.
+`backend/seed/demo-control-rooms/plant-1.json` holds one week of history (1–8 September
+2026). A month-long seed generated on 2026-10-17 was withdrawn: it was built before the
+resolution-stall fix (see `docs/decisions.md`), and at realistic volume a month is 74 MB,
+which makes room load ~21s and `/state` ~4.5s. A longer seed waits on history retention.
 
 `npm run generate:history` resumes a seed using the shared Live engine with both provider
 roles forced onto deterministic fallbacks. It defaults to a scratch output, never installs

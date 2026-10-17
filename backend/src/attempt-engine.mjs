@@ -103,7 +103,9 @@ export function replanAttempt(state, attempt, { at = state.simulationState.simul
   const segment = attempt.segments.at(-1);
   if (segment && !segment.endedAt) {
     const remainingMinutes = Math.max(0, attempt.workTotal - attempt.completedWork) / segment.teamRate;
-    attempt.resolutionDueAt = new Date(Date.parse(at) + remainingMinutes * 60_000).toISOString();
+    // Round up to the next millisecond: a due time truncated early would leave
+    // a sliver of work unfinished when the resolution fires.
+    attempt.resolutionDueAt = new Date(Math.ceil(Date.parse(at) + remainingMinutes * 60_000)).toISOString();
     attempt.resolutionDueToken = token("resolution", attempt);
   }
   return attempt;

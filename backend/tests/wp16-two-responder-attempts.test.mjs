@@ -7,7 +7,7 @@ import { teamProbability, teamRate } from "../src/attempt-engine.mjs";
 import { createLiveAssignmentService } from "../src/live-assignment-service.mjs";
 import { createLiveStore } from "../src/live-store.mjs";
 import { createLiveSeed } from "../seed/live-simulation.mjs";
-import { createResolutionEngine } from "../src/resolution-engine.mjs";
+import { createResolutionEngine, finalizeResolutionAttemptState } from "../src/resolution-engine.mjs";
 import { createScheduler } from "../src/scheduler.mjs";
 import { createLiveRecommendationService } from "../src/live-recommendation-service.mjs";
 import { createLiveRuntime } from "../src/live-runtime.mjs";
@@ -313,4 +313,28 @@ test("standard issues request help only when observable progress is behind the i
   const recommendationSafePacket = await service.candidatePacket("ISS-104", "support-check", "ASSISTANCE");
   assert.equal(JSON.stringify(recommendationSafePacket).includes("durationFactor"), false);
   assert.equal(JSON.stringify(recommendationSafePacket).includes("successDraw"), false);
+});
+
+test("resolution due times round up, and a due event that lands short replans instead of stalling", async () => {
+  const { store, service } = await fixture();
+  await service.assign({ issueId: "ISS-104", responderId: "R-ENGR028" });
+  const state = await store.snapshot();
+  const attempt = state.resolutionAttempts.find((row) => row.issueId === "ISS-104");
+  const segment = attempt.segments.at(-1);
+  const exactMs = Date.parse(segment.startedAt) + ((attempt.workTotal - attempt.completedWork) / segment.teamRate) * 60_000;
+  assert.ok(Date.parse(attempt.resolutionDueAt) >= exactMs, "due time is never before the work finishes");
+
+  // Fire one millisecond before the work finishes, as a truncated due time once did.
+  state.simulationState.simulationTime = new Date(Math.ceil(exactMs) - 1).toISOString();
+  const generation = attempt.scheduleGeneration;
+  const outcome = finalizeResolutionAttemptState(state, attempt);
+  assert.equal(outcome.status, "NOT_COMPLETE");
+  assert.equal(attempt.status, "ACTIVE");
+  assert.equal(attempt.scheduleGeneration, generation + 1);
+  assert.equal(attempt.segments.at(-1).endedAt, null, "a new segment is open");
+  assert.ok(attempt.resolutionDueToken, "a new resolution is scheduled");
+  assert.ok(Date.parse(attempt.resolutionDueAt) - Date.parse(state.simulationState.simulationTime) <= 1_000, "within a second, not the next roster change");
+
+  state.simulationState.simulationTime = attempt.resolutionDueAt;
+  assert.ok(["RESOLVED", "REOPENED"].includes(finalizeResolutionAttemptState(state, attempt).status));
 });

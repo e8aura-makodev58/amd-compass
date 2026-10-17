@@ -789,3 +789,22 @@ Gemini's WIP at the user's explicit request, resolving its unfinished master mer
   ten-issue cap. Measurements, exact reproduction and seed SHA-256 are in
   `docs/demo-history.md`; further performance/retention or demand-policy decisions stay
   with the main agent. No running data, plant-2 seed or room metadata was changed.
+
+## 2026-10-17 — Resolution due times round up; a short due event replans (main agent)
+
+- **Defect:** `replanAttempt` computed `resolutionDueAt` from fractional milliseconds and
+  `toISOString()` truncated it, so the due event could fire up to 1 ms before the work
+  finished. `finalizeResolutionAttemptState` then closed the segment, returned
+  `NOT_COMPLETE` and scheduled nothing, so the attempt stalled until the next roster change
+  (often a shift handover ~12h later). Real-time ticks usually overshoot the due time, which
+  hid it; the offline history generator steps exactly to due times and hit it on most
+  attempts after week one (median time to resolve 0.3h → 23h, demand held at the
+  ten-actionable-issue cap).
+- **Fix:** due times round up to the next millisecond, and a `NOT_COMPLETE` finalize replans
+  the attempt (new open segment, new due token) instead of leaving it without one.
+  Regression test in `wp16-two-responder-attempts.test.mjs`.
+- **Seed:** the month-long plant-1 seed from the same day was built on the defect, so
+  plant-1 is restored to the original week. Regenerated with the fix, the month holds
+  3,531 issues (~750/week, median resolve 0.2h) in 74 MB; cold room load ~21s, `/state`
+  ~4.5s (6.5 MB), analytics 1.1–2.3s. A month-long demo seed needs history retention
+  first; that decision is open with the user.

@@ -1,4 +1,4 @@
-import { attemptProbability, contributionShares, internalOutcomeProfile, settleAttempt } from "./attempt-engine.mjs";
+import { attemptProbability, contributionShares, internalOutcomeProfile, replanAttempt, settleAttempt } from "./attempt-engine.mjs";
 import { returnResponderToDutyStation } from "./responder-location.mjs";
 
 function nextId(entries, prefix) {
@@ -35,7 +35,13 @@ export function finalizeResolutionAttemptState(state, attempt, forced = false) {
   }
   delete issue.pendingOfferId; delete issue.offeredResponderId;
   settleAttempt(state, attempt, state.simulationState.simulationTime, { completeRemaining: forced });
-  if (attempt.completedWork + 1e-9 < attempt.workTotal) return { status: "NOT_COMPLETE" };
+  if (attempt.completedWork + 1e-9 < attempt.workTotal) {
+    // settleAttempt closed the segment. Reopen it with a fresh due time so the
+    // attempt keeps progressing; otherwise it would stall until the next roster
+    // change (often a shift handover hours later).
+    replanAttempt(state, attempt);
+    return { status: "NOT_COMPLETE", resolutionDueAt: attempt.resolutionDueAt };
+  }
   const success = attempt.successDraw < attemptProbability(attempt);
   const assignments = state.assignments.filter((row) => row.attemptId === attempt.id);
   const active = assignments.filter((row) => row.status === "ACTIVE");

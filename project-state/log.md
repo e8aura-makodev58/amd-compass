@@ -178,3 +178,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Added `generate:history`, an isolated, guarded offline generator using the real runtime cycle, seeded RNG and deterministic audit timestamps. Short hermetic tests check byte identity, normal-store equivalence/migration, privacy and live-data path rejection; production persistence and retention are unchanged.
 - Extended only the plant-1 seed through 6 October 08:00 UTC: September plus four complete operational weeks, 669 issues / 844 history rows, LIVE + PAUSED. Two full generations matched SHA-256. Benchmarked cold load (1.82s), analytics, memory and browser loading; no live data or other seeds touched.
 - Pages updated: backend/control-rooms.md, operations/running-and-config.md, operations/testing.md; docs/demo-history.md and docs/decisions.md document reproduction, engine seam and performance/backlog follow-ups.
+
+## [2026-10-17] fix — resolution stall on a short due event; month seed withdrawn
+- `attempt-engine.mjs`: resolution due times round up to the next ms. `resolution-engine.mjs`: a `NOT_COMPLETE` finalize replans instead of stalling until the next roster change. Regression test added.
+- plant-1 seed restored to the original week; the merged month seed had been built on the defect. A fixed month is 74 MB and too slow to load (~21s room load, ~4.5s `/state`), so it is not committed. Pages updated: backend/control-rooms.md; `docs/decisions.md` entry.

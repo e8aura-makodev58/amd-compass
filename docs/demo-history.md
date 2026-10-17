@@ -38,6 +38,12 @@ stderr reports daily progress.
 
 ## Committed plant-1 seed (2026-10-17)
 
+> **Withdrawn the same day.** The seed described below was generated before the resolution
+> stall fix (`docs/decisions.md`, "Resolution due times round up") and was replaced by the
+> original week-long seed. The figures below are kept as the record of that run. With the
+> fix, the same command produces 3,531 issues in 74 MB, which is too slow to load (cold
+> room load ~21s, `/state` ~4.5s); a month-long seed waits on history retention.
+
 The September seed was extended from 8 September to **6 October 2026, 08:00 UTC**. Its
 continuous original start is 1 September. This contains September, four complete
 Monday-to-Monday weeks (7 September–5 October), and more than seven complete days.
