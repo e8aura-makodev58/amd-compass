@@ -237,8 +237,9 @@ main agent to choose next work for codex and itself.
 
 - **main agent — Larger live measurement at the app's real timeouts.** 10 samples per model,
   60s ranking / 30s planner timeouts (the app defaults), through the provider controls, to
-  choose the default model per role. Then sets the recommended defaults once codex's
-  per-role settings merge.
+  choose the default model per role. **Done:** MiMo-V2.6-Flash / `none` stays the default
+  for both roles (rankings 9/10, planner 10/10; DeepSeek 8/10 and 3/10). Codex: keep both
+  role defaults at MiMo.
 
 - **main agent:** reviews and merges. Measured live 2026-10-16 (see codex's bullet). Re-measures with more
   samples once the provider controls land (codex's validity fix is merged).

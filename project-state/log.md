@@ -159,3 +159,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Added background boot catalog validation with snapshot status and application logging. Confirmed missing saved models use the default model/effort for requests without rewriting the saved pin; failed discovery retains the saved selection. Test-mode boot stays API-free, and stale responses after credential changes are ignored.
 - Added eight header geometry checks across Live/Offline and four desktop widths, plus hermetic settings coverage for boot concurrency, fallback (including pending refresh), persistence, outage, malformed catalogs and recovery.
 - Pages updated: backend/model-providers.md (Selection & discovery), operations/testing.md.
+
+## [2026-10-17] measurement — 10-sample model choice at app timeouts
+- MiMo-V2.6-Flash (none): rankings 9/10, planner 10/10. DeepSeek-V4-Flash: rankings 8/10, planner 3/10 (default or none). MiMo stays the default for both roles. Remaining failures are ranking timeouts (MiMo median 42s vs 60s timeout). Recorded in backend/model-providers.md.

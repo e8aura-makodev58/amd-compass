@@ -109,7 +109,22 @@ ranking.
 Rankings went from 1 valid in 15 to 5 valid in 12 across comparable models, and every
 valid ranking picked the expected candidate. No digit-in-prose failures remained. MiMo
 stays the default: it is the only model valid on both roles. Small samples; the app's own
-agent timeout is 60s, shorter than this run's 90s. The planner is
+agent timeout is 60s, shorter than this run's 90s.
+
+### Default-choice measurement (2026-10-17, 10 samples, app timeouts 60s ranking / 30s planner)
+
+| Model (reasoning) | Ranking valid | Picked `R-ENGR028` | Ranking median | Planner valid | Planner median | Failures |
+|---|---|---|---|---|---|---|
+| **MiMo-V2.6-Flash (none)** | **9/10** | 8/10 | 41.7s | **10/10** | 5.5s | Ranking timeout ×1. |
+| DeepSeek-V4-Flash (default) | 8/10 | 8/10 | 33.2s | 3/10 | 5.4s | Ranking timeout ×2; planner unknown equipment ×5, timeout ×2. |
+| DeepSeek-V4-Flash (none) | 8/10 | 8/10 | 41.9s | 3/10 | 5.8s | Ranking timeout ×2; planner unknown equipment ×5, `responseAction` over 240 characters ×2. |
+
+**Decision: MiMo-V2.6-Flash / `none` stays the default for both roles.** With the repair
+retry it is now the most reliable ranker as well as the planner. DeepSeek is no better at
+ranking and much worse at planning. All remaining ranking failures are timeouts, not
+invalid answers: MiMo's ranking latencies ran 24–60s (median 42s, some including a repair),
+so the 60s agent timeout is tight. Per-role selection (codex, round 4) stays useful for
+operators, but needs no different defaults. The planner is
 reliable on MiMo and DeepSeek. Re-measure after that fix and the provider limiter merge.
 
 Output speed is roughly 25 tokens/s, so a ranking takes 20–40s; the agent timeout defaults
