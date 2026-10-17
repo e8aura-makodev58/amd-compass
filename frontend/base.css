@@ -36,8 +36,8 @@ h2 { margin-bottom: 0; font-size: 1.2rem; font-weight: 650; letter-spacing: -.01
 button { border: 1px solid var(--rule-strong); border-radius: var(--radius-sm); padding: 8px 14px; background: var(--paper-raised); color: var(--ink); cursor: pointer; font-weight: 600; box-shadow: var(--shadow-sm); transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease; }
 button:hover { background: var(--paper-sunk); }
 /* Primary: the one forward action in each area. */
-#pause-resume-button, #settings-save, .demo-override-actions button, .recommend-button, .decision-controls > button:not(.secondary-button) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-#pause-resume-button:hover, #settings-save:hover, .demo-override-actions button:hover:not(:disabled), .recommend-button:hover, .decision-controls > button:not(.secondary-button):hover:not(:disabled) { border-color: var(--accent-ink); background: var(--accent-ink); }
+#pause-resume-button, #settings-save, #settings-event-planner-save, .demo-override-actions button, .recommend-button, .decision-controls > button:not(.secondary-button) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+#pause-resume-button:hover, #settings-save:hover, #settings-event-planner-save:hover, .demo-override-actions button:hover:not(:disabled), .recommend-button:hover, .decision-controls > button:not(.secondary-button):hover:not(:disabled) { border-color: var(--accent-ink); background: var(--accent-ink); }
 button:disabled, button:disabled:hover { border-color: var(--rule); background: var(--paper-sunk); color: var(--ink-3); box-shadow: none; opacity: 1; } button:disabled { opacity: .7; cursor: not-allowed; }
 button.is-loading { cursor: wait; }
 .mode-controls, .tab-bar, .simulation-bar, .lower-grid { display: flex; }

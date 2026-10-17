@@ -35,6 +35,9 @@ text-variable aliases to the shared inks, retaining the 4.5:1 gate for vendor te
 missing/valid saved models, runtime default fallback with byte-for-byte preservation of
 the saved file, failed/malformed discovery, recovery, fallback during pending refresh,
 and stale credential responses.
+Role-specific settings tests cover legacy-file loading without writes, independent and
+concurrent role saves, unknown-role rejection, planner environment overrides, and boot
+fallback/logging for just the missing role. Credentials remain byte-for-byte unchanged.
 Services do not implicitly discover at initialization; boot tests explicitly enable
 `checkModelsOnBoot` with fake fetch. The server disables boot discovery in `NODE_ENV=test`.
 
@@ -59,6 +62,9 @@ right after use. Never bind 3000 or 3200 on this host (other running apps).
 E2E journeys cover the audit trail, the building/floor view and camera, the control-room
 search palette, the live floor and staffing actions, the room picker and multi-room state
 isolation, the override dropdown, and the provider-settings form.
+`e2e/provider-settings.spec.mjs` uses mocked settings/catalog/save responses for two-role
+editing and reloads at 375px and 1280px, verifies draft preservation and separate status,
+and checks horizontal overflow and zero outbound requests without writing real settings.
 
 `e2e/header-layout.spec.mjs` measures the header at 920, 1024, 1280 and 1440px in Live
 and Offline (with Reset Offline visible). Bounding rectangles and scroll widths assert

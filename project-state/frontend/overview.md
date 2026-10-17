@@ -88,7 +88,9 @@ Three floors, ~20–30 machines each; a 2D top view and an optional 2.5D isometr
 - **Analytics** — KPI grid, issue/equipment/responder tables, Compass-vs-baseline
   disagreement, timeline charts, and a searchable equipment directory. See
   [../concepts/analytics-and-ethics.md](../concepts/analytics-and-ethics.md).
-- **Settings** — an **API** sub-tab (provider / model / reasoning-effort with live model
+- **Settings** — an **API** sub-tab (shared provider/credential and separate Ranking
+  (Compass) / Event planner model and reasoning pickers with individual validation status,
+  saves and preserved unsaved drafts, with live model
   discovery) and a **Demo** sub-tab (workforce scenario, agent activity, deferred-demand
   ledger, handover log). The provider dropdown is rendered dynamically from `/api/settings` (today it lists
   only AMD Token Factory), so a newly added provider would appear with no client change. See

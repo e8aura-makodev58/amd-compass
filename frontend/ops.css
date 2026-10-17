@@ -1,4 +1,9 @@
 /* Modern light. Settings, Demo controls, Control Rooms management. */
+.settings-card, .settings-field { min-width: 0; }
+.settings-role { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--rule); border-radius: var(--radius); }
+.settings-role legend { padding: 0 5px; color: var(--ink); font-weight: 600; }
+.settings-role .workflow-prompt { margin: 0; overflow-wrap: anywhere; }
+.settings-field input, .settings-field select { min-width: 0; max-width: 100%; box-sizing: border-box; }
 .demo-view { min-height: 520px; padding: 24px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow-sm); }.demo-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 18px; }.demo-panel { padding: 20px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow-sm); }.demo-panel h3 { margin-bottom: 14px; }.primary-activity { display: flex; gap: 13px; align-items: center; min-height: 88px; padding: 15px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-raised); }.primary-activity.working { border-color: var(--accent); background: var(--accent-wash); }.primary-activity strong { display: block; margin-bottom: 5px; }.primary-activity p, .agent-status-list p { margin: 0; color: var(--ink-3); font-size: .78rem; line-height: 1.45; }.activity-spinner { width: 24px; height: 24px; flex: 0 0 auto; border: 3px solid var(--rule-strong); border-radius: 50%; }/* At rest the ring is plain; the dark arc appears only while an agent works, so an idle
    ring never reads as a stalled spinner. */
 .primary-activity.working .activity-spinner { border-top-color: var(--accent); animation: activity-spin .9s linear infinite; }

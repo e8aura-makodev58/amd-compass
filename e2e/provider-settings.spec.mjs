@@ -26,6 +26,12 @@ test("Settings offers AMD Token Factory as the only provider, with a write-only 
   await expect(providerSelect).toBeVisible();
   await expect(apiKeyInput).toHaveAttribute("type", "password");
   await expect(apiKeyInput).toHaveValue("");
+  for (const name of ["Ranking (Compass)", "Event planner"]) {
+    const picker = page.getByRole("group", { name, exact: true });
+    await expect(picker.getByLabel("Model", { exact: true })).toBeVisible();
+    await expect(picker.getByLabel("Thinking level", { exact: true })).toBeVisible();
+    await expect(picker.getByRole("status")).toBeVisible();
+  }
 
   const optionTexts = await providerSelect.locator("option").allTextContents();
   expect(optionTexts).toHaveLength(1);
@@ -38,3 +44,67 @@ test("Settings offers AMD Token Factory as the only provider, with a write-only 
 
   expect(requestsToProviders).toEqual([]);
 });
+
+for (const width of [375, 1280]) {
+  test(`independent role pickers save only their own model and fit at ${width}px`, async ({ page, baseURL }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const roles = {
+      compass: { modelId: "MiMo-V2.6-Flash", reasoningEffort: "none", modelValidation: { status: "VALID", effectiveModelId: "MiMo-V2.6-Flash" } },
+      "event-planner": { modelId: "Retired-Model", reasoningEffort: "default", modelValidation: { status: "MISSING", effectiveModelId: "MiMo-V2.6-Flash" } },
+    };
+    const snapshot = () => ({
+      provider: "amd", modelId: roles.compass.modelId, reasoningEffort: roles.compass.reasoningEffort, roles,
+      providers: [{ id: "amd", label: "AMD Token Factory", enabled: true, credentialConfigured: false }],
+    });
+    const posts = [];
+    const outbound = [];
+    page.on("request", (request) => { if (new URL(request.url()).origin !== new URL(baseURL).origin) outbound.push(request.url()); });
+    await page.route("**/api/settings", async (route) => {
+      if (route.request().method() === "POST") {
+        const input = route.request().postDataJSON();
+        posts.push(input);
+        roles[input.role] = { modelId: input.modelId, reasoningEffort: input.reasoningEffort, modelValidation: { status: "VALID", effectiveModelId: input.modelId } };
+      }
+      await route.fulfill({ json: snapshot() });
+    });
+    await page.route("**/api/settings/models?*", (route) => route.fulfill({ json: {
+      ...snapshot(), modelDiscovery: { status: "READY" }, models: [
+        { id: "MiMo-V2.6-Flash", reasoningEfforts: ["default", "none"] },
+        { id: "DeepSeek-V4-Flash", reasoningEfforts: ["default", "none", "high"] },
+        { id: "GLM-5.3-Flash", reasoningEfforts: ["default", "low", "high"] },
+      ],
+    } }));
+    await page.goto("/rooms/plant-1");
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    const ranking = page.getByRole("group", { name: "Ranking (Compass)", exact: true });
+    const planner = page.getByRole("group", { name: "Event planner", exact: true });
+    await expect(planner.getByRole("status")).toContainText("Saved model unavailable");
+    await page.getByRole("button", { name: "Refresh available models", exact: true }).click();
+    await expect(page.locator("#settings-feedback")).toContainText("Found 3 selectable models");
+    await ranking.getByLabel("Model", { exact: true }).selectOption("DeepSeek-V4-Flash");
+    await ranking.getByLabel("Thinking level", { exact: true }).selectOption("high");
+    await planner.getByLabel("Model", { exact: true }).selectOption("GLM-5.3-Flash");
+    await planner.getByLabel("Thinking level", { exact: true }).selectOption("low");
+    await ranking.getByRole("button", { name: "Save Ranking (Compass)", exact: true }).click();
+    await expect(page.locator("#settings-feedback")).toContainText("Saved Ranking (Compass)");
+    await expect(planner.getByLabel("Model", { exact: true })).toHaveValue("GLM-5.3-Flash");
+    await expect(planner.getByLabel("Thinking level", { exact: true })).toHaveValue("low");
+    await expect(planner.getByRole("status")).toHaveText("Unsaved selection.");
+    await planner.getByRole("button", { name: "Save Event planner", exact: true }).click();
+    await expect(page.locator("#settings-feedback")).toContainText("Saved Event planner");
+    expect(posts).toEqual([
+      { provider: "amd", role: "compass", modelId: "DeepSeek-V4-Flash", reasoningEffort: "high" },
+      { provider: "amd", role: "event-planner", modelId: "GLM-5.3-Flash", reasoningEffort: "low" },
+    ]);
+    await page.reload();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    await expect(ranking.getByLabel("Model", { exact: true })).toHaveValue("DeepSeek-V4-Flash");
+    await expect(planner.getByLabel("Model", { exact: true })).toHaveValue("GLM-5.3-Flash");
+    for (const picker of [ranking, planner]) await expect(picker.getByRole("status")).toHaveText("Saved model is available.");
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    expect(await page.locator(".settings-card").evaluate((card) => card.scrollWidth <= card.clientWidth + 1)).toBe(true);
+    await page.screenshot({ path: `.cache/amd-codex-roles-${width}.png`, fullPage: true });
+    expect(outbound).toEqual([]);
+  });
+}

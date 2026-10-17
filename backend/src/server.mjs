@@ -277,8 +277,10 @@ export function createRequestHandler(manager, logger = null, settingsService = n
       if (request.method === "POST" && url.pathname === "/api/settings") {
         if (!settingsService) return sendJson(response, 503, { error: "Provider settings are unavailable" });
         try {
-          const saved = await settingsService.update(await readJsonBody(request));
-          logEvent(logger, "provider_settings_updated", { provider: saved.provider, modelId: saved.modelId, reasoningEffort: saved.reasoningEffort });
+          const input = await readJsonBody(request);
+          const saved = await settingsService.update(input);
+          const role = input.role ?? "compass";
+          logEvent(logger, "provider_settings_updated", { provider: saved.provider, role, modelId: saved.roles[role].modelId, reasoningEffort: saved.roles[role].reasoningEffort });
           return sendJson(response, 200, saved);
         } catch (error) {
           return sendJson(response, 400, { error: error.message });

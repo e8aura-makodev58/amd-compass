@@ -165,3 +165,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] config — Compass agent timeout 90s
 - `COMPASS_AGENT_TIMEOUT_MS` default 60000 → 90000 (user decision). `measure:amd` ranking timeout default follows. Pages updated: operations/running-and-config.md, backend/model-providers.md; `docs/decisions.md` entry.
+
+## [2026-10-17] feature — Separate ranking and event-planner models
+- Added per-role model/effort persistence, backward-compatible single-pin loading without writes, role-specific validation/fallback/logging and planner-only environment seeds. Credential storage and the provider call path are unchanged.
+- Settings now has two independently saved pickers with individual status and draft preservation; mocked browser coverage checks 375px/1280px without API spend or real settings writes.
+- Pages updated: backend/model-providers.md (Selection & discovery), backend/http-api.md, frontend/overview.md, operations/running-and-config.md, operations/testing.md; docs/decisions.md and .env.example also updated.

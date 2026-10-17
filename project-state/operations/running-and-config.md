@@ -60,6 +60,8 @@ baselines.
 | `AMD_TOKEN_FACTORY_API_KEY_FILE` | — | Path to a file containing only the key. A host path is not visible inside Docker. |
 | `AMD_TOKEN_FACTORY_MODEL` | `MiMo-V2.6-Flash` | Seeds the model on a fresh install. |
 | `AMD_TOKEN_FACTORY_REASONING_EFFORT` | `none` for MiMo, else `default` | Seeds the reasoning level; `default` omits the field. |
+| `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` | shared model seed | Optional model seed override for the event planner only. |
+| `AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT` | shared explicit effort, otherwise the planner model's default | Optional reasoning seed override for the event planner only. |
 | `AMD_TOKEN_FACTORY_MAX_OUTPUT_TOKENS` | `4096` | `max_tokens` per call; a truncated reply fails closed. |
 | `AMD_TOKEN_FACTORY_APP_RPM` | `10` | Local limit on AMD request starts per rolling minute, shared by every caller in the process. |
 | `AMD_TOKEN_FACTORY_APP_CONCURRENCY` | `2` | Local limit on AMD requests in flight. Up to 32 more wait in a queue. |
@@ -67,7 +69,8 @@ baselines.
 | `AMD_TOKEN_FACTORY_BREAKER_THRESHOLD` | `5` | Consecutive service failures (429, 5xx, network, timeout) that open the circuit breaker. |
 | `AMD_TOKEN_FACTORY_BREAKER_COOLDOWN_MS` | `60000` | How long the breaker stays open before one probe request is allowed. |
 
-The model and reasoning level can also be chosen at runtime from the Settings → API tab, which
+The model and reasoning level can be chosen independently for Ranking (Compass) and Event
+planner at runtime from the Settings → API tab, which
 persists to `backend/data/provider-settings.json`. A persisted selection takes precedence
 over the env seeds on subsequent boots. See
 [../backend/model-providers.md](../backend/model-providers.md).

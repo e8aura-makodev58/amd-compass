@@ -5,6 +5,13 @@ import { compassDataPath } from "./data-root.mjs";
 import { logEvent } from "./application-log-store.mjs";
 
 const DEFAULT_TIMEOUT_MS = 8_000;
+const MODEL_ROLES = ["compass", "event-planner"];
+const defaultModel = () => ({ modelId: AMD_DEFAULT_MODEL_ID, reasoningEffort: defaultReasoningEffortFor(AMD_DEFAULT_MODEL_ID) });
+
+function modelRole(value = "compass") {
+  if (!MODEL_ROLES.includes(value)) throw new Error("Select an available model role");
+  return value;
+}
 
 /**
  * Reasoning-effort levels per AMD Token Factory model family, from the AMD
@@ -59,11 +66,14 @@ function normalizeModelEntry(value = {}) {
  * (openai, openrouter, gpt-oss). Those pins are dropped rather than sent to
  * AMD, and the AMD defaults apply instead.
  */
-function normalizeSettings(value = {}, defaults = { modelId: AMD_DEFAULT_MODEL_ID, reasoningEffort: defaultReasoningEffortFor(AMD_DEFAULT_MODEL_ID) }) {
+function normalizeSettings(value = {}, defaults = Object.fromEntries(MODEL_ROLES.map((role) => [role, defaultModel()]))) {
   const models = {};
   for (const id of PROVIDER_IDS) {
-    const normalized = normalizeModelEntry(value.models?.[id]);
-    models[id] = normalized.modelId ? normalized : { ...defaults };
+    const legacy = normalizeModelEntry(value.models?.[id]);
+    models[id] = Object.fromEntries(MODEL_ROLES.map((role) => {
+      const normalized = normalizeModelEntry(value.models?.[id]?.[role]);
+      return [role, normalized.modelId ? normalized : legacy.modelId ? { ...legacy } : { ...defaults[role] }];
+    }));
   }
   return { provider: normalizeProviderId(value.provider), models, updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : null };
 }
@@ -92,7 +102,7 @@ function providerList(apiKeys, storedCredentials = {}) {
  */
 function previewSettings(settings, apiKeys, storedCredentials, providerId = settings.provider) {
   const id = normalizeProviderId(providerId);
-  const current = settings.models[id];
+  const current = settings.models[id].compass;
   return {
     provider: id,
     modelId: current.modelId,
@@ -121,9 +131,18 @@ export function createProviderSettingsService({
   // Seeds a fresh install; a persisted settings file, once written, takes
   // precedence over these on later boots.
   const seedModelId = environment.AMD_TOKEN_FACTORY_MODEL || AMD_DEFAULT_MODEL_ID;
-  const seed = {
+  const sharedSeed = {
     modelId: seedModelId,
     reasoningEffort: environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(seedModelId),
+  };
+  const plannerModelId = environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL || seedModelId;
+  const seed = {
+    compass: sharedSeed,
+    "event-planner": {
+      modelId: plannerModelId,
+      reasoningEffort: environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT
+        || environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(plannerModelId),
+    },
   };
   let settings = normalizeSettings({ models: { amd: seed } }, seed);
   // Cached so a save can validate against the list the operator actually saw,
@@ -132,9 +151,10 @@ export function createProviderSettingsService({
   let initialization;
   let catalogState = { status: "UNCHECKED" };
   let catalogRevision = 0;
+  let settingsWrite = Promise.resolve();
 
-  function modelValidation(providerId = settings.provider) {
-    const savedModelId = settings.models[providerId].modelId;
+  function modelValidation(providerId = settings.provider, role = "compass") {
+    const savedModelId = settings.models[providerId][role].modelId;
     const missing = catalogState.status === "READY" && !availableModelsByProvider[providerId].some((model) => model.id === savedModelId);
     return {
       ...catalogState,
@@ -145,7 +165,13 @@ export function createProviderSettingsService({
   }
 
   function preview(providerId = settings.provider) {
-    return { ...previewSettings(settings, currentApiKeys(), storedCredentials, providerId), modelValidation: modelValidation(providerId) };
+    return {
+      ...previewSettings(settings, currentApiKeys(), storedCredentials, providerId),
+      modelValidation: modelValidation(providerId),
+      roles: Object.fromEntries(MODEL_ROLES.map((role) => [role, {
+        ...settings.models[providerId][role], modelValidation: modelValidation(providerId, role),
+      }])),
+    };
   }
 
   function invalidateCatalog() {
@@ -181,10 +207,10 @@ export function createProviderSettingsService({
     if (checkModelsOnBoot) void refreshModels();
   }
 
-  async function persist() {
+  async function persist(nextSettings) {
     await mkdir(dirname(filePath), { recursive: true, mode: 0o700 });
     const temporaryPath = `${filePath}.${process.pid}.tmp`;
-    await writeFile(temporaryPath, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+    await writeFile(temporaryPath, `${JSON.stringify(nextSettings, null, 2)}\n`, { mode: 0o600 });
     await rename(temporaryPath, filePath);
   }
 
@@ -224,9 +250,11 @@ export function createProviderSettingsService({
       if (revision === catalogRevision) {
         availableModelsByProvider[id] = models;
         catalogState = { status: "READY", checkedAt: new Date().toISOString() };
-        const validation = modelValidation(id);
-        if (validation.status === "MISSING") {
-          logEvent(logger, "provider_saved_model_missing", { provider: id, savedModelId: validation.savedModelId, effectiveModelId: validation.effectiveModelId });
+        for (const role of MODEL_ROLES) {
+          const validation = modelValidation(id, role);
+          if (validation.status === "MISSING") {
+            logEvent(logger, "provider_saved_model_missing", { provider: id, role, savedModelId: validation.savedModelId, effectiveModelId: validation.effectiveModelId });
+          }
         }
       }
       return { ...base(), modelDiscovery: { status: "READY", provider: id, fetchedAt: new Date().toISOString() }, models };
@@ -238,8 +266,15 @@ export function createProviderSettingsService({
     }
   }
 
-  async function update(input) {
+  function update(input) {
+    const saving = settingsWrite.then(() => updateSelection(input));
+    settingsWrite = saving.catch(() => {});
+    return saving;
+  }
+
+  async function updateSelection(input) {
     await initialize();
+    const role = modelRole(input?.role);
     const providerId = input?.provider;
     const catalog = PROVIDER_IDS.includes(providerId) ? PROVIDER_CATALOG[providerId] : null;
     if (!catalog || !catalog.enabled) throw new Error("Select an available provider");
@@ -252,8 +287,9 @@ export function createProviderSettingsService({
     const supportedEfforts = cachedEntry?.reasoningEfforts ?? catalog.fallbackReasoningEfforts(modelId);
     const reasoningEffort = typeof input.reasoningEffort === "string" ? input.reasoningEffort : "";
     if (!supportedEfforts.includes(reasoningEffort)) throw new Error(`Reasoning level is not supported for ${modelId}`);
-    settings = { provider: providerId, models: { ...settings.models, [providerId]: { modelId, reasoningEffort } }, updatedAt: new Date().toISOString() };
-    await persist();
+    const nextSettings = { provider: providerId, models: { ...settings.models, [providerId]: { ...settings.models[providerId], [role]: { modelId, reasoningEffort } } }, updatedAt: new Date().toISOString() };
+    await persist(nextSettings);
+    settings = nextSettings;
     return preview();
   }
 
@@ -286,13 +322,14 @@ export function createProviderSettingsService({
     },
     async requestOptions(purpose = "compass") {
       await initialize();
+      const role = modelRole(purpose);
       const mode = purpose === "event-planner"
         ? environment.COMPASS_EVENT_PLANNER_MODE ?? "live"
         : environment.COMPASS_LIVE_COMPASS_MODE ?? "live";
       const providerId = settings.provider;
-      const current = modelValidation(providerId).status === "MISSING"
-        ? { modelId: AMD_DEFAULT_MODEL_ID, reasoningEffort: defaultReasoningEffortFor(AMD_DEFAULT_MODEL_ID) }
-        : settings.models[providerId];
+      const current = modelValidation(providerId, role).status === "MISSING"
+        ? defaultModel()
+        : settings.models[providerId][role];
       return {
         mode,
         provider: providerId,
