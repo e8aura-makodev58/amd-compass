@@ -12,7 +12,7 @@ This is a net-new, synthetic project. It contains no LOCI source, proprietary fa
 
 ## What is implemented
 
-- persistent simulation clock with pause/resume and 1×/5×/10×/60× speed;
+- persistent simulation clock with pause/resume; the UI offers 1× and 5× (the API also accepts 10× and 60×);
 - deterministic one-shot scheduler with bounded cadence and no restart catch-up;
 - a dedicated Demo view with visible agent activity and Trigger Next Event / Force Resolve controls;
 - a default 2D manufacturing-floor map with three-floor selection, drag pan, wheel/button/keyboard zoom, and an optional 2.5D overview;
@@ -99,7 +99,7 @@ If the container fails its health check or a post-switchover validation, stop Co
 ## Demo controls
 
 - **Resume / Pause** controls simulation time.
-- **Speed** selects 1×, 5×, 10×, or 60× without replacing the current timer.
+- **Speed** selects 1× or 5× without replacing the current timer. Live AMD rankings take about 40–90 seconds, so faster speeds outrun them; the API still accepts 10× and 60× for offline generation.
 - **Demo** opens a dedicated activity monitor and keeps presentation-only shortcuts out of the normal operating controls. The navigation status pill remains visible while an agent is working.
 - **Trigger Next Event** immediately executes the validated scheduler path and respects the active-issue ceiling.
 - **Force Resolve** immediately consumes the selected assigned issue's one-shot token. The result still uses the normal skill/history probability and variability model; it bypasses waiting, not outcome logic.

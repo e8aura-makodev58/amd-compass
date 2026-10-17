@@ -834,3 +834,16 @@ growth limits and tests: `docs/history-retention.md`. Reproduction and measured 
 is 2.39s and one first HTTP DAY request was 317ms; these target misses are disclosed for
 main-agent review. Exact observations, compact indexes/facts, workforce history and
 unowned events remain growing canonical evidence, not a constant-space guarantee.
+
+## 2026-10-17 — UI speed menu capped at 5× (main agent, user request)
+
+- A live AMD ranking takes about 40–90s of real time (median 42s measured; 90s limit). At
+  5× that is 3.5–7.5 simulated minutes, acceptable next to a ~12-minute median fix; at 10×
+  it equals the fix itself, and at 60× it is 40–90 simulated minutes. Throughput (10 RPM, 2
+  concurrent) is not the limit until about 20×.
+- The UI offers 1× and 5×. The API, schema and clock still accept 10× and 60× (offline
+  history generation and the soak evaluation use them). A room already faster shows its
+  speed as a disabled "above recommended" option until lowered.
+- Known defect, not yet fixed: the live tick awaits model calls, so the clock stops while a
+  ranking or event plan is in flight and then jumps ahead. Visible at any speed when AMD is
+  slow; `project-state/backend/live-runtime.md` describes the intended non-blocking design.

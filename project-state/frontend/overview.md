@@ -80,6 +80,13 @@ The manufacturing floor is split into **world geometry inside a CSS-3D scene** a
 deliberate and is the foundation for a fuller 3D floor — keep it when extending the map.
 Three floors, ~20–30 machines each; a 2D top view and an optional 2.5D isometric overview.
 
+## Speed menu
+
+The header speed menu offers **1× and 5×** only (`RECOMMENDED_SPEEDS` in `app.js`). A live
+AMD ranking takes about 40–90s, so above 5× it arrives long after the simulated dispatch has
+moved on. A room already running faster (the API still accepts 10× and 60×) shows its speed
+as a disabled "above recommended" option until the operator lowers it.
+
 ## Tabs
 
 - **Live Floor** — the map plus the context panel (selected issue: staffing roster, offers,

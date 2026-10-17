@@ -38,7 +38,7 @@ returns `404`; a non-`READY` room returns `503` before any handler body runs.
 | GET | `/analytics` | Fixed-snapshot analytics. |
 | POST | `/mode` | Switch the room between `LIVE` and `OFFLINE`. |
 | POST | `/simulation/start`, `/pause`, `/resume` | Clock run-state. |
-| POST | `/simulation/speed` | Set 1× / 5× / 10× / 60×. |
+| POST | `/simulation/speed` | Set 1× / 5× / 10× / 60×. The UI offers only 1× and 5× (recommended maximum for live AMD rankings). |
 | POST | `/simulation/reset` | Reset the clock. |
 | POST | `/simulation/force-event` | Immediately run the validated scheduler path (respects the active-issue ceiling). |
 | PATCH | `/demo/scenario` | Update the workforce-continuity scenario. |

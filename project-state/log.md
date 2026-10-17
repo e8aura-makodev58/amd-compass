@@ -197,3 +197,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] docs — submission tagline kept; live AMD capture for the video
 - User kept "The right responder. The right fix. Learned from every past repair." as the cover/deck tagline (vision); deck slide 1 notes and the video close present fix recommendations as next. Codex's factual corrections otherwise stand.
 - The month data holds no successful AMD ranking (month extension ran with models forced off; the original week used earlier providers). By user decision the main agent runs plant-1 live on AMD in the 3200 app to capture genuine MiMo rankings for the video.
+
+## [2026-10-17] ui — speed menu capped at 5×
+- Header speed menu offers 1×/5× only; a faster room shows its speed as a disabled "above recommended" option. API unchanged. New `e2e/speed-select.spec.mjs` (2 tests). Pages updated: frontend/overview.md, backend/http-api.md; README; `docs/decisions.md` entry (also records the open clock-blocking defect).

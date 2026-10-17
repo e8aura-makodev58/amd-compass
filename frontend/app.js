@@ -1015,7 +1015,7 @@ function render(state) {
   if (previousMode && previousMode !== state.mode) { stationHistoryCache.clear(); selectedIssueId = null; selectedStationId = null; selectedResponderId = null; clearEventSelection(); }
   currentState = state; const live = state.mode === "LIVE"; elements["simulation-controls"].hidden = !live; elements["control-room-search"].hidden = !live; if (!live && searchOpen) closeSearchPalette(); elements["offline-reset-button"].hidden = live; elements["live-mode-button"].classList.toggle("active", live); elements["offline-mode-button"].classList.toggle("active", !live); renderResponders(state); renderStations(state); renderSidebarTabs(); if (currentView === "settings" && currentSettingsTab === "demo") renderDemoContinuity(state);
   if (!live) { renderOffline(state); renderAgentActivity(state); return; }
-  elements["simulation-time"].textContent = new Date(state.simulationState.simulationTime).toISOString().replace("T", " ").slice(0, 16); elements["simulation-status"].textContent = statusLabel(state.simulationState.status); elements["speed-select"].value = String(state.simulationState.speedMultiplier); elements["pause-resume-button"].textContent = state.simulationState.status === "RUNNING" ? "Pause" : "Resume";
+  elements["simulation-time"].textContent = new Date(state.simulationState.simulationTime).toISOString().replace("T", " ").slice(0, 16); elements["simulation-status"].textContent = statusLabel(state.simulationState.status); renderSpeedOptions(state.simulationState.speedMultiplier); elements["pause-resume-button"].textContent = state.simulationState.status === "RUNNING" ? "Pause" : "Resume";
   renderFloor(state); const issue = chooseIssue(state); renderIssues(state); renderEvents(state); renderLiveDecision(state, issue); renderAgentActivity(state); if (searchOpen) renderSearchPalette();
 }
 
@@ -1166,6 +1166,21 @@ const SETTINGS_ROLES = [
   { role: "compass", label: "Ranking (Compass)", modelId: "settings-model", effortId: "settings-effort", saveId: "settings-save" },
   { role: "event-planner", label: "Event planner", modelId: "settings-event-planner-model", effortId: "settings-event-planner-effort", saveId: "settings-event-planner-save" },
 ];
+// A live AMD ranking takes about 40–90s of real time, so above 5× it arrives long after
+// the simulated dispatch moved on (docs/decisions.md). The API still accepts 10× and 60×
+// for offline generation; a room already running faster shows its speed until lowered.
+const RECOMMENDED_SPEEDS = [1, 5];
+function renderSpeedOptions(speed) {
+  const select = elements["speed-select"];
+  const speeds = RECOMMENDED_SPEEDS.includes(speed) ? RECOMMENDED_SPEEDS : [...RECOMMENDED_SPEEDS, speed];
+  if (select.dataset.speeds !== speeds.join(",")) {
+    select.innerHTML = speeds.map((value) => RECOMMENDED_SPEEDS.includes(value)
+      ? `<option value="${value}">${value}×</option>`
+      : `<option value="${value}" disabled>${value}× (above recommended)</option>`).join("");
+    select.dataset.speeds = speeds.join(",");
+  }
+  select.value = String(speed);
+}
 function reasoningEffortsFor(providerId, modelId) { return (discoveredModelsByProvider[providerId] ?? []).find((model) => model.id === modelId)?.reasoningEfforts ?? null; }
 
 function renderSettings(settings) {
