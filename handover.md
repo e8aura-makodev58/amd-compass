@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no open task) |
+| codex | RUN (round 8 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none — round 7 merged `5cf085a` | — |
+| codex | Hidden fault causes, fix catalog and ranked fix recommendations | 8 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -237,6 +237,82 @@ review them.
 - **codex — Review the submission drafts.** Done: merged `5cf085a`.
 
 - **main agent:** reviews and merges, then passes the final text to the user.
+
+**Round 8 (2026-10-17).** The user requires **troubleshooting and fix recommendations** as a
+real feature in the submission, and chose the measurable design: the fix applied must change
+the simulated outcome, and Compass must rank fixes from evidence. The main agent meanwhile
+extends the demo video (other features) and will add the fix segment after this merges.
+
+- **codex — Hidden fault causes, a fix catalog, and ranked fix recommendations.** Start with
+  `git merge master` and `npm install`; use port 3021. This is a large change: commit in
+  coherent steps on your branch, keep both suites green at each, and read
+  `project-state/backend/simulation.md`, `domain-model.md`, `concepts/agent-boundary.md` and
+  `docs/history-retention.md` first.
+  - **1. Hidden fault truth (like `ResponderSkill`, AGENTS.md rule 4).** Each issue gets a
+    hidden **fault cause** drawn with the seeded RNG when it is created: 3–4 causes per
+    issue class from an application-owned catalog (synthetic, domain-neutral), with priors
+    that may vary by equipment. The cause drives an **observable symptom** (a short symptom
+    code/text from the catalog shown on the issue), so similar symptoms carry real signal,
+    but the cause itself is never exposed: not to Compass, the event planner, normal UI or
+    API payloads, analytics, logs or archives readable by the UI. Add a schema guard in the
+    style of `assertNoResponderSkill`, and tests that scan every public payload and model
+    packet for it.
+  - **2. Fix catalog with hidden effectiveness.** Application-owned fixes per issue class
+    (about 5–6 each): id, short title, troubleshooting steps text. A hidden
+    effectiveness table per (cause, fix) multiplies the attempt's success probability and
+    scales its duration. When work starts, the attempt records the **fix applied**; outcome =
+    existing team model × fix effectiveness, still seeded and deterministic. A failed attempt
+    reopens the issue and the next attempt tries the next-ranked fix (a troubleshooting
+    sequence). `actionTaken` in history becomes the applied fix (id + title + steps). The
+    planner's free-text `responseAction` stays accepted for compatibility but is no longer
+    the action taken; decide whether to keep showing it as the incident note and document it.
+  - **3. Evidence and recommendation (rule 3 boundary).** Code builds the candidate fixes for
+    the issue (that class's catalog) with **observed** evidence from history: attempts and
+    first-time success for the same symptom, same issue class, same equipment, smoothed
+    success, median minutes, last used. Compass (the **ranking role's** model and settings,
+    through `callChatCompletion` and the provider controls) ranks **only the supplied fix
+    ids** with a short rationale and a troubleshooting order; validate exactly like the
+    responder ranking (supplied ids only, no invented fixes, bounded prose, no numbers that
+    are not in the packet). **Deterministic fallback** ranks by smoothed same-symptom success,
+    then evidence count, then catalog order. **Baseline for comparison:** the most frequently
+    applied fix for the class. Store the recommendation on the issue with model info, the
+    fallback/baseline picks and any disagreement, in the audit trail.
+  - **4. Runtime.** Fix ranking runs as model-bound work in the live agent lane (it must never
+    hold the clock; see `live-runtime.md`) and must not block responder dispatch: if it is
+    not ready when work starts, use the deterministic pick and record that. Offline mode uses
+    the fixture path, API-free. Event planner untouched apart from the catalog link.
+  - **5. UI.** Issue panel: a **Recommended fix** section (ranked fixes, rationale,
+    troubleshooting steps, evidence table, source: AMD model or deterministic, disagreement
+    with the baseline). Audit trail: fix applied per attempt and the outcome. Analytics: a
+    **first-time fix rate** by period, and recommended-vs-baseline agreement with
+    denominators and the thin-sample rule. Must fit 375px and 1280px; Live Floor tiles keep
+    working.
+  - **6. History and the month seed.** Existing rooms migrate: open issues get a seeded hidden
+    cause and symptom; resolved history keeps its legacy actions (marked legacy, excluded
+    from fix evidence). Regenerate plant-1 with `generate:history` from the original week
+    (`962ac7f`) to `2026-10-06T08:00Z` so the month shows fix evidence accumulating and the
+    first-time fix rate improving week to week **if and only if the engine produces that**;
+    report the weekly numbers either way. Retention must carry whatever fix evidence the
+    engine and analytics need (compact facts), with archived/unarchived equality tests
+    extended. Keep each committed seed file under 20 MB.
+  - **7. Tests and docs.** Hermetic unit tests: hidden-cause privacy, catalog validation,
+    outcome depends on fix as specified, deterministic fallback order, validator rejects
+    unknown/invented fixes, lane non-blocking, migration, retention equality, generator
+    determinism. E2E: the Recommended fix section and audit entries with forced provider
+    failure. Update `project-state/` (simulation, domain-model, agent-boundary, live-runtime,
+    http-api, frontend overview, analytics-and-ethics, log) and add a `docs/decisions.md`
+    entry stating how this fits rules 3 and 4. You may now edit `agent.mjs` /
+    `model-provider.mjs` as needed for the fix-ranking call; keep `provider-controls.mjs`
+    unchanged.
+  - **Do not touch:** `backend/data/`, port 3200, `docs/submission/` (the main agent updates
+    the deck and video after the merge).
+  - In your handoff, include sample IDs of resolved issues whose fix was ranked
+    deterministically, with the symptom, the ranked fixes and the outcome, so the main agent
+    can find good records quickly.
+
+- **main agent:** extends the demo video to about 2:50 with more features meanwhile; after
+  the merge, captures live AMD fix rankings on 3200, adds the fix segment, and updates the
+  deck and form text.
 
 ### Merge log
 
