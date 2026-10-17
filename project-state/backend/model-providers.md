@@ -2,7 +2,8 @@
 
 ResponseCompass calls a model in exactly two places — the **Compass agent** (`agent.mjs`, ranks
 candidates) and the **event planner** (`event-planner.mjs`, proposes the next issue). Both
-send one JSON-output chat-completion request and parse one JSON result. Provider mechanics
+send JSON-output chat-completion requests and parse JSON results. The ranking agent can
+make one revalidated repair request within its original deadline. Provider mechanics
 are isolated in `model-provider.mjs`; everything that must never depend on the provider
 (validation, fallback, never trusting the model) lives in the callers.
 
@@ -86,7 +87,8 @@ The single valid MiMo ranking picked `R-ENGR028`. Most ranking failures come fro
 `containsNumericLeakage` in `agent.mjs`, which then rejected any digit, while models wrote
 responder IDs or numbers in their rationale. Since 2026-10-17 (user decision) the supplied
 candidates' `responderId` / `displayName` are allowed in prose; every other digit is still
-rejected. Prompt hardening plus one revalidated repair attempt is being built on top.
+rejected. The ranking prompt now reinforces qualitative prose with a compliant example;
+one revalidated repair attempt is available as described below.
 A ranking-only re-check right after that change (2026-10-17, 3 samples): **MiMo-V2.6-Flash
 3/3 valid** (median 28.4s; it picked `R-ENGR028` in 1 of 3 and other eligible candidates
 otherwise). DeepSeek-V4-Flash (default reasoning) was 1/3: it left candidates out of the
@@ -128,6 +130,28 @@ Both callers accept a `mode`:
 
 Any failure resolves to an explicit `{ status: "unavailable" }`, and the runtime falls back
 to the deterministic baselines — dispatch always continues.
+
+## Ranking validation repair (`agent.mjs`)
+
+A parsed live ranking that fails `validateAgentResult` can trigger **one** replacement
+request through `callLiveModel` → `callChatCompletion`. The replacement receives the same
+authoritative candidate packet and bounded validator feedback (at most eight errors,
+each at most 256 characters), without echoing the rejected model output. It uses the same
+model, reasoning setting and output contract, and passes the full unchanged validator.
+Supplied candidate names remain the only digit-bearing prose allowed.
+
+Both calls share the original monotonic deadline (default 60 seconds). Repair starts only
+with at least one second remaining and gets only the remaining timeout, so provider
+queueing/retries also consume that budget. Even a valid result arriving after the deadline
+is unavailable. A second validation failure stays `validation-failed`; provider errors do
+not trigger a validation repair. Validation remains outside the provider call so rejected
+rankings are not service failures for provider controls. Fixture and force-failure modes
+never repair or call the network.
+
+Hermetic coverage lives in `backend/tests/wp5-agent.test.mjs`, using fake fetch, an injected
+monotonic clock and mock timers to check successful repair, repeated rejection, feedback
+bounds, skipping a near-expired deadline and aborting at the shared deadline. The main agent
+must re-measure live validity after merging; these tests establish behavior, not model quality.
 
 ## Not yet built
 

@@ -257,16 +257,16 @@ round 2 apply.
 
 ## codex
 
-- **Status:** IDLE
-- **Updated:** —
-- **Task:** —
-- **Head commit:** —
-- **Changes:** —
-- **Files changed:** —
-- **Verification:** `npm test` — · E2E —
-- **project-state pages updated:** —
-- **Risks / follow-ups:** —
-- **Questions for main:** —
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-17
+- **Task:** Raise AMD ranking validity — prompt hardening and one bounded validated repair.
+- **Head commit:** This handoff on `codex`, based on `7d61d0a`.
+- **Changes:** Hardened qualitative-prose instructions with a compliant example. A parsed live ranking rejected by validation can be re-requested exactly once, through `callLiveModel` → `callChatCompletion`, with the original packet and bounded validator errors (eight errors, 256 characters each), without echoing rejected output. The replacement passes the full unchanged validator. Both requests share one monotonic deadline; repair requires at least one second remaining and gets only that remaining budget. Provider errors never trigger validation repair; repeated validation failures remain `validation-failed`. Fixture and forced-failure behavior unchanged.
+- **Files changed:** `backend/src/agent.mjs`, `backend/tests/wp5-agent.test.mjs`, `docs/decisions.md`, this section, and the project-state pages listed below. Neither `model-provider.mjs` nor `provider-settings.mjs` touched.
+- **Verification:** `npm test` 241/241; Chromium E2E 38/38 on assigned port 3021 (forced provider failures, no API spend). Fake fetch/clock/timer tests cover numeric-prose repair, second rejection, bounded feedback, insufficient remaining time, shared-deadline abort and late valid response rejection. Test server stopped; ports 3021/3121 free.
+- **project-state pages updated:** `backend/model-providers.md` (outside Selection & discovery), `concepts/agent-boundary.md`, `log.md`.
+- **Risks / follow-ups:** Main agent re-measures live validity after merging this and Claude's provider controls. Repairs inherit limiter/retries/breaker through the shared provider path; validation never enters service-failure counting. Watcher remains stopped per user instruction. No preview server started.
+- **Questions for main:** None.
 
 ---
 

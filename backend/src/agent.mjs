@@ -32,6 +32,8 @@ Refer to evidence qualitatively because the UI renders authoritative numbers.
 You may name a supplied candidate by its exact displayName or responderId; those are the only digits allowed in prose.
 Every ranked candidate must include a tradeoff that compares it to a different supplied candidate.
 Apart from supplied candidate names, write recommendationSummary, every tradeoff explanation, topRecommendation.rationale, and uncertaintyNote using no digits at all: no counts, percentages, minutes, distances, sample sizes, or numerals of any kind. Spell any ordinal as a word.
+Do not copy numeric evidence from the packet into prose, even in parentheses or written out as words. Say nearer, longer trip, stronger evidence, or limited history instead. Numeric rank fields and supplied identifiers in structured fields are still required.
+Compliant prose example: "Stronger observed evidence supports this candidate, while the nearer alternative offers a shorter trip. Limited history makes the alternative less certain."
 
 Return only the required structured output.`;
 
@@ -84,6 +86,7 @@ export const AGENT_RESULT_JSON_SCHEMA = {
 // tokens per second). AMD's own ten-minute server timeout is far too long for
 // interactive dispatch.
 const DEFAULT_TIMEOUT_MS = 60_000;
+const MIN_REPAIR_TIME_MS = 1_000;
 const scenarioAFixtureUrl = new URL("../../fixtures/agent-result-scenario-a.json", import.meta.url);
 
 function isPlainObject(value) {
@@ -175,8 +178,8 @@ function containsNumericLeakage(namePattern, ...prose) {
 /**
  * Full SOW §24 validation pipeline. The model is never trusted: every ID is
  * checked against the candidate packet that was actually sent, and any
- * generated prose that leaks numeric evidence is rejected outright rather
- * than repaired. Supplied candidate names are the one allowed exception.
+ * generated prose that leaks numeric evidence is rejected, never edited into
+ * compliance. Supplied candidate names are the one allowed exception.
  */
 export function validateAgentResult(candidatePacket, result) {
   const errors = checkAgentResultShape(result);
@@ -258,7 +261,7 @@ function buildFixtureResult(candidatePacket) {
   return { ...fixture, recommendationRequestId: candidatePacket.recommendationRequestId };
 }
 
-async function callLiveModel(candidatePacket, { provider, modelId, apiKey, reasoningEffort, timeoutMs, fetchImpl }) {
+async function callLiveModel(candidatePacket, { provider, modelId, apiKey, reasoningEffort, timeoutMs, fetchImpl }, validationErrors) {
   return callChatCompletion({
     provider,
     modelId,
@@ -267,7 +270,15 @@ async function callLiveModel(candidatePacket, { provider, modelId, apiKey, reaso
     timeoutMs,
     fetchImpl,
     systemInstruction: SYSTEM_INSTRUCTION,
-    userContent: JSON.stringify(candidatePacket),
+    // Re-ask from authoritative inputs, without echoing the rejected output.
+    // Bound feedback even if a malformed result generated many/large errors.
+    userContent: validationErrors ? JSON.stringify({
+      candidatePacket,
+      repair: {
+        instruction: "The previous response failed validation. Return a complete replacement using only this candidate packet and the required output contract. Correct these errors; keep all prose qualitative.",
+        validationErrors: validationErrors.slice(0, 8).map((error) => error.slice(0, 256)),
+      },
+    }) : JSON.stringify(candidatePacket),
     jsonSchemaName: "compass_agent_result",
     jsonSchema: AGENT_RESULT_JSON_SCHEMA,
     errorLabel: "Compass agent provider",
@@ -293,15 +304,26 @@ export async function requestAgentRecommendation(candidatePacket, options = {}) 
 
   if (mode === "live") {
     try {
-      const raw = await callLiveModel(candidatePacket, {
+      // A monotonic clock (injectable for hermetic tests) owns one budget for
+      // both requests, including provider queueing/retries and validation.
+      const now = options.now ?? (() => performance.now());
+      const timeoutMs = options.timeoutMs ?? (Number.parseInt(process.env.COMPASS_AGENT_TIMEOUT_MS, 10) || DEFAULT_TIMEOUT_MS);
+      const deadline = now() + timeoutMs;
+      const callOptions = {
         provider,
         modelId,
         apiKey: options.apiKey ?? readAmdApiKey(),
         reasoningEffort,
-        timeoutMs: options.timeoutMs ?? (Number.parseInt(process.env.COMPASS_AGENT_TIMEOUT_MS, 10) || DEFAULT_TIMEOUT_MS),
         fetchImpl: options.fetchImpl ?? fetch,
-      });
-      const { valid, errors } = validateAgentResult(candidatePacket, raw);
+      };
+      let raw = await callLiveModel(candidatePacket, { ...callOptions, timeoutMs: Math.max(0, deadline - now()) });
+      let { valid, errors } = validateAgentResult(candidatePacket, raw);
+      const remainingMs = deadline - now();
+      if (!valid && remainingMs >= MIN_REPAIR_TIME_MS) {
+        raw = await callLiveModel(candidatePacket, { ...callOptions, timeoutMs: remainingMs }, errors);
+        ({ valid, errors } = validateAgentResult(candidatePacket, raw));
+      }
+      if (now() >= deadline) return { status: "unavailable", reason: "timeout", modelInfo };
       if (!valid) return { status: "unavailable", reason: "validation-failed", errors, modelInfo };
       return { status: "ok", result: raw, modelInfo };
     } catch (error) {
