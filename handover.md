@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 6 task open) |
+| codex | STOP (no open task) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | History retention for long-running rooms, then the month seed | 6 |
+| codex | none — round 6 merged `5db2ad4` | — |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -225,65 +225,15 @@ resolutionAttempts 5.9 MB, resolutionHistory 2.8 MB, dispatchOffers 2.5 MB, assi
 2.2 MB, issues 2.0 MB. Real use grows the same way, so the user chose **history
 retention** first, then the month seed.
 
-- **codex — History retention for long-running rooms, then the month seed.** Start with
-  `git merge master` and `npm install`; use port 3021.
-  - **Goal:** a room's live state stays small however long it runs, without losing
-    history. Closed detail older than a retention window moves out of
-    `live-simulation.json` into a per-room **archive** in the same room directory
-    (append-only, for example one file per simulated month; your call on format). The issue
-    audit trail (`/issues/:issueId/audit`) still works for archived issues by reading the
-    archive.
-  - **What moves:** only records of issues that are closed (`RESOLVED`, with no active
-    attempt, offer or assignment) and that resolved before `simulationTime − retention`. That
-    covers their recommendations, operational events, dispatch offers, attempts, assignments
-    and the issue row. Never archive anything an open issue, a pending scheduler token,
-    workforce continuity or the dispatch/attempt engines still read. **First list every
-    reader of each array** (engine, scheduler, analytics, UI projections, audit, migration)
-    and record the list in the handoff.
-  - **Engine outcomes must not change.** Anything the engine uses to decide (for example
-    `attempt-engine.mjs` observed-history evidence from `resolutionHistory`, ID counters
-    such as `nextId`, RNG streams) must give identical results after archiving. Keep a
-    compact form where needed, or keep those rows. Prove it with a test: the same seed run
-    for some simulated days with and without archiving gives identical engine decisions
-    (issues, assignments, outcomes, RNG state).
-  - **Analytics over the whole history:** DAY/WEEK/MONTH periods (3 months) and the
-    fixed-snapshot `/analytics` must give the **same numbers** with archiving as without.
-    Keep compact per-issue analytic facts (or per-period aggregates) in the live file so
-    analytics never reads the archive on a request. Test equality on a generated span.
-  - **`/state` and list payloads:** the Live Floor must not ship the whole history. Bound
-    `/state` to what the UI shows (open work plus recent events), and check what Issues,
-    Responders and the Engineering/Analytics views need. Keep UI behaviour unchanged; update
-    E2E setup if needed, never the intent.
-  - **When and how:** archive at a deterministic point (for example a daily simulated
-    boundary inside the normal mutation path, and once on load for an oversized legacy
-    file). Same input gives byte-identical live and archive files. Writes stay atomic: a
-    crash between writing the archive and the live file must neither lose nor duplicate
-    rows (write the archive first, idempotent by record ID, then the live file).
-    Configurable window `COMPASS_HISTORY_RETENTION_DAYS`, default **7**; document it in
-    `.env.example` and `operations/running-and-config.md`.
-  - **ResponderSkill** stays hidden: archived files are server-side only, and the archive
-    must never add skill-shaped fields to any payload.
-  - **Then the seed:** with the generator (it may archive while generating), regenerate
-    plant-1 from the original week (`git show 962ac7f:backend/seed/demo-control-rooms/plant-1.json`)
-    to **2026-10-06T08:00Z**. Commit the seed and its archive under
-    `backend/seed/demo-control-rooms/`, and extend `demo-seed-bootstrap.mjs` to copy the
-    archive too. Keep each committed file under **20 MB** (compact JSON, no indentation, is
-    fine). Leave plant-2 and room metadata unchanged.
-  - **Targets with the month seed** (report measured numbers, as in round 5): cold room load
-    under 2s, `/state` under 300ms, Issues/Responders under 500ms, each period under 300ms,
-    full `/analytics` under 1s. If a target is out of reach, report why under *Questions for
-    main* rather than lowering the bar silently.
-  - **Do not touch:** `model-provider.mjs`, `provider-controls.mjs`, `agent.mjs`,
-    `provider-settings.mjs`, `scripts/measure-amd-models.mjs`, `backend/data/`, port 3200.
-  - Update `project-state/` (control-rooms, the live-store/persistence page, analytics,
-    http-api if payloads change, running-and-config, testing, log) and add a
-    `docs/decisions.md` entry. Update `docs/demo-history.md` for the new seed.
+- **codex — History retention for long-running rooms, then the month seed.** Done: merged
+  `5db2ad4`. Month seed (1 Sep → 6 Oct) committed with its archive.
 
 - **main agent:** reviews and merges, installs the plant-1 seed and archive into the 3200 app
   (backing up its current plant-1 directory first) and checks Analytics there.
 
 ### Merge log
 
+- 2026-10-17 — **codex** `8ef8ee2` → merge `5db2ad4`: seven-day history retention with per-room archive, bounded `/state`, compact analytic facts; month-long plant-1 seed and archive (round 6). Clean merge. `npm test` 276/276, E2E 49/49. Handoff archived.
 - 2026-10-17 — **codex** `af6532d` → merge `781bb42`: offline history generator (round 5). Main agent found and fixed a resolution-stall engine defect the generator exposed (`afc2110`) and withdrew the month seed (built on the defect; a corrected month is 74 MB and too slow). `npm test` 274/274, E2E 48/48. Handoff archived.
 - 2026-10-17 — **codex** `1834326` → merge `eee2b80`: separate model per role, ranking vs event planner (round 4). Clean merge. Main agent fixed the planner-only seed effort on master (`b8c570a`). `npm test` 270/270, E2E 48/48. Handoff archived.
 - 2026-10-17 — **codex** `6fb0b72` → merge `a2dad5b`: header layout E2E and saved-model check at boot (round 2, reassigned from codebuddy). Clean merge. `npm test` 265/265, E2E 46/46. Handoff archived.
@@ -301,17 +251,9 @@ retention** first, then the month seed.
 
 ## codex
 
-- **Status:** READY FOR MERGE
+- **Status:** IDLE
 - **Updated:** 2026-10-17
-- **Task:** Round 6 — history retention and corrected month seed; merged master `bd1e967` before starting.
-- **Changes:** Seven-day deterministic retention on load/daily mutation; archive-first synced/idempotent issue bundles by resolution day/reset epoch. Complete archived audit through the shared redactor; staged bootstrap copies seed plus archive. Preserve ID floors, length tokens, duplicate tokens, recent context, recurrence inputs, RNG and exact resolution observations. Compact facts preserve all-history analytics without archive reads. Bounded public state, paginated issue/station history and archived-issue UI. Numeric timeline bounds and queued read projections avoid repeated large clones/parsing.
-- **Reader inventory:** Full array-by-array engine, scheduler, migration, analytics and UI reader map in `docs/history-retention.md` (created before implementation). Covers issues, recommendations, operationalEvents, offers, attempts, assignments and resolutionHistory; Offline/evaluation readers documented too.
-- **Seed:** Corrected original week (`962ac7f`) → `2026-10-06T08:00:00.000Z`, LIVE + PAUSED. 3,531 issues / 4,148 observations; 742 hot / 2,789 archived. Live JSON 16,755,396 bytes; 29 archive files totalling 40,190,709 bytes, largest 1,990,575. SHA-256 `76fd984d8fa03a9887d855229849bd6f14664bc63edc7a9f5d345da76d01b569`. Plant-2 and metadata unchanged; zero fetches/credential reads.
-- **Verification:** Final `npm test` 276/276; E2E 49/49 on port 3021 with required Chromium libraries; ports 3021/3121 verified free. Three-day retained/unretained runs reconstruct all moved rows identically and match decisions, candidate/planner inputs, RNG/workforce, exact analytics and all four period levels; repeated generation byte-identical. Crash-before-live-commit recovery, protected pending work, reset epochs, bootstrap and archived browser flow covered.
-- **Measurements:** Cold plant-1 1,469ms; full fresh-root two-room bootstrap/manager 2,391ms. HTTP state 56ms / 250,003 bytes; issues 34ms; responders 23ms; analytics 239ms; first DAY/WEEK/MONTH 317/54/44ms. Isolated in-process periods 88/48/42ms; analytics 183ms. Chromium Live Floor 273ms; all period tabs and complete September visually checked, no browser errors/outbound requests. See `docs/demo-history.md` for conditions and memory.
-- **project-state pages updated:** control-rooms, domain-model, live-runtime, overview, http-api, frontend overview, analytics-and-ethics, running-and-config, testing and log; decisions and seed/retention docs updated.
-- **Risks / follow-ups:** Exact resolution observations, compact facts/indexes, workforce history and unowned events still grow; closed detailed history and public payloads are bounded, not every canonical byte. Reset preserves prior epochs on disk. Main must back up the whole current plant-1 directory, then install BOTH `plant-1.json` as `live-simulation.json` and `plant-1.json.history/` as room `history-archive/`. No backend/data, other worktree or port 3200 was accessed. Watcher remains stopped per user.
-- **Questions for main:** Review the two disclosed latency misses: full two-room fresh-root manager boot 2.39s versus 2s, and one first HTTP DAY request 317ms versus 300ms under shared-host test load. Cold plant-1 and other endpoints meet their targets. Targets unchanged; no separate decision blocks correctness work.
+- **Task:** None. Round 6 merged; see `docs/handover-history.md`.
 
 ---
 

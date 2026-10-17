@@ -4,6 +4,22 @@
 
 ## Merged handoffs
 
+### 2026-10-17 — codex → master (branch commit `8ef8ee2`, merge `5db2ad4`)
+
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-17
+- **Task:** Round 6 — history retention and corrected month seed; merged master `bd1e967` before starting.
+- **Changes:** Seven-day deterministic retention on load/daily mutation; archive-first synced/idempotent issue bundles by resolution day/reset epoch. Complete archived audit through the shared redactor; staged bootstrap copies seed plus archive. Preserve ID floors, length tokens, duplicate tokens, recent context, recurrence inputs, RNG and exact resolution observations. Compact facts preserve all-history analytics without archive reads. Bounded public state, paginated issue/station history and archived-issue UI. Numeric timeline bounds and queued read projections avoid repeated large clones/parsing.
+- **Reader inventory:** Full array-by-array engine, scheduler, migration, analytics and UI reader map in `docs/history-retention.md` (created before implementation). Covers issues, recommendations, operationalEvents, offers, attempts, assignments and resolutionHistory; Offline/evaluation readers documented too.
+- **Seed:** Corrected original week (`962ac7f`) → `2026-10-06T08:00:00.000Z`, LIVE + PAUSED. 3,531 issues / 4,148 observations; 742 hot / 2,789 archived. Live JSON 16,755,396 bytes; 29 archive files totalling 40,190,709 bytes, largest 1,990,575. SHA-256 `76fd984d8fa03a9887d855229849bd6f14664bc63edc7a9f5d345da76d01b569`. Plant-2 and metadata unchanged; zero fetches/credential reads.
+- **Verification:** Final `npm test` 276/276; E2E 49/49 on port 3021 with required Chromium libraries; ports 3021/3121 verified free. Three-day retained/unretained runs reconstruct all moved rows identically and match decisions, candidate/planner inputs, RNG/workforce, exact analytics and all four period levels; repeated generation byte-identical. Crash-before-live-commit recovery, protected pending work, reset epochs, bootstrap and archived browser flow covered.
+- **Measurements:** Cold plant-1 1,469ms; full fresh-root two-room bootstrap/manager 2,391ms. HTTP state 56ms / 250,003 bytes; issues 34ms; responders 23ms; analytics 239ms; first DAY/WEEK/MONTH 317/54/44ms. Isolated in-process periods 88/48/42ms; analytics 183ms. Chromium Live Floor 273ms; all period tabs and complete September visually checked, no browser errors/outbound requests. See `docs/demo-history.md` for conditions and memory.
+- **project-state pages updated:** control-rooms, domain-model, live-runtime, overview, http-api, frontend overview, analytics-and-ethics, running-and-config, testing and log; decisions and seed/retention docs updated.
+- **Risks / follow-ups:** Exact resolution observations, compact facts/indexes, workforce history and unowned events still grow; closed detailed history and public payloads are bounded, not every canonical byte. Reset preserves prior epochs on disk. Main must back up the whole current plant-1 directory, then install BOTH `plant-1.json` as `live-simulation.json` and `plant-1.json.history/` as room `history-archive/`. No backend/data, other worktree or port 3200 was accessed. Watcher remains stopped per user.
+- **Questions for main:** Review the two disclosed latency misses: full two-room fresh-root manager boot 2.39s versus 2s, and one first HTTP DAY request 317ms versus 300ms under shared-host test load. Cold plant-1 and other endpoints meet their targets. Targets unchanged; no separate decision blocks correctness work.
+
+**Main agent:** clean merge. Reviewed `history-retention.mjs`, `history-archive.mjs` and the engine ID/token changes (archive written first and idempotent; ID high-water marks; pending work protected; the stall fix in `afc2110` intact). Seed checked: 3,531 issues, ~680–830/week after week one, median resolve ~0.2h. Accepted the two near misses (two-room boot 2.39s, one first DAY 317ms). Follow-up for very long runs: `resolutionHistory` and the compact facts still grow (~4.5 MB per simulated month). On master: `npm test` 276/276, E2E 49/49.
+
 ### 2026-10-17 — codex → master (branch commit `af6532d`, merge `781bb42`)
 
 - **Status:** READY FOR MERGE
