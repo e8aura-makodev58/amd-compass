@@ -73,8 +73,10 @@ repeats for the leaders. Validity means `validateAgentResult` accepted the outpu
 `requestEventProposal`, so they pass the same provider limits and validators as the app.
 It runs one call at a time and prints a Markdown table. It spends the shared team quota, so
 it is manual and never part of `npm test`. Options: `--models id[:effort],…` (default
-`AMD_DEFAULT_MODEL_ID`), `--samples N` (default 3), `--skip-planner`, `--timeout-ms`
-(default 90000). The expected Scenario A top pick is `R-ENGR028`.
+`AMD_DEFAULT_MODEL_ID`), `--samples N` (default 3), `--skip-planner`, `--skip-ranking`,
+`--timeout-ms` (ranking, default 60000) and `--planner-timeout-ms` (default 30000); the
+timeout defaults match the app's own. Repeated failures are grouped with a count. (Runs
+before 2026-10-17 05:30 UTC used one 90s timeout for both roles.) The expected Scenario A top pick is `R-ENGR028`.
 
 | Model (reasoning) | Ranking valid | Ranking median | Planner valid | Planner median | Main failure |
 |---|---|---|---|---|---|

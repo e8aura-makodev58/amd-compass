@@ -3,6 +3,9 @@
 //
 //   npm run measure:amd -- --models MiMo-V2.6-Flash,GLM-5.3-Flash:low --samples 3
 //
+// Timeouts default to the app's own: 60s for a ranking (COMPASS_AGENT_TIMEOUT_MS)
+// and 30s for a planner proposal (COMPASS_EVENT_PLANNER_TIMEOUT_MS).
+//
 // Each model is "<id>" or "<id>:<reasoning effort>". Calls go through the same
 // request functions the app uses (requestAgentRecommendation and
 // requestEventProposal), so they pass through the provider's own limits and
@@ -22,7 +25,9 @@ const { values } = parseArgs({
     models: { type: "string", default: AMD_DEFAULT_MODEL_ID },
     samples: { type: "string", default: "3" },
     "skip-planner": { type: "boolean", default: false },
-    "timeout-ms": { type: "string", default: "90000" },
+    "skip-ranking": { type: "boolean", default: false },
+    "timeout-ms": { type: "string", default: "60000" },
+    "planner-timeout-ms": { type: "string", default: "30000" },
   },
 });
 
@@ -32,7 +37,8 @@ if (!apiKey) {
   process.exit(1);
 }
 const samples = Math.max(1, Number.parseInt(values.samples, 10) || 1);
-const timeoutMs = Number.parseInt(values["timeout-ms"], 10) || 90000;
+const timeoutMs = Number.parseInt(values["timeout-ms"], 10) || 60000;
+const plannerTimeoutMs = Number.parseInt(values["planner-timeout-ms"], 10) || 30000;
 const models = values.models.split(",").map((entry) => entry.trim()).filter(Boolean).map((entry) => {
   const [modelId, effort] = entry.split(":");
   return { modelId, reasoningEffort: effort || defaultReasoningEffortFor(modelId) };
@@ -56,7 +62,7 @@ const rows = [];
 for (const { modelId, reasoningEffort } of models) {
   const options = { mode: "live", provider: "amd", apiKey, modelId, reasoningEffort, timeoutMs };
   const agent = { valid: 0, expectedTop: 0, latencies: [], failures: [] };
-  for (let i = 0; i < samples; i++) {
+  for (let i = 0; i < (values["skip-ranking"] ? 0 : samples); i++) {
     const started = Date.now();
     const outcome = await requestAgentRecommendation(packet, options);
     const elapsed = Date.now() - started;
@@ -73,7 +79,7 @@ for (const { modelId, reasoningEffort } of models) {
   if (!values["skip-planner"]) {
     for (let i = 0; i < samples; i++) {
       const started = Date.now();
-      const outcome = await requestEventProposal(plannerPacket, options);
+      const outcome = await requestEventProposal(plannerPacket, { ...options, timeoutMs: plannerTimeoutMs });
       const elapsed = Date.now() - started;
       const check = outcome.status === "ok" ? validateEventProposal(seed, outcome.output) : null;
       if (check?.valid) {
@@ -88,11 +94,14 @@ for (const { modelId, reasoningEffort } of models) {
   rows.push({ modelId, reasoningEffort, agent, planner });
 }
 
-console.log(`\nMeasured ${new Date().toISOString()} · ${samples} sample(s) per model · expected top pick ${expectedTop}\n`);
+console.log(`\nMeasured ${new Date().toISOString()} · ${samples} sample(s) per model · timeouts ${seconds(timeoutMs)} ranking / ${seconds(plannerTimeoutMs)} planner · expected top pick ${expectedTop}\n`);
 console.log("| Model (reasoning) | Ranking valid | Expected top | Ranking median | Planner valid | Planner median | Failures |");
 console.log("|---|---|---|---|---|---|---|");
 for (const { modelId, reasoningEffort, agent, planner } of rows) {
   const plannerCells = values["skip-planner"] ? ["—", "—"] : [`${planner.valid}/${samples}`, seconds(median(planner.latencies))];
-  const failures = [...agent.failures, ...planner.failures].join(" · ").replaceAll("|", "/") || "—";
-  console.log(`| ${modelId} (${reasoningEffort}) | ${agent.valid}/${samples} | ${agent.expectedTop}/${samples} | ${seconds(median(agent.latencies))} | ${plannerCells[0]} | ${plannerCells[1]} | ${failures} |`);
+  const rankingCells = values["skip-ranking"] ? ["—", "—", "—"] : [`${agent.valid}/${samples}`, `${agent.expectedTop}/${samples}`, seconds(median(agent.latencies))];
+  const counts = new Map();
+  for (const failure of [...agent.failures.map((f) => `ranking ${f}`), ...planner.failures.map((f) => `planner ${f}`)]) counts.set(failure, (counts.get(failure) ?? 0) + 1);
+  const failures = [...counts].map(([text, n]) => (n > 1 ? `${text} ×${n}` : text)).join(" · ").replaceAll("|", "/") || "—";
+  console.log(`| ${modelId} (${reasoningEffort}) | ${rankingCells[0]} | ${rankingCells[1]} | ${rankingCells[2]} | ${plannerCells[0]} | ${plannerCells[1]} | ${failures} |`);
 }
