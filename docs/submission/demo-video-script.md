@@ -1,35 +1,54 @@
-# Demo video script (draft)
+# Demo video script (reviewed draft)
 
-Target length **3:00**, screen recording of the app on e8-aura-p1 with voice-over. Times are
-cumulative. Status: **draft, awaiting codex review**. Confirm the form's length limit before
-recording.
+Target length **3:00**. Times are cumulative. Narration fits about 150 words/minute with
+room for clicks and pauses; narration totals **309 words** (about 2.06 minutes at 150 words/minute), leaving about 56 seconds for visual pauses and navigation. Confirm the form's duration limit
+before recording. All plant data is synthetic.
 
 ## Before recording
 
-- Use the running app with the month-long e8-aura-p1 history (Live, paused at 6 Oct 08:00).
-- Set a working AMD key in Settings so the Compass rationale is a live model response.
-- Browser at 1920×1080, zoom 100%, notifications off.
-- Rehearse once: a live ranking can take up to about a minute, so start the clock early or
-  cut the wait in editing. If AMD is unavailable, record the deterministic fallback and say so.
+- Use the month seed in e8-aura-p1, Live and paused at 6 Oct 08:00 UTC. Do not reset it.
+- Rehearse the station-history path: Stations → Station 5 (`EQ-05`) → Observed issues →
+  Earlier issues / Show older records → `ISS-105`. It has saved model analysis, baseline
+  disagreement, an accepted offer and resolution. Station 4 / `ISS-104` has an override.
+  These are existing historical records, not fresh AMD responses. The original week
+  predates the current AMD-only integration. Label that footage **Historical simulation
+  record — prior provider**; do not attribute it to MiMo or AMD.
+- For an AMD-specific ranking shot, the operator must instead capture a genuine new AMD
+  decision in a separate rehearsal, identify its issue ID and confirm its stored provider.
+  Choose only a record with the outcomes being narrated. Do not assume disagreement,
+  acceptance or assistance will occur on demand. If unavailable, use the labelled
+  historical walkthrough below; user decision on which version to record is still open.
+- Keep the September view paused and separate from any running rehearsal. A ranking can
+  take up to 90 seconds including repair; the planner deadline is 30 seconds. Cut or
+  explicitly time-compress real waits; never manufacture a response.
+- Browser at 1920×1080, zoom 100%, notifications off. Open Settings → API only for a
+  tightly cropped shot of the Ranking and Event planner model controls. Configure any
+  credential before recording; exclude all credential fields, hints, terminals and logs.
 
 ## Script
 
 | Time | Screen | Voice-over |
 |---|---|---|
-| 0:00–0:15 | Cover image, then the room picker. | "When a machine fails, most control rooms send whoever is closest. ResponseCompass sends whoever makes the most sense, and explains why." |
-| 0:15–0:35 | Open e8-aura-p1. Live Floor: pan the map, switch floors, show the 2.5D overview briefly. | "This is a simulated plant: three floors, around seventy machines and twenty-four responders, each with a location, a shift and a history." |
-| 0:35–0:50 | Start the clock (60×). An issue appears on the map and in the event feed. | "The event planner, running on AMD Token Factory, proposes a realistic incident. Code validates it before it ever touches the plant." |
-| 0:50–1:25 | Select the issue. Show the Compass recommendation: ranked candidates and rationale. Point at the nearest responder not being first. | "Code gathers the evidence: who's eligible, travel time, same-class history. Compass ranks only those candidates. Here the nearest technician isn't first: Compass prefers someone with a stronger record on this class of fault, and says why." |
-| 1:25–1:45 | Offer goes out; responder accepts; issue moves to Assigned. Show a second responder joining on a complex issue if one is on screen. | "Offers go out automatically. Responders accept or reject in their own time, and complex work pulls in a second responder." |
-| 1:45–2:00 | Open the issue's audit trail: Compass analysis, offers, override, resolution and action taken. | "Every decision is audited: the analysis, every offer, any override by central command, and the action taken to resolve it." |
-| 2:00–2:10 | Event feed: point at a baseline-disagreement marker. | "When Compass disagrees with the nearest-responder baseline, the feed flags it, so its value can be checked, not assumed." |
-| 2:10–2:35 | Analytics tab: Month view with September complete, then Week and Day. Scroll the Compass-vs-baseline section. | "Here's a full month of operations: nearly three thousand issues in September. Analytics show resolution time, success and downtime, with denominators, and never rank people." |
-| 2:35–2:50 | Settings → API: the two model pickers (Ranking, Event planner). | "Both roles run on AMD Token Factory, with MiMo-V2.6-Flash by default. Rate limits, retries and a circuit breaker keep usage within AMD's limits. If the model is slow or unavailable, dispatch falls back deterministically and never stops." |
-| 2:50–3:00 | Back to the Live Floor, then the cover image with the tagline. | "Next, Compass will recommend the fix as well, from every past repair. ResponseCompass: the right responder, the right fix." |
+| 0:00–0:15 | Reviewed cover, then room picker. | When equipment fails, the nearest available technician may not be the best match. ResponseCompass helps a control room choose a responder and understand the tradeoffs. |
+| 0:15–0:35 | Open e8-aura-p1. Live Floor: pan, change floor, briefly select 2.5D. Stay paused. | This synthetic plant has three floors, seventy-two machines and twenty-four responder profiles. The floor shows locations and current work; shift rules determine who is available. Each control room keeps its own clock and history. |
+| 0:35–0:50 | Stations → Station 5 → Observed issues. Cut lengthy pagination; select `ISS-105`. Add historical-provider label. | Here is a saved simulation record. Code establishes eligibility, travel time and observed history. Models cannot access the simulation's private responder skill. |
+| 0:50–1:15 | Saved Compass analysis, evidence table, decision-time baselines. Do not claim this historical response came from AMD. | Compass ranks only the eligible candidates supplied by code and explains its choice. In this saved example, its first choice differs from the nearest baseline. That disagreement is inspectable; it does not, by itself, prove a better outcome. |
+| 1:15–1:35 | Same record: Dispatch outcome, accepted offer, Response and resolution. | The saved chronology shows the responder offer and its acceptance, followed by the resolution and recorded action. The application handles these steps. The action comes from the incident's planned response; recommending a fix from past repairs is future work. |
+| 1:35–1:50 | Return to Station Status. Show an active assigned issue and roster; no forced resolution. | Live work can receive additional help when eligible support is available. Operators can override pending dispatch. Those actions leave an audit trail rather than silently replacing a decision. |
+| 1:50–2:00 | Analytics → Compass vs Baselines → Inspect records. | Here, recommendation records show agreement and disagreement with both baselines. This explains choices, rather than claiming a performance win. |
+| 2:00–2:25 | Month: complete September, then Week and Day; scroll to responder summaries. | September contains nearly three thousand issue-raised events and a complete month of simulated activity. Charts show activity and downtime. Observed responder summaries show resolution time and success with denominators, suppressing thin samples. This history tests the engine; it is not an AMD-only outcome experiment. |
+| 2:25–2:50 | Settings → API, cropped to two model controls; then Live Floor. No settings changes or key fields. | The current integration uses AMD Token Factory, with MiMo-V2.6-Flash as the default for both ranking and event planning. Code validates outputs. Local rate limits, bounded retries and a circuit breaker control requests. When a model fails or times out, deterministic fallback keeps dispatch available. |
+| 2:50–3:00 | Reviewed cover. | Next, we plan fix recommendations drawn from comparable past resolutions. ResponseCompass: choose the responder, understand why. |
 
-## Notes for the editor
+## Recording checks
 
-- Keep model wait time out of the cut; never fake a model response.
-- Say "simulated" at least once; all data is synthetic.
-- Do not show the API key, the Settings key field contents or terminal output.
-- No company logos other than in the AMD Token Factory name as spoken.
+- The initial seed already has two assigned issues: starting the clock does not guarantee
+  a new incident in fifteen seconds, or a model recommendation in thirty-five seconds.
+  Those original live-timing steps have been replaced with saved chronology.
+- A newly assigned issue may still be unresolved. Show completed resolution only in a
+  completed record. Do not narrate an override or second responder unless present.
+- The recent event feed may contain no disagreement marker; use Analytics → Inspect
+  records instead. Feed markers, when present, mean disagreement with either baseline.
+- All screen steps above are supported by the current code. No manual UI session or live
+  provider call was made for this document review; rehearse the final take before filming.
+- No company logos, other event/competition names or credential values in any frame.
