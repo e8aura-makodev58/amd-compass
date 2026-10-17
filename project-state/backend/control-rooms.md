@@ -59,3 +59,17 @@ The former `plant1` route is a compatibility alias for `plant-1`; startup moves 
 known state files into the canonical directory without overwriting conflicting files.
 A conflict fails only the first room. Metadata saved under `plant1` keeps its name
 and revision when read as `plant-1`.
+
+## Committed demo history
+
+`backend/seed/demo-control-rooms/plant-1.json` contains real-engine, deterministic offline
+history from 1 September through 6 October 2026 at 08:00 UTC, ending LIVE + PAUSED.
+September and four complete operational weeks are retained. The existing visible period
+windows include the current partial period (six complete days / three complete weeks /
+one complete month visible at this endpoint). No retention or chart rules were changed.
+
+`npm run generate:history` resumes a seed using the shared Live engine with both provider
+roles forced onto deterministic fallbacks. It defaults to a scratch output, never installs
+into the running app, and preserves hidden skill boundaries. Bootstrap still seeds only
+a fresh data root; existing deployments are untouched. See [docs/demo-history.md](../../docs/demo-history.md)
+for exact reproduction, SHA-256, measurements and the sequential worker/store rationale.
