@@ -173,3 +173,8 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] fix — planner seed effort for a different planner model
 - A planner-only `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` no longer inherits the shared `AMD_TOKEN_FACTORY_REASONING_EFFORT` (e.g. `none` with GLM would be rejected with HTTP 422); it uses that model's default unless `_EVENT_PLANNER_REASONING_EFFORT` is set. Pages updated: backend/model-providers.md, operations/running-and-config.md.
+
+## [2026-10-17] feature — Reproducible month of offline plant-1 history
+- Added `generate:history`, an isolated, guarded offline generator using the real runtime cycle, seeded RNG and deterministic audit timestamps. Short hermetic tests check byte identity, normal-store equivalence/migration, privacy and live-data path rejection; production persistence and retention are unchanged.
+- Extended only the plant-1 seed through 6 October 08:00 UTC: September plus four complete operational weeks, 669 issues / 844 history rows, LIVE + PAUSED. Two full generations matched SHA-256. Benchmarked cold load (1.82s), analytics, memory and browser loading; no live data or other seeds touched.
+- Pages updated: backend/control-rooms.md, operations/running-and-config.md, operations/testing.md; docs/demo-history.md and docs/decisions.md document reproduction, engine seam and performance/backlog follow-ups.

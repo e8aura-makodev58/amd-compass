@@ -280,9 +280,16 @@ Analytics has full periods to show.
 
 ## codex
 
-- **Status:** IDLE
+- **Status:** READY FOR MERGE
 - **Updated:** 2026-10-17
-- **Task:** None. Round 4 (separate model per role) merged; see `docs/handover-history.md`.
+- **Task:** One month of offline simulation history for e8-aura-p1, round 5.
+- **Head commit:** This handoff on `codex`, based on `962ac7f`.
+- **Changes:** Added `npm run generate:history` with room/until/from/out options, default scratch output and live-data path rejection. An isolated worker runs the real scheduler/dispatch/resolution/attempt/workforce/planner pipeline with both roles forced to deterministic fallback, fetch/credential-read guards, pinned audit timestamps and seeded RNG. A single sequential in-memory store avoids per-mutation disk rewrites; no history rows are fabricated. Small runtime seam `advanceSimulation` factors out the existing cycle without a UI projection; normal ticks, production store and retention remain unchanged. Only plant-1 seed replaced, ending LIVE + PAUSED at 2026-10-06 08:00 UTC: full September and four complete operational weeks retained, 669 issues / 844 history rows, 15,509,844 bytes (14.79 MiB). Plant-2 and metadata unchanged.
+- **Files changed:** scripts/generate-demo-history.mjs, package.json, backend/src/live-runtime.mjs, backend/tests/demo-history-generator.test.mjs, backend/seed/demo-control-rooms/plant-1.json, docs/demo-history.md, docs/decisions.md, this section and project-state pages below. Forbidden provider/controls/agent/settings/measurement modules and backend/data untouched.
+- **Verification:** `npm test` 273/273; Chromium E2E unchanged, 48/48 on 3021. Short tests generate one day twice from the current seed, compare bytes, load/migrate through the normal store, check private/public privacy, and compare an engine run against the durable store. Two full regenerations also matched SHA-256 `b94fbb11d09b33882fa03375c3cb7946540f62b2060f1d85ce6b0193e126cd15`, with zero fetch calls and credential reads; timed run 20.3s / 41,764 cycles. Preview 3121 used scratch data roots and forced provider failures: Live Floor, Issues/Responders endpoints and Day/Week/Month loaded; September's complete/nonzero chart visually checked, no browser errors/outbound requests. Both ports free. Master rechecked, already current. No generated docs assets to restore.
+- **project-state pages updated:** backend/control-rooms.md, operations/running-and-config.md, operations/testing.md, log.md. docs/demo-history.md contains exact reproduction from the original week seed and measurements.
+- **Risks / follow-ups:** Main agent installs into the 3200 app; bootstrap still never replaces existing data. Worker audit timestamps use simulated time; application globals untouched. Existing dashboard windows include the current partial period: six complete days / three complete weeks / one complete month visible despite four complete weeks retained. Watcher remains stopped per user instruction.
+- **Questions for main:** Review cold normal-manager startup 1.82s and benchmark RSS 252.1 MiB / heap 143.8 MiB. HTTP: state 288–335ms (1.56 MB), Issues 258–294ms, Responders 263–386ms, full analytics 363–499ms, DAY 127–168ms / WEEK 118–163ms / MONTH 123–226ms; Chromium Live Floor ready 509–531ms. The long-run fallback reaches the ten-actionable-issue cap, explaining lower throughput/file size than estimated. No pruning, retention or demand-policy changes made; please decide follow-ups separately.
 
 ---
 

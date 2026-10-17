@@ -21,6 +21,12 @@ continuity, the map/label layout, render lifecycle, store-failure recovery, and 
 100-opportunity deterministic reliability soak. Tests are named by work package
 (`wpNN-*.test.mjs`) plus a few feature-named files.
 
+`demo-history-generator.test.mjs` generates one simulated day twice from the committed
+plant-1 seed and compares bytes, checks normal-store migration/loading and private/public
+skill boundaries, and compares a short engine run against the normal durable store. Worker
+guards reject fetch and credential reads; tests also reject live-data output paths. Only
+short spans run in `npm test`; month-long regeneration is a separate manual script.
+
 `design-tokens-contrast.test.mjs` parses the CSS tokens and checks every paper-facing
 text colour at 4.5:1 against all five light surfaces (including selection/alert washes), including tokens used by the linked
 area stylesheets. It also checks white primary-button text against both accent backgrounds. It uses

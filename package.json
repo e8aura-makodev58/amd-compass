@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "test:all": "npm test && npm run test:e2e",
     "measure:amd": "node --env-file-if-exists=.env scripts/measure-amd-models.mjs",
+    "generate:history": "node scripts/generate-demo-history.mjs",
     "vendor": "node scripts/vendor-frontend.mjs"
   },
   "engines": {

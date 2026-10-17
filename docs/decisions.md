@@ -767,3 +767,25 @@ Gemini's WIP at the user's explicit request, resolving its unfinished master mer
 - Settings has two labelled, independently saved pickers and keeps the other role's draft
   through saves and catalog refreshes. Hermetic tests cover migration, role persistence,
   validation, fallback, env seeds and mocked UI interactions at phone/desktop widths.
+
+## 2026-10-17 — Generate portable history through the offline Live engine
+
+- Add `npm run generate:history` and `createLiveRuntime.advanceSimulation(elapsed)`.
+  The latter factors out the existing scheduler → deferred work → autonomous dispatch
+  cycle without constructing a UI projection; ordinary ticks still return the same
+  public result, and the production disk store/retention behavior is unchanged.
+- Run generation in an isolated worker with both model roles in forced-failure mode,
+  guarded fetch/credential reads and deterministic audit timestamps. Use a single-writer
+  in-memory adapter, validate on input/daily/output boundaries, and atomically commit only
+  a valid final file. A normal-store equivalence test covers the adapter; a short
+  committed-seed test checks byte identity, migration and privacy. Global Date/fetch are
+  replaced only in the worker, preserving application/test-runner globals.
+- Advance the plant-1 seed through 6 October 08:00 UTC to retain four complete operational
+  weeks as well as September. The existing chart windows include the current partial
+  period, hence show six complete days / three complete weeks / one complete month.
+  No fabricated records, forced resolutions, pruning, retention or chart-limit changes.
+- Cold normal-manager startup measured 1.82s, period HTTP responses 118–226ms, full
+  analytics 363–499ms, final benchmark RSS 252 MiB. The fallback simulation reaches the
+  ten-issue cap. Measurements, exact reproduction and seed SHA-256 are in
+  `docs/demo-history.md`; further performance/retention or demand-policy decisions stay
+  with the main agent. No running data, plant-2 seed or room metadata was changed.

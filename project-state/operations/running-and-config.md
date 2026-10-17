@@ -77,6 +77,13 @@ over the env seeds on subsequent boots. See
 
 ## Ports, data, and persistence
 
+`npm run generate:history -- --room plant-1 --until <ISO> [--from <seed.json>] [--out <file.json>]`
+generates real-engine history entirely offline, resuming the input clock. It writes to
+`.cache/generated-demo-history/<room>.json` by default, refuses runtime `backend/data/`
+output, and never installs into a running app. Both roles use deterministic fallbacks;
+no server, settings/key load or provider calls are involved. See
+[docs/demo-history.md](../../docs/demo-history.md) for reproduction and performance notes.
+
 - One process serves both the API and the static frontend.
 - State lives under `backend/data/` — one subtree per control room
   (`backend/data/control-rooms/<id>/`), plus the shared `provider-settings.json`,

@@ -167,6 +167,15 @@ export function createLiveRuntime({
     return { mode: "LIVE", action: action?.result ?? action ?? null, agentActivity: structuredClone(agentActivity), ...(await store.publicSnapshot()) };
   }
 
+  // Shared engine cycle without a UI projection. Offline history generation
+  // drives this sequentially; interactive callers still receive withState.
+  async function advanceSimulation(realElapsedMilliseconds) {
+    const transaction = await scheduler.tick(realElapsedMilliseconds);
+    await drainDeferredAgentWork();
+    await ensureAutonomousDispatch();
+    return transaction.result;
+  }
+
   /**
    * One real-time-driven scheduler cycle: what `startLoop`'s own interval used
    * to run inline. A closure function (not a method depending on `this`) so a
@@ -185,9 +194,7 @@ export function createLiveRuntime({
     try {
       const snapshot = await store.snapshot();
       if (snapshot.simulationState.status === "RUNNING") {
-        await scheduler.tick(elapsed);
-        await drainDeferredAgentWork();
-        await ensureAutonomousDispatch();
+        await advanceSimulation(elapsed);
       }
     } catch (error) {
       logger?.log(JSON.stringify({ timestamp: new Date().toISOString(), event: "live_scheduler_error", error: error.message }));
@@ -250,7 +257,8 @@ export function createLiveRuntime({
       if (moved.result.status === "TRANSFERRED") await requestComplexAssistanceIfNeeded(moved.result.targetIssueId);
       return withState(moved);
     },
-    async tick(realElapsedMilliseconds) { const result = await scheduler.tick(realElapsedMilliseconds); await drainDeferredAgentWork(); await ensureAutonomousDispatch(); return withState(result); },
+    advanceSimulation,
+    async tick(realElapsedMilliseconds) { return withState(await advanceSimulation(realElapsedMilliseconds)); },
     async reconcileStartup() { const result = await scheduler.reconcileClaimedTriggers(); await drainDeferredAgentWork(); return result; },
     runScheduledTick,
     // Retained as a standalone capability (e.g. a single-runtime test or a
