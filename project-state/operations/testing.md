@@ -31,6 +31,13 @@ panels, schema/version/size limits, injected parameters/constraints, duplicate/m
 regions and forbidden floating/pop-out layouts. The contrast test resolves Dockview's
 text-variable aliases to the shared inks, retaining the 4.5:1 gate for vendor text.
 
+`provider-settings.test.mjs` uses fake catalogs to cover nonblocking boot discovery,
+missing/valid saved models, runtime default fallback with byte-for-byte preservation of
+the saved file, failed/malformed discovery, recovery, fallback during pending refresh,
+and stale credential responses.
+Services do not implicitly discover at initialization; boot tests explicitly enable
+`checkModelsOnBoot` with fake fetch. The server disables boot discovery in `NODE_ENV=test`.
+
 ## End-to-end — Playwright
 
 ```sh
@@ -52,6 +59,11 @@ right after use. Never bind 3000 or 3200 on this host (other running apps).
 E2E journeys cover the audit trail, the building/floor view and camera, the control-room
 search palette, the live floor and staffing actions, the room picker and multi-room state
 isolation, the override dropdown, and the provider-settings form.
+
+`e2e/header-layout.spec.mjs` measures the header at 920, 1024, 1280 and 1440px in Live
+and Offline (with Reset Offline visible). Bounding rectangles and scroll widths assert
+that all four view tabs and the activity indicator/dot are fully contained, the topbar
+stays within the viewport without horizontal overflow, and no tab-bar scrolling is needed.
 
 `e2e/tiling.spec.mjs` covers desktop frame coverage, pointer and keyboard resizing,
 minimum sizes, reload and view-switch persistence, reset, edge moves, maximise/restore,

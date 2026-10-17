@@ -2,6 +2,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { AMD_DEFAULT_MODEL_ID, PROVIDER_IDS, amdBaseUrl, defaultReasoningEffortFor, readAmdApiKey } from "./model-provider.mjs";
 import { compassDataPath } from "./data-root.mjs";
+import { logEvent } from "./application-log-store.mjs";
 
 const DEFAULT_TIMEOUT_MS = 8_000;
 
@@ -109,6 +110,8 @@ export function createProviderSettingsService({
   fetchImpl = fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   environment = process.env,
+  checkModelsOnBoot = false,
+  logger = null,
 } = {}) {
   // Environment variables remain a safe deployment bootstrap. A credential
   // saved through Settings takes precedence and is kept in its own owner-only
@@ -126,14 +129,40 @@ export function createProviderSettingsService({
   // Cached so a save can validate against the list the operator actually saw,
   // without re-fetching.
   let availableModelsByProvider = Object.fromEntries(PROVIDER_IDS.map((id) => [id, []]));
-  let initialized = false;
+  let initialization;
+  let catalogState = { status: "UNCHECKED" };
+  let catalogRevision = 0;
+
+  function modelValidation(providerId = settings.provider) {
+    const savedModelId = settings.models[providerId].modelId;
+    const missing = catalogState.status === "READY" && !availableModelsByProvider[providerId].some((model) => model.id === savedModelId);
+    return {
+      ...catalogState,
+      status: catalogState.status === "READY" ? (missing ? "MISSING" : "VALID") : catalogState.status,
+      savedModelId,
+      effectiveModelId: missing ? AMD_DEFAULT_MODEL_ID : savedModelId,
+    };
+  }
+
+  function preview(providerId = settings.provider) {
+    return { ...previewSettings(settings, currentApiKeys(), storedCredentials, providerId), modelValidation: modelValidation(providerId) };
+  }
+
+  function invalidateCatalog() {
+    catalogRevision += 1;
+    catalogState = { status: "UNCHECKED" };
+    availableModelsByProvider = Object.fromEntries(PROVIDER_IDS.map((id) => [id, []]));
+  }
 
   function currentApiKeys() {
     return Object.fromEntries(PROVIDER_IDS.map((id) => [id, storedCredentials[id] || environmentApiKeys[id] || ""]));
   }
 
-  async function initialize() {
-    if (initialized) return;
+  function initialize() {
+    return initialization ??= loadSettings();
+  }
+
+  async function loadSettings() {
     try {
       settings = normalizeSettings(JSON.parse(await readFile(filePath, "utf8")), seed);
     } catch (error) {
@@ -147,7 +176,9 @@ export function createProviderSettingsService({
     } catch (error) {
       if (error.code !== "ENOENT") throw error;
     }
-    initialized = true;
+    // Never await the network during startup. Production opts in at the server
+    // entrypoint; tests must explicitly opt in with a fake fetch.
+    if (checkModelsOnBoot) void refreshModels();
   }
 
   async function persist() {
@@ -170,21 +201,37 @@ export function createProviderSettingsService({
     const catalog = PROVIDER_CATALOG[id];
     const apiKeys = currentApiKeys();
     const apiKey = apiKeys[id];
-    const base = () => previewSettings(settings, apiKeys, storedCredentials, id);
-    if (!apiKey) return { ...base(), modelDiscovery: { status: "UNAVAILABLE", provider: id, reason: `${catalog.label} credential is not configured` }, models: [] };
+    const revision = ++catalogRevision;
+    const base = () => preview(id);
+    if (!apiKey) {
+      catalogState = { status: "UNAVAILABLE", reason: `${catalog.label} credential is not configured` };
+      return { ...base(), modelDiscovery: { ...catalogState, provider: id }, models: [] };
+    }
+    // Keep confirmed catalog evidence in force while a refresh is pending;
+    // do not briefly resume calls to a model already known to be missing.
+    if (catalogState.status !== "READY") catalogState = { status: "CHECKING" };
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetchImpl(catalog.modelsUrl, { headers: { authorization: `Bearer ${apiKey}` }, signal: controller.signal });
       if (!response.ok) throw new Error(`${catalog.label} model discovery responded with HTTP ${response.status}`);
       const payload = await response.json();
-      const models = (Array.isArray(payload?.data) ? payload.data : [])
+      if (!Array.isArray(payload?.data)) throw new Error(`${catalog.label} model discovery returned an invalid catalog`);
+      const models = payload.data
         .filter((model) => typeof model?.id === "string" && catalog.isSelectable(model))
         .map((model) => catalog.toOption(model))
         .sort((a, b) => a.id.localeCompare(b.id));
-      availableModelsByProvider[id] = models;
+      if (revision === catalogRevision) {
+        availableModelsByProvider[id] = models;
+        catalogState = { status: "READY", checkedAt: new Date().toISOString() };
+        const validation = modelValidation(id);
+        if (validation.status === "MISSING") {
+          logEvent(logger, "provider_saved_model_missing", { provider: id, savedModelId: validation.savedModelId, effectiveModelId: validation.effectiveModelId });
+        }
+      }
       return { ...base(), modelDiscovery: { status: "READY", provider: id, fetchedAt: new Date().toISOString() }, models };
     } catch (error) {
+      if (revision === catalogRevision) catalogState = { status: "UNAVAILABLE" };
       return { ...base(), modelDiscovery: { status: "UNAVAILABLE", provider: id, reason: controller.signal.aborted ? `${catalog.label} model discovery timed out` : error.message }, models: [] };
     } finally {
       clearTimeout(timer);
@@ -207,12 +254,12 @@ export function createProviderSettingsService({
     if (!supportedEfforts.includes(reasoningEffort)) throw new Error(`Reasoning level is not supported for ${modelId}`);
     settings = { provider: providerId, models: { ...settings.models, [providerId]: { modelId, reasoningEffort } }, updatedAt: new Date().toISOString() };
     await persist();
-    return previewSettings(settings, currentApiKeys(), storedCredentials);
+    return preview();
   }
 
   return {
     initialize,
-    async snapshot() { await initialize(); return previewSettings(settings, currentApiKeys(), storedCredentials); },
+    async snapshot() { await initialize(); return preview(); },
     refreshModels,
     update,
     async updateCredential(input) {
@@ -222,8 +269,9 @@ export function createProviderSettingsService({
       const apiKey = typeof input?.apiKey === "string" ? input.apiKey.trim() : "";
       if (!apiKey || apiKey.length > 1_000) throw new Error("Enter a valid API key");
       storedCredentials = { ...storedCredentials, [providerId]: apiKey };
+      invalidateCatalog();
       await persistCredentials();
-      return previewSettings(settings, currentApiKeys(), storedCredentials, providerId);
+      return preview(providerId);
     },
     async removeCredential(providerId) {
       await initialize();
@@ -231,9 +279,10 @@ export function createProviderSettingsService({
       if (storedCredentials[providerId]) {
         const { [providerId]: removed, ...remaining } = storedCredentials;
         storedCredentials = remaining;
+        invalidateCatalog();
         await persistCredentials();
       }
-      return previewSettings(settings, currentApiKeys(), storedCredentials, providerId);
+      return preview(providerId);
     },
     async requestOptions(purpose = "compass") {
       await initialize();
@@ -241,7 +290,9 @@ export function createProviderSettingsService({
         ? environment.COMPASS_EVENT_PLANNER_MODE ?? "live"
         : environment.COMPASS_LIVE_COMPASS_MODE ?? "live";
       const providerId = settings.provider;
-      const current = settings.models[providerId];
+      const current = modelValidation(providerId).status === "MISSING"
+        ? { modelId: AMD_DEFAULT_MODEL_ID, reasoningEffort: defaultReasoningEffortFor(AMD_DEFAULT_MODEL_ID) }
+        : settings.models[providerId];
       return {
         mode,
         provider: providerId,

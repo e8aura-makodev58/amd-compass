@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createProviderSettingsService, reasoningEffortsForModel } from "../src/provider-settings.mjs";
 import { createRequestHandler } from "../src/server.mjs";
+import { AMD_DEFAULT_MODEL_ID, defaultReasoningEffortFor } from "../src/model-provider.mjs";
 
 async function scratchPath() {
   const directory = await mkdtemp(join(tmpdir(), "compass-provider-settings-"));
@@ -186,6 +187,141 @@ test("requestOptions preserves independent explicit inference modes for hermetic
   });
   assert.equal((await service.requestOptions("compass")).mode, "force-failure");
   assert.equal((await service.requestOptions("event-planner")).mode, "fixture");
+});
+
+async function savedModelPath() {
+  const filePath = await scratchPath();
+  await writeFile(filePath, JSON.stringify({
+    provider: "amd", models: { amd: { modelId: "DeepSeek-V4-Flash", reasoningEffort: "high" } },
+    updatedAt: "2026-10-17T00:00:00.000Z",
+  }));
+  return filePath;
+}
+
+test("boot discovery never blocks initialization, reports a missing pin and falls back without rewriting it", async () => {
+  const filePath = await savedModelPath();
+  const before = await readFile(filePath, "utf8");
+  const logs = [];
+  let calls = 0;
+  let release;
+  const response = new Promise((resolve) => { release = resolve; });
+  const service = createProviderSettingsService({
+    filePath, apiKeys: { amd: "test-secret" }, environment: {}, checkModelsOnBoot: true,
+    logger: { log: (line) => logs.push(JSON.parse(line)) },
+    fetchImpl: async () => { calls += 1; return response; },
+  });
+  await Promise.all([service.initialize(), service.initialize(), service.snapshot()]);
+  assert.equal(calls, 1, "concurrent initialization starts only one boot check");
+  assert.equal((await service.snapshot()).modelValidation.status, "CHECKING");
+  assert.equal((await service.requestOptions()).modelId, "DeepSeek-V4-Flash");
+  release({ ok: true, json: async () => ({ data: [chatModel(AMD_DEFAULT_MODEL_ID)] }) });
+  await new Promise(setImmediate);
+  const snapshot = await service.snapshot();
+  assert.equal(snapshot.modelId, "DeepSeek-V4-Flash", "the UI retains the saved selection");
+  assert.equal(snapshot.modelValidation.status, "MISSING");
+  assert.equal(snapshot.modelValidation.savedModelId, "DeepSeek-V4-Flash");
+  assert.equal(snapshot.modelValidation.effectiveModelId, AMD_DEFAULT_MODEL_ID);
+  for (const purpose of ["compass", "event-planner"]) {
+    const options = await service.requestOptions(purpose);
+    assert.equal(options.modelId, AMD_DEFAULT_MODEL_ID);
+    assert.equal(options.reasoningEffort, defaultReasoningEffortFor(AMD_DEFAULT_MODEL_ID));
+  }
+  assert.equal(logs.length, 1);
+  assert.equal(logs[0].event, "provider_saved_model_missing");
+  assert.equal(logs[0].savedModelId, "DeepSeek-V4-Flash");
+  assert.equal(logs[0].effectiveModelId, AMD_DEFAULT_MODEL_ID);
+  assert.equal(JSON.stringify({ snapshot, logs }).includes("test-secret"), false);
+  assert.equal(await readFile(filePath, "utf8"), before);
+  const reloaded = createProviderSettingsService({ filePath, apiKeys: {}, environment: {} });
+  assert.equal((await reloaded.requestOptions()).modelId, "DeepSeek-V4-Flash");
+});
+
+test("a valid boot catalog preserves the saved model and its reasoning level", async () => {
+  const logs = [];
+  const service = createProviderSettingsService({
+    filePath: await savedModelPath(), apiKeys: { amd: "test-key" }, environment: {}, checkModelsOnBoot: true,
+    logger: { log: (line) => logs.push(line) }, fetchImpl: stubAmdModelList(AMD_CATALOG),
+  });
+  await service.initialize();
+  await new Promise(setImmediate);
+  assert.equal((await service.snapshot()).modelValidation.status, "VALID");
+  const options = await service.requestOptions();
+  assert.equal(options.modelId, "DeepSeek-V4-Flash");
+  assert.equal(options.reasoningEffort, "high");
+  assert.deepEqual(logs, []);
+});
+
+test("failed boot discovery keeps the saved choice and does not prevent startup", async () => {
+  const service = createProviderSettingsService({
+    filePath: await savedModelPath(), apiKeys: { amd: "test-key" }, environment: {}, checkModelsOnBoot: true,
+    fetchImpl: async () => { throw new Error("catalog offline"); },
+  });
+  await service.initialize();
+  await new Promise(setImmediate);
+  assert.equal((await service.snapshot()).modelValidation.status, "UNAVAILABLE");
+  assert.equal((await service.requestOptions()).modelId, "DeepSeek-V4-Flash");
+});
+
+test("malformed catalogs fail discovery; later valid discovery can restore a missing pin", async () => {
+  let catalog = {};
+  const service = createProviderSettingsService({
+    filePath: await savedModelPath(), apiKeys: { amd: "test-key" }, environment: {},
+    fetchImpl: async () => ({ ok: true, json: async () => catalog }),
+  });
+  assert.equal((await service.refreshModels()).modelDiscovery.status, "UNAVAILABLE");
+  assert.equal((await service.requestOptions()).modelId, "DeepSeek-V4-Flash");
+  catalog = { data: [] };
+  assert.equal((await service.refreshModels()).modelValidation.status, "MISSING");
+  assert.equal((await service.requestOptions()).modelId, AMD_DEFAULT_MODEL_ID);
+  catalog = { data: AMD_CATALOG };
+  assert.equal((await service.refreshModels()).modelValidation.status, "VALID");
+  assert.equal((await service.requestOptions()).modelId, "DeepSeek-V4-Flash");
+});
+
+test("boot checks are opt-in for services so hermetic callers never discover implicitly", async () => {
+  let calls = 0;
+  const service = createProviderSettingsService({
+    filePath: await savedModelPath(), apiKeys: { amd: "test-key" }, environment: {},
+    fetchImpl: async () => { calls += 1; throw new Error("must not call"); },
+  });
+  await service.initialize();
+  await service.snapshot();
+  await service.requestOptions();
+  assert.equal(calls, 0);
+});
+
+test("a confirmed missing pin keeps the default while catalog refresh is pending", async () => {
+  let pending;
+  const service = createProviderSettingsService({
+    filePath: await savedModelPath(), apiKeys: { amd: "test-key" }, environment: {},
+    fetchImpl: async () => pending ?? { ok: true, json: async () => ({ data: [] }) },
+  });
+  await service.refreshModels();
+  let release;
+  pending = new Promise((resolve) => { release = resolve; });
+  const refreshing = service.refreshModels();
+  await new Promise(setImmediate);
+  assert.equal((await service.requestOptions()).modelId, AMD_DEFAULT_MODEL_ID);
+  release({ ok: true, json: async () => ({ data: AMD_CATALOG }) });
+  await refreshing;
+  assert.equal((await service.requestOptions()).modelId, "DeepSeek-V4-Flash");
+});
+
+test("a catalog response for an old credential cannot override the current credential's status", async () => {
+  let release;
+  const response = new Promise((resolve) => { release = resolve; });
+  const service = createProviderSettingsService({
+    filePath: await savedModelPath(), apiKeys: { amd: "test-key" }, environment: {},
+    fetchImpl: async () => response,
+  });
+  await service.initialize();
+  const pending = service.refreshModels();
+  await new Promise(setImmediate);
+  await service.updateCredential({ provider: "amd", apiKey: "replacement-key" });
+  release({ ok: true, json: async () => ({ data: [] }) });
+  await pending;
+  assert.equal((await service.snapshot()).modelValidation.status, "UNCHECKED");
+  assert.equal((await service.requestOptions()).modelId, "DeepSeek-V4-Flash");
 });
 
 test("settings routes are wired end to end: snapshot, credentials, model discovery, and save — deployment-global, not gated by any one room's mode", async () => {
