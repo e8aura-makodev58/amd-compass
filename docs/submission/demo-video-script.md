@@ -1,6 +1,6 @@
 # Demo video
 
-**Recorded:** `ResponseCompass-demo.webm`, 1920×1080, about 1:40, captions burned in, no
+**Recorded:** `ResponseCompass-demo.webm`, 1920×1080, 2:17, captions burned in, no
 audio. Produced by `build/record-video.mjs` (see `build/README.md`). All plant data is
 synthetic. Confirm the form's duration limit and accepted formats before uploading; convert
 to MP4 if WebM is not accepted (this host has no MP4 encoder).
@@ -30,18 +30,26 @@ recorded for review, not assumed to be better.
 | 1 | Title card | (title and tagline only) |
 | 2 | Room picker | When equipment fails, the nearest technician may not be the best match. ResponseCompass helps a control room choose who to send, and shows why. |
 | 3 | Live Floor: floors 2, 3, 1; 2.5D view; back to 2D | This synthetic plant has three floors, seventy-two machines and twenty-four responders. Each control room keeps its own clock and history. |
-| 4 | Dispatch / context maximised → Stations → EQ-03 → ISS-3642 | Code establishes eligibility, travel time and observed history. Compass, running live on AMD Token Factory with MiMo-V2.6-Flash, ranks only the eligible candidates it is given. |
-| 5 | Initial assignment Compass analysis and evidence table | The nearest responder is under a minute away but has little history with this fault. Compass ranked Engr370 first and explained why; both baselines chose someone else. |
-| 6 | Response and resolution | Engr370 accepted the offer and resolved the issue first time, in eleven minutes. Every step, and the action taken, is in the audit trail. |
-| 7 | Analytics: Month, Week, Day | A full simulated month: nearly three thousand issues raised in September. Charts show activity and equipment downtime. |
-| 8 | Analytics, scrolled | Summaries show denominators, suppress thin samples and never rank people. |
-| 9 | Settings → API, credential area hidden | Ranking and event planning each run on their own AMD Token Factory model. Rate limits, bounded retries and a circuit breaker control requests. |
-| 10 | Settings → API | If a model is slow or fails, dispatch falls back deterministically, and the simulation clock keeps moving. |
-| 11 | Closing card | Next: recommending the fix from past resolutions. The right responder. The right fix. |
+| 4 | Search palette (types "Engr370"), then a tile maximised and restored | Find any issue, station or responder from the keyboard, and arrange the floor, issues, feed and context as tiles. |
+| 5 | Dispatch / context maximised → Stations → EQ-03 → ISS-3642 | Code establishes eligibility, travel time and observed history. Compass, running live on AMD Token Factory with MiMo-V2.6-Flash, ranks only the eligible candidates it is given. |
+| 6 | Initial assignment Compass analysis and evidence table | The nearest responder is under a minute away but has little history with this fault. Compass ranked Engr370 first and explained why; both baselines chose someone else. |
+| 7 | Response and resolution | Engr370 accepted the offer and resolved the issue first time, in eleven minutes. Every step, and the action taken, is in the audit trail. |
+| — | *Fix recommendation segment (about 30 s), added after round 8 merges* | |
+| 8 | Offline Demo, Reset, Raise Scenario A | Offline Demo replays a fixed scenario through the same dispatch path with no API calls, for training or when the model is unavailable. |
+| 9 | Offer sent, with baselines and the override control | Baselines and Compass's ranking drive an automatic offer; central command can override it. |
+| 10 | Primary assigned, support offer sent | The responder accepts. This work is complex, so a second responder is offered support. |
+| 11 | Fixed outcome: issue reopened | Here the first attempt fails, so the issue reopens for another try, using the same resolution math as Live. |
+| 12 | Analytics: Month, Week, Day | A full simulated month: nearly three thousand issues raised in September. Charts show activity and equipment downtime. |
+| 13 | Compass vs Baselines | Every Compass ranking is compared with the nearest and naive-score baselines, and each disagreement can be inspected record by record. |
+| 14 | Issue-Class Experience | Summaries show denominators, suppress thin samples, and list experience by issue class, not as a leaderboard. |
+| 15 | Settings → API, credential area hidden | Ranking and event planning each run on their own AMD Token Factory model. Rate limits, bounded retries and a circuit breaker control requests. |
+| 16 | Settings → API | If a model is slow or fails, dispatch falls back deterministically, and the simulation clock keeps moving. |
+| 17 | Settings → Demo | The Demo tab shows the agents at work, workforce scenarios, deferred demand and shift handovers. |
+| 18 | Closing card | Next: recommending the fix from past resolutions. The right responder. The right fix. |
 
 ## Optional voice-over
 
-The captions are written to be read aloud at a natural pace (about 230 words, roughly 1:40).
+The captions are written to be read aloud at a natural pace (about 370 words, roughly 2:15).
 To add narration, record the caption text over the video in any editor; keep the captions.
 
 ## Rules kept

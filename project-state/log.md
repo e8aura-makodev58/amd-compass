@@ -215,3 +215,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] ui — analytics denominators rounded
 - `analyticsRate` showed fractional evidence weights unrounded (e.g. "n=511.4537…"); it now uses the shared `formatCount` (one decimal). E2E check added to the analytics journey.
+
+## [2026-10-17] docs — demo video extended to 2:17
+- Added search palette, tiles, the Offline dispatch loop (offer, override control, support, reopen), Compass-vs-baseline and issue-class analytics, and the Settings Demo tab. A slot remains for the round-8 fix recommendation segment (cap 3:00).

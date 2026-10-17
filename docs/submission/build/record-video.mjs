@@ -39,7 +39,7 @@ async function caption(text) {
   }, { text, css: CAPTION_CSS });
   // Rehearsal: FRAMES=<dir> saves a still per caption, for checking without a video decoder.
   if (process.env.FRAMES) {
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
     await page.screenshot({ path: join(process.env.FRAMES, `caption-${String(++captionCount).padStart(2, "0")}.png`) });
   }
 }
@@ -52,6 +52,9 @@ function card(title, lines) {
       ${lines.map(([text, color, weight]) => `<div style="font-size:48px;font-weight:${weight};color:${color};margin-top:18px">${text}</div>`).join("")}
     </div></body></html>`;
 }
+
+// Start from Live mode even if an earlier take stopped inside the Offline segment.
+await page.request.post(`${base}/api/control-rooms/plant-1/mode`, { data: { mode: "LIVE" } });
 
 // 1. Opening card
 await page.setContent(card("ResponseCompass", [["The right responder. The right fix.", "#0F8B8D", 700], ["Learned from every past repair.", "#5B6474", 400]]));
@@ -68,6 +71,15 @@ await wait(4);
 for (const floor of [2, 3, 1]) { await page.locator(`[data-select-floor="${floor}"]`).click(); await wait(1.6); }
 await page.locator("#view-iso").click(); await wait(3.5);
 await page.locator("#view-2d").click(); await wait(1.5);
+
+// Search palette and tiled layout
+await page.keyboard.press("/");
+await page.locator("#control-search-input").pressSequentially("Engr370", { delay: 90 });
+await caption("Find any issue, station or responder from the keyboard, and arrange the floor, issues, feed and context as tiles.");
+await wait(1.5);
+await page.keyboard.press("Enter"); await wait(2);
+await page.getByRole("button", { name: "Maximise Floor map" }).click(); await wait(2.5);
+await page.getByRole("button", { name: "Restore Floor map" }).click(); await wait(1.5);
 
 // 3. A saved AMD ranking, opened from the station's issue history
 await page.getByRole("button", { name: "Maximise Dispatch / context" }).click();
@@ -91,6 +103,34 @@ await caption("Engr370 accepted the offer and resolved the issue first time, in 
 await wait(8);
 await page.getByRole("button", { name: "Restore Dispatch / context" }).click();
 
+// [Round 8] Fix recommendation segment goes here once the feature is merged.
+
+// Offline Demo: the full dispatch loop on a fixed scenario, API-free
+await page.getByRole("button", { name: "Offline Demo" }).click();
+await page.getByRole("button", { name: "Reset Offline" }).click();
+await page.getByRole("button", { name: "Maximise Dispatch / context" }).click();
+await caption("Offline Demo replays a fixed scenario through the same dispatch path with no API calls, for training or when the model is unavailable.");
+await wait(4);
+await page.getByRole("button", { name: "Raise Scenario A issue" }).click();
+// Resolves once the panel shows any of the given states (later states count too).
+const panelText = (texts, timeout = 30_000) => page.waitForFunction((needles) => {
+  const content = document.querySelector("#recommendation-panel")?.textContent ?? "";
+  return needles.some((needle) => content.includes(needle));
+}, [].concat(texts), { timeout, polling: 200 });
+// The fixed scenario moves on its own clock (offer, acceptance, support, outcome in about
+// nine seconds), so each caption follows the state it describes.
+await panelText(["Offer sent to", "Support offer sent", "Issue Reopened", "Issue Resolved"]);
+await caption("Baselines and Compass's ranking drive an automatic offer; central command can override it.");
+await panelText(["Support offer sent", "Issue Reopened", "Issue Resolved"]);
+await caption("The responder accepts. This work is complex, so a second responder is offered support.");
+await panelText(["Issue Reopened", "Issue Resolved"]);
+await caption("Here the first attempt fails, so the issue reopens for another try, using the same resolution math as Live.");
+await wait(5);
+await page.getByRole("button", { name: "Restore Dispatch / context" }).click();
+await page.getByRole("button", { name: "Live Simulation" }).click();
+await page.locator(".building").waitFor();
+await wait(1);
+
 // 4. Analytics
 await page.locator("#analytics-tab").click();
 await page.locator("[data-analytics-level=MONTH]").click();
@@ -99,9 +139,16 @@ await caption("A full simulated month: nearly three thousand issues raised in Se
 await wait(7);
 await page.locator("[data-analytics-level=WEEK]").click(); await wait(3);
 await page.locator("[data-analytics-level=DAY]").click(); await wait(3);
-await caption("Summaries show denominators, suppress thin samples and never rank people.");
-await page.mouse.wheel(0, 900); await wait(5);
-await page.mouse.wheel(0, 900); await wait(4);
+const scrollToHeading = async (text) => {
+  await page.getByRole("heading", { name: text }).first().evaluate((node) => window.scrollTo({ top: node.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" }));
+  await wait(1.2);
+};
+await scrollToHeading("Compass vs Baselines");
+await caption("Every Compass ranking is compared with the nearest and naive-score baselines, and each disagreement can be inspected record by record.");
+await wait(6);
+await scrollToHeading("Issue-Class Experience");
+await caption("Summaries show denominators, suppress thin samples, and list experience by issue class, not as a leaderboard.");
+await wait(6);
 
 // 5. Settings: one AMD model per role
 await page.locator("#settings-tab").click();
@@ -116,6 +163,9 @@ await page.evaluate(() => {
 await caption("Ranking and event planning each run on their own AMD Token Factory model. Rate limits, bounded retries and a circuit breaker control requests.");
 await wait(7);
 await caption("If a model is slow or fails, dispatch falls back deterministically, and the simulation clock keeps moving.");
+await wait(5);
+await page.locator("#settings-demo-tab").click();
+await caption("The Demo tab shows the agents at work, workforce scenarios, deferred demand and shift handovers.");
 await wait(6);
 
 // 6. Closing card
