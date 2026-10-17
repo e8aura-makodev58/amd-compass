@@ -1141,6 +1141,11 @@ let discoveredModelsByProvider = {};
 // provider until Save is clicked — the operator can browse a provider's
 // models before committing to it.
 let selectedProviderId = null;
+let modelDrafts = {};
+const SETTINGS_ROLES = [
+  { role: "compass", label: "Ranking (Compass)", modelId: "settings-model", effortId: "settings-effort", saveId: "settings-save" },
+  { role: "event-planner", label: "Event planner", modelId: "settings-event-planner-model", effortId: "settings-event-planner-effort", saveId: "settings-event-planner-save" },
+];
 function reasoningEffortsFor(providerId, modelId) { return (discoveredModelsByProvider[providerId] ?? []).find((model) => model.id === modelId)?.reasoningEfforts ?? null; }
 
 function renderSettings(settings) {
@@ -1149,19 +1154,29 @@ function renderSettings(settings) {
   const offline = currentState && currentState.mode !== "LIVE";
   const providerMeta = (settings.providers ?? []).find((provider) => provider.id === selectedProviderId);
   const providerOptions = (settings.providers ?? []).map((provider) => `<option value="${escapeHtml(provider.id)}" ${provider.id === selectedProviderId ? "selected" : ""} ${provider.enabled ? "" : "disabled"}>${escapeHtml(provider.label)}${provider.enabled ? "" : " (coming soon)"}</option>`).join("");
-  // Only the dropdown's own provider has a meaningful "currently saved" model —
-  // showing another provider's saved model under this dropdown would be wrong.
-  const previewingSaved = selectedProviderId === settings.provider;
-  const currentModelId = previewingSaved ? settings.modelId : "";
-  const models = discoveredModelsByProvider[selectedProviderId] ?? [];
-  const modelOptions = models.length
-    ? models.map((model) => `<option value="${escapeHtml(model.id)}" ${model.id === currentModelId ? "selected" : ""}>${escapeHtml(model.id)}${model.ownedBy && model.ownedBy !== "unknown" ? ` · ${escapeHtml(model.ownedBy)}` : ""}</option>`).join("")
-    : currentModelId
-      ? `<option value="${escapeHtml(currentModelId)}" selected>${escapeHtml(currentModelId)} (saved — refresh to change)</option>`
-      : `<option value="">No model selected yet — refresh to choose one</option>`;
-  const efforts = reasoningEffortsFor(selectedProviderId, currentModelId) ?? (previewingSaved && settings.reasoningEffort ? [settings.reasoningEffort] : ["default"]);
-  const currentEffort = previewingSaved ? settings.reasoningEffort : efforts[0];
-  const effortOptions = efforts.map((effort) => `<option value="${escapeHtml(effort)}" ${effort === currentEffort ? "selected" : ""}>${escapeHtml(effort)}</option>`).join("");
+  const rolePickers = SETTINGS_ROLES.map(({ role, label, modelId, effortId, saveId }) => {
+    const saved = settings.roles?.[role] ?? settings;
+    const draft = modelDrafts[role] ??= { modelId: saved.modelId, reasoningEffort: saved.reasoningEffort };
+    const models = discoveredModelsByProvider[selectedProviderId] ?? [];
+    const choices = [...models];
+    if (!choices.some((model) => model.id === draft.modelId)) choices.unshift({ id: draft.modelId });
+    const modelOptions = choices.map((model) => `<option value="${escapeHtml(model.id)}" ${model.id === draft.modelId ? "selected" : ""}>${escapeHtml(model.id)}</option>`).join("");
+    const efforts = reasoningEffortsFor(selectedProviderId, draft.modelId) ?? [draft.reasoningEffort || "default"];
+    const effortOptions = efforts.map((effort) => `<option value="${escapeHtml(effort)}" ${effort === draft.reasoningEffort ? "selected" : ""}>${escapeHtml(effort)}</option>`).join("");
+    const validation = saved.modelValidation ?? settings.modelValidation;
+    const changed = draft.modelId !== saved.modelId || draft.reasoningEffort !== saved.reasoningEffort;
+    const status = changed ? "Unsaved selection."
+      : validation?.status === "MISSING" ? `Saved model unavailable. Live requests use ${validation.effectiveModelId}.`
+      : validation?.status === "VALID" ? "Saved model is available."
+      : validation?.status === "CHECKING" ? "Checking saved model availability…"
+      : "Model availability is unverified. Refresh available models to check.";
+    return `<fieldset class="settings-role" data-model-role="${role}"><legend>${label}</legend>
+      <div class="settings-field"><label for="${modelId}">Model</label><select id="${modelId}">${modelOptions}</select></div>
+      <div class="settings-field"><label for="${effortId}">Thinking level</label><select id="${effortId}">${effortOptions}</select></div>
+      <p class="workflow-prompt" data-model-status role="status">${escapeHtml(status)}</p>
+      <button id="${saveId}" type="button">Save ${label}</button>
+    </fieldset>`;
+  }).join("");
 
   const credentialStatus = providerMeta?.credentialConfigured
     ? `${escapeHtml(providerMeta.label)} API key is configured for this shared deployment (${escapeHtml(providerMeta.credentialHint ?? "masked")}). It is never sent back to the browser.`
@@ -1176,10 +1191,8 @@ function renderSettings(settings) {
     <div class="settings-actions"><button id="settings-save-key" type="button">${providerMeta?.credentialConfigured ? "Replace key" : "Save key"}</button>${providerMeta?.credentialSource === "settings" ? `<button id="settings-remove-key" type="button" class="secondary-button">Remove saved key</button>` : ""}</div>
     ${credentialSource}
     <label class="settings-field">Provider<select id="settings-provider">${providerOptions}</select></label>
-    <label class="settings-field">Model<select id="settings-model">${modelOptions}</select></label>
     <button id="settings-refresh-models" type="button" class="secondary-button" ${offline ? "disabled" : ""}>${offline ? "Switch to Live Simulation to discover models" : "Refresh available models"}</button>
-    <label class="settings-field">Thinking level<select id="settings-effort">${effortOptions}</select></label>
-    <button id="settings-save" type="button">Save settings</button>
+    ${rolePickers}
     <p id="settings-feedback" class="workflow-prompt" aria-live="polite"></p>
   </section>`;
 
@@ -1191,14 +1204,26 @@ function renderSettings(settings) {
   document.querySelector("#settings-refresh-models")?.addEventListener("click", refreshModels);
   document.querySelector("#settings-save-key")?.addEventListener("click", saveProviderCredential);
   document.querySelector("#settings-remove-key")?.addEventListener("click", removeProviderCredential);
-  document.querySelector("#settings-model").addEventListener("change", (event) => {
-    const nextEfforts = reasoningEffortsFor(selectedProviderId, event.target.value) ?? ["default"];
-    document.querySelector("#settings-effort").innerHTML = nextEfforts.map((effort) => `<option value="${escapeHtml(effort)}">${escapeHtml(effort)}</option>`).join("");
-  });
-  document.querySelector("#settings-save").addEventListener("click", saveSettings);
+  for (const picker of SETTINGS_ROLES) {
+    const model = document.getElementById(picker.modelId);
+    const effort = document.getElementById(picker.effortId);
+    const markChanged = () => {
+      modelDrafts[picker.role] = { modelId: model.value, reasoningEffort: effort.value };
+      model.closest("fieldset").querySelector("[data-model-status]").textContent = "Unsaved selection.";
+    };
+    model.addEventListener("change", () => {
+      const nextEfforts = reasoningEffortsFor(selectedProviderId, model.value) ?? ["default"];
+      const previous = effort.value;
+      effort.innerHTML = nextEfforts.map((value) => `<option value="${escapeHtml(value)}" ${value === previous ? "selected" : ""}>${escapeHtml(value)}</option>`).join("");
+      markChanged();
+    });
+    effort.addEventListener("change", markChanged);
+    document.getElementById(picker.saveId).addEventListener("click", () => saveSettings(picker.role));
+  }
 }
 
 async function loadSettings() {
+  modelDrafts = {};
   elements["settings-content"].innerHTML = `<p class="workflow-prompt">Settings are loading…</p>`;
   try {
     const settings = await globalApi("/settings");
@@ -1227,22 +1252,28 @@ async function refreshModels() {
   }
 }
 
-async function saveSettings() {
-  const button = document.querySelector("#settings-save");
+async function saveSettings(role) {
+  const picker = SETTINGS_ROLES.find((entry) => entry.role === role);
+  const button = document.getElementById(picker.saveId);
   const feedback = document.querySelector("#settings-feedback");
   const provider = document.querySelector("#settings-provider").value;
-  const modelId = document.querySelector("#settings-model").value;
-  const reasoningEffort = document.querySelector("#settings-effort").value;
-  button.disabled = true; button.classList.add("is-loading"); feedback.textContent = "";
+  const modelId = document.getElementById(picker.modelId).value;
+  const reasoningEffort = document.getElementById(picker.effortId).value;
+  for (const entry of SETTINGS_ROLES) document.getElementById(entry.saveId).disabled = true;
+  button.classList.add("is-loading"); feedback.textContent = "";
   try {
-    const saved = await globalApi("/settings", { method: "POST", body: JSON.stringify({ provider, modelId, reasoningEffort }) });
+    const saved = await globalApi("/settings", { method: "POST", body: JSON.stringify({ provider, role, modelId, reasoningEffort }) });
     selectedProviderId = saved.provider;
+    delete modelDrafts[role];
     renderSettings(saved);
-    document.querySelector("#settings-feedback").textContent = "Saved. Live recommendations will use this configuration.";
+    document.querySelector("#settings-feedback").textContent = `Saved ${picker.label}. Live requests for this role will use this configuration.`;
   } catch (error) {
     feedback.textContent = error.message;
   } finally {
-    button.disabled = false; button.classList.remove("is-loading");
+    for (const entry of SETTINGS_ROLES) {
+      const save = document.getElementById(entry.saveId);
+      if (save) { save.disabled = false; save.classList.remove("is-loading"); }
+    }
   }
 }
 

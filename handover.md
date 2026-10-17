@@ -261,16 +261,16 @@ main agent to choose next work for codex and itself.
 
 ## codex
 
-- **Status:** IDLE
-- **Updated:** —
-- **Task:** —
-- **Head commit:** —
-- **Changes:** —
-- **Files changed:** —
-- **Verification:** `npm test` — · E2E —
-- **project-state pages updated:** —
-- **Risks / follow-ups:** —
-- **Questions for main:** —
+- **Status:** READY FOR MERGE
+- **Updated:** 2026-10-17
+- **Task:** Separate model per role (ranking vs event planner), round 4.
+- **Head commit:** This handoff on `codex`, based on `553c10c`.
+- **Changes:** `models.amd` now contains `compass` and `event-planner` model/effort selections. Old single selections load into both without a write until operator save. Role saves are serialized and commit in-memory selection after persistence; credentials remain untouched. Snapshots expose `roles` with per-role `modelValidation`; top-level fields remain ranking aliases. API saves accept a role (omission defaults to ranking), reject unknown roles, and log the selected role/model. Boot catalog fallback affects only missing roles and logs their role. Planner-only environment seeds supplement shared seeds; both defaults remain MiMo / none. Settings has two labelled pickers, independent status/save actions and draft preservation through other-role saves or refreshes.
+- **Files changed:** `.env.example`, `backend/src/provider-settings.mjs`, settings-save logging in `backend/src/server.mjs`, `backend/tests/provider-settings.test.mjs`, `frontend/app.js`, `frontend/base.css`, `frontend/ops.css`, `e2e/provider-settings.spec.mjs`, docs/decisions.md, this section and project-state pages below. No changes to provider/controls/agent/planner/measurement modules.
+- **Verification:** `npm test` 270/270; full Chromium E2E 48/48 on port 3021 with forced provider failures (focused settings E2E also 3/3; contrast checks 2/2). No live AMD calls or real settings writes. Unit tests cover migration, independent/concurrent saves, role validation, env overrides and per-role boot fallback/logging. Mocked UI tests cover phone/desktop edits, missing-model status, other-role drafts, reload, no horizontal overflow and no outbound requests. Visually checked 375px and 1280px. Master rechecked: already up to date. Test servers stopped; ports 3021/3121 free. No regenerated docs assets to restore.
+- **project-state pages updated:** backend/model-providers.md (Selection & discovery only), backend/http-api.md, frontend/overview.md, operations/running-and-config.md, operations/testing.md, log.md.
+- **Risks / follow-ups:** Old clients omitting role update ranking only; saved selections for the other role are preserved. Credential format/permissions and provider call path unchanged. Watcher remains stopped per user instruction. No preview server started.
+- **Questions for main:** None.
 
 ---
 

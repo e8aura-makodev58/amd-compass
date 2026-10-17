@@ -134,12 +134,18 @@ samples: re-measure before relying on these numbers.
 
 ## Selection & discovery (`provider-settings.mjs`)
 
-- **Persisted pin.** `backend/data/provider-settings.json` stores
-  `{ provider: "amd", models: { amd: { modelId, reasoningEffort } } }`. A file written by an
-  older build that names a removed provider loads as AMD with the default model; old pins
-  are dropped, never sent to AMD.
+- **Persisted role pins.** `backend/data/provider-settings.json` stores
+  `{ provider: "amd", models: { amd: { compass: {modelId, reasoningEffort},
+  "event-planner": {modelId, reasoningEffort} } } }`. A legacy single selection loads
+  into both roles without rewriting the file; the next operator save writes the new
+  shape. Saves update only the selected role and serialize atomic owner-only writes.
+  A file naming a removed provider loads AMD defaults; removed-provider pins are never
+  sent to AMD. The separate credential file is unchanged by model saves.
 - **Env seeding.** A fresh install seeds from `AMD_TOKEN_FACTORY_MODEL` /
-  `AMD_TOKEN_FACTORY_REASONING_EFFORT`.
+  `AMD_TOKEN_FACTORY_REASONING_EFFORT` for both roles. Optional
+  `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` / `_REASONING_EFFORT` override only the planner
+  seed. An explicit shared effort is inherited unless overridden; otherwise the selected
+  model's default effort applies. Persisted selections override environment seeds.
 - **Credential.** The env/file key is the bootstrap; a key saved in Settings is kept in the
   owner-only `provider-credentials.json` and takes precedence. Snapshots only ever expose a
   masked hint.
@@ -150,18 +156,27 @@ samples: re-measure before relying on these numbers.
 - **Boot validation.** The server enables a background catalog check after settings and
   credentials load; startup never awaits the network. `NODE_ENV=test` disables this boot
   check. Service-level callers opt in with `checkModelsOnBoot` (tests supply fake fetch).
-  Snapshots retain the saved `modelId` and expose `modelValidation` with `status`
+  Snapshots expose `roles.compass` and `roles["event-planner"]`, each with saved model,
+  effort and `modelValidation` with `status`
   (`UNCHECKED`, `CHECKING`, `VALID`, `MISSING`, `UNAVAILABLE`), `savedModelId`, and
   `effectiveModelId`. A successful catalog missing the saved chat model emits
-  `provider_saved_model_missing` to the application log. Both ranking and planner request
-  options then use `AMD_DEFAULT_MODEL_ID` and its default reasoning effort, leaving the
-  user's saved file untouched. Failed/malformed discovery keeps the saved choice; a later
+  `provider_saved_model_missing` with `role` to the application log. Only the missing
+  role's request options use `AMD_DEFAULT_MODEL_ID` and its default reasoning effort,
+  leaving the user's saved file untouched. Failed/malformed discovery keeps saved choices; a later
   successful refresh can restore it. Confirmed fallback remains active during a pending
   refresh. Changing credentials invalidates catalog evidence,
   and stale in-flight responses cannot override the new credential's status.
 - **`requestOptions(purpose)`** returns `{ mode, provider: "amd", apiKey, modelId,
-  reasoningEffort? }` for `agent.mjs` / `event-planner.mjs`. `mode` is `live` unless
+  reasoningEffort? }` for `agent.mjs` / `event-planner.mjs`, using that role's selection.
+  Purposes are `compass` (default) and `event-planner`; unknown roles are rejected.
+  `mode` is `live` unless
   overridden by `COMPASS_LIVE_COMPASS_MODE` / `COMPASS_EVENT_PLANNER_MODE`.
+- **API / UI.** `POST /api/settings` accepts `{provider, role, modelId, reasoningEffort}`,
+  validating against the cached catalog and supported reasoning levels. Omitting role
+  retains compatibility by selecting `compass`. Top-level snapshot `modelId`,
+  `reasoningEffort` and `modelValidation` remain ranking aliases. Settings → API provides
+  labelled Ranking (Compass) and Event planner fieldsets with independent controls,
+  status and saves; saving one or refreshing models preserves the other's unsaved draft.
 
 ## Inference modes
 

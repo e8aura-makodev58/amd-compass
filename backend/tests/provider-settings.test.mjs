@@ -148,7 +148,7 @@ test("update persists a valid selection atomically and it survives a reload", as
   assert.equal((await stat(filePath)).mode & 0o777, 0o600);
   const onDisk = JSON.parse(await readFile(filePath, "utf8"));
   assert.equal(onDisk.provider, "amd");
-  assert.equal(onDisk.models.amd.modelId, "GLM-5.3-Flash");
+  assert.equal(onDisk.models.amd.compass.modelId, "GLM-5.3-Flash");
 
   const reloaded = createProviderSettingsService({ filePath, apiKeys: { amd: "rc-test-key" }, environment: {} });
   const snapshot = await reloaded.snapshot();
@@ -198,6 +198,98 @@ async function savedModelPath() {
   return filePath;
 }
 
+test("legacy settings apply to both roles without rewriting until one role is saved", async () => {
+  const filePath = await savedModelPath();
+  const before = await readFile(filePath, "utf8");
+  const credentialsFilePath = join(filePath, "..", "provider-credentials.json");
+  const credentialBytes = '{"amd":"test-saved-secret"}\n';
+  await writeFile(credentialsFilePath, credentialBytes, { mode: 0o600 });
+  const service = createProviderSettingsService({ filePath, apiKeys: {}, environment: {}, fetchImpl: stubAmdModelList(AMD_CATALOG) });
+  const snapshot = await service.snapshot();
+  for (const role of ["compass", "event-planner"]) {
+    assert.equal(snapshot.roles[role].modelId, "DeepSeek-V4-Flash");
+    assert.equal((await service.requestOptions(role)).reasoningEffort, "high");
+  }
+  assert.equal(await readFile(filePath, "utf8"), before);
+  await service.refreshModels();
+  await service.update({ provider: "amd", role: "compass", modelId: "GLM-5.3-Flash", reasoningEffort: "low" });
+  const disk = JSON.parse(await readFile(filePath, "utf8"));
+  assert.equal(disk.models.amd.compass.modelId, "GLM-5.3-Flash");
+  assert.equal(disk.models.amd["event-planner"].modelId, "DeepSeek-V4-Flash");
+  assert.equal((await stat(filePath)).mode & 0o777, 0o600);
+  assert.equal(await readFile(credentialsFilePath, "utf8"), credentialBytes);
+  assert.equal((await stat(credentialsFilePath)).mode & 0o777, 0o600);
+  const reloaded = createProviderSettingsService({ filePath, apiKeys: {}, environment: {} });
+  assert.equal((await reloaded.requestOptions("compass")).modelId, "GLM-5.3-Flash");
+  assert.equal((await reloaded.requestOptions("event-planner")).modelId, "DeepSeek-V4-Flash");
+});
+
+test("role saves are independent, serialized, and validate roles, models and reasoning", async () => {
+  const filePath = await scratchPath();
+  const service = createProviderSettingsService({ filePath, apiKeys: { amd: "test-key" }, environment: {}, fetchImpl: stubAmdModelList(AMD_CATALOG) });
+  await service.refreshModels();
+  await assert.rejects(service.update({ provider: "amd", role: "unknown", modelId: "GLM-5.3-Flash", reasoningEffort: "low" }), /model role/);
+  await assert.rejects(service.requestOptions("unknown"), /model role/);
+  await assert.rejects(service.update({ provider: "amd", role: "event-planner", modelId: "missing", reasoningEffort: "default" }), /not available/);
+  await assert.rejects(service.update({ provider: "amd", role: "event-planner", modelId: "GLM-5.3-Flash", reasoningEffort: "max" }), /Reasoning level/);
+  await Promise.all([
+    service.update({ provider: "amd", role: "compass", modelId: "DeepSeek-V4-Flash", reasoningEffort: "high" }),
+    service.update({ provider: "amd", role: "event-planner", modelId: "GLM-5.3-Flash", reasoningEffort: "low" }),
+  ]);
+  const reloaded = createProviderSettingsService({ filePath, apiKeys: {}, environment: {} });
+  assert.equal((await reloaded.requestOptions("compass")).modelId, "DeepSeek-V4-Flash");
+  assert.equal((await reloaded.requestOptions("compass")).reasoningEffort, "high");
+  assert.equal((await reloaded.requestOptions("event-planner")).modelId, "GLM-5.3-Flash");
+  assert.equal((await reloaded.requestOptions("event-planner")).reasoningEffort, "low");
+});
+
+test("planner environment overrides seed only the planner, while defaults stay MiMo for both roles", async () => {
+  for (const environment of [
+    {},
+    { AMD_TOKEN_FACTORY_MODEL: "DeepSeek-V4-Flash", AMD_TOKEN_FACTORY_REASONING_EFFORT: "high" },
+    { AMD_TOKEN_FACTORY_MODEL: "DeepSeek-V4-Flash", AMD_TOKEN_FACTORY_REASONING_EFFORT: "high", AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL: "GLM-5.3-Flash", AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT: "low" },
+    { AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT: "default" },
+  ]) {
+    const service = createProviderSettingsService({ filePath: await scratchPath(), apiKeys: {}, environment });
+    const snapshot = await service.snapshot();
+    const sharedModel = environment.AMD_TOKEN_FACTORY_MODEL || AMD_DEFAULT_MODEL_ID;
+    assert.equal(snapshot.roles.compass.modelId, sharedModel);
+    assert.equal(snapshot.roles.compass.reasoningEffort, environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(sharedModel));
+    const plannerModel = environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL || sharedModel;
+    assert.equal(snapshot.roles["event-planner"].modelId, plannerModel);
+    assert.equal(snapshot.roles["event-planner"].reasoningEffort, environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT || environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(plannerModel));
+  }
+});
+
+for (const missingRole of ["compass", "event-planner"]) {
+  test(`boot fallback affects only the missing ${missingRole} model and logs its role`, async () => {
+    const filePath = await scratchPath();
+    const otherRole = missingRole === "compass" ? "event-planner" : "compass";
+    await writeFile(filePath, JSON.stringify({ provider: "amd", models: { amd: {
+      [missingRole]: { modelId: "Retired-Model", reasoningEffort: "default" },
+      [otherRole]: { modelId: "DeepSeek-V4-Flash", reasoningEffort: "high" },
+    } } }));
+    const before = await readFile(filePath, "utf8");
+    const logs = [];
+    const service = createProviderSettingsService({
+      filePath, apiKeys: { amd: "test-key" }, environment: {}, checkModelsOnBoot: true,
+      fetchImpl: stubAmdModelList(AMD_CATALOG), logger: { log: (line) => logs.push(JSON.parse(line)) },
+    });
+    await service.initialize();
+    await new Promise(setImmediate);
+    const snapshot = await service.snapshot();
+    assert.equal(snapshot.roles[missingRole].modelValidation.status, "MISSING");
+    assert.equal(snapshot.roles[otherRole].modelValidation.status, "VALID");
+    assert.equal((await service.requestOptions(missingRole)).modelId, AMD_DEFAULT_MODEL_ID);
+    assert.equal((await service.requestOptions(otherRole)).modelId, "DeepSeek-V4-Flash");
+    assert.equal((await service.requestOptions(otherRole)).reasoningEffort, "high");
+    assert.equal(logs.length, 1);
+    assert.equal(logs[0].event, "provider_saved_model_missing");
+    assert.equal(logs[0].role, missingRole);
+    assert.equal(await readFile(filePath, "utf8"), before);
+  });
+}
+
 test("boot discovery never blocks initialization, reports a missing pin and falls back without rewriting it", async () => {
   const filePath = await savedModelPath();
   const before = await readFile(filePath, "utf8");
@@ -226,7 +318,8 @@ test("boot discovery never blocks initialization, reports a missing pin and fall
     assert.equal(options.modelId, AMD_DEFAULT_MODEL_ID);
     assert.equal(options.reasoningEffort, defaultReasoningEffortFor(AMD_DEFAULT_MODEL_ID));
   }
-  assert.equal(logs.length, 1);
+  assert.equal(logs.length, 2);
+  assert.deepEqual(logs.map((event) => event.role), ["compass", "event-planner"]);
   assert.equal(logs[0].event, "provider_saved_model_missing");
   assert.equal(logs[0].savedModelId, "DeepSeek-V4-Flash");
   assert.equal(logs[0].effectiveModelId, AMD_DEFAULT_MODEL_ID);
@@ -335,7 +428,8 @@ test("settings routes are wired end to end: snapshot, credentials, model discove
   // control-room-manager.mjs / server.mjs createRequestHandler) — settings
   // are deployment-global, shared across every Control Room, so `null` here
   // stands in for "manager is irrelevant to this route".
-  const handler = createRequestHandler(null, null, settingsService);
+  const events = [];
+  const handler = createRequestHandler(null, { log: (line) => events.push(JSON.parse(line)) }, settingsService);
 
   const snapshot = await invoke(handler, "GET", "/api/settings");
   assert.equal(snapshot.status, 200);
@@ -360,6 +454,15 @@ test("settings routes are wired end to end: snapshot, credentials, model discove
   const saved = await invoke(handler, "POST", "/api/settings", { provider: "amd", modelId: "GLM-5.3-Flash", reasoningEffort: "low" });
   assert.equal(saved.status, 200);
   assert.equal(saved.json.modelId, "GLM-5.3-Flash");
+
+  const plannerSaved = await invoke(handler, "POST", "/api/settings", { provider: "amd", role: "event-planner", modelId: "DeepSeek-V4-Flash", reasoningEffort: "none" });
+  assert.equal(plannerSaved.status, 200);
+  assert.equal(plannerSaved.json.roles.compass.modelId, "GLM-5.3-Flash");
+  assert.equal(plannerSaved.json.roles["event-planner"].modelId, "DeepSeek-V4-Flash");
+  const logged = events.filter((event) => event.event === "provider_settings_updated").at(-1);
+  assert.equal(logged.role, "event-planner");
+  assert.equal(logged.modelId, "DeepSeek-V4-Flash");
+  assert.equal((await invoke(handler, "POST", "/api/settings", { provider: "amd", role: "unknown", modelId: "DeepSeek-V4-Flash", reasoningEffort: "none" })).status, 400);
 
   const rejected = await invoke(handler, "POST", "/api/settings", { provider: "openrouter", modelId: "deepseek/deepseek-v4-flash", reasoningEffort: "default" });
   assert.equal(rejected.status, 400);

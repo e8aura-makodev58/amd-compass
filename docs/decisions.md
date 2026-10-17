@@ -750,3 +750,20 @@ Gemini's WIP at the user's explicit request, resolving its unfinished master mer
 - Impact: More live recommendations complete. When AMD is slow or down, the deterministic
   fallback appears up to 30s later than before; the circuit breaker still fails fast after
   repeated service failures.
+
+## 2026-10-17 — Independent AMD model selection per role
+
+- Store `compass` and `event-planner` model/effort selections separately. Both default to
+  MiMo-V2.6-Flash with reasoning `none`, retaining the measured default behavior.
+  Planner-only environment overrides supplement the shared seeds on fresh installs.
+- Load an old single-model file into both roles without writing it; migrate the shape
+  only when an operator saves. Queue model saves and publish in-memory selections only
+  after atomic persistence succeeds. Leave the owner-only credential file untouched.
+- Snapshots expose both roles and their validation status; legacy top-level model fields
+  remain aliases for ranking. An omitted API role retains the ranking default; unknown
+  roles are rejected. Confirmed missing models fall back only for their own role and log
+  `provider_saved_model_missing` with that role. All provider calls continue through the
+  existing callers and shared provider controls.
+- Settings has two labelled, independently saved pickers and keeps the other role's draft
+  through saves and catalog refreshes. Hermetic tests cover migration, role persistence,
+  validation, fallback, env seeds and mocked UI interactions at phone/desktop widths.
