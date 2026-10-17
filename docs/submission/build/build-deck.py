@@ -151,14 +151,17 @@ SLIDES = [
               "one repair. Retries: at most two, only on HTTP 429. Five consecutive service failures open the "
               "breaker; one probe after 60 s. Rankings run in a background lane, so the clock keeps moving."),
 
-    dict(items=[*title("Live demo highlights"), *bullets(0.6, 1.6, 5.6, 5.2, [
-        "Live Floor: three floors, 2D map and 2.5D overview, issues and responders in real time.",
-        "Compass ranking with rationale; offer, accept, reject; help for complex work.",
-        "Override and force-resolve; one-click audit trail per issue.",
-        "Two independent control rooms (e8-aura-p1, e8-aura-p2).",
-    ], size=18), *image("live-floor.png", 6.5, 1.6, w=6.35)],
-        notes="A disagreement marker in the event feed means Compass chose differently from either baseline. Open "
-              "the recommendation record to see which baseline and to read the rationale."),
+    dict(items=[*title("A real MiMo ranking, end to end", "ISS-3642, captured live on AMD Token Factory (MiMo-V2.6-Flash)"),
+                *bullets(0.6, 1.9, 4.6, 5.0, [
+        "Nearest responder: **Optr375**, 0.8 min away, thin history on this fault.",
+        "Compass ranked **Engr370** first: deepest evidence, 92% success, 2 min away.",
+        "Offer accepted; resolved first time in **11.2 min**.",
+        "Every step, and the action taken, is in the issue's audit trail.",
+    ], size=17), *image("compass-record.png", 5.45, 1.85, w=7.45)],
+        notes="This record was captured live on AMD Token Factory with MiMo-V2.6-Flash on 2026-10-17 (simulated time "
+              "6 October). Both baselines picked someone else: nearest chose Optr375, the naive score chose Tech363. "
+              "One good outcome is not proof of better performance; the disagreement is recorded so it can be reviewed. "
+              "In that capture, 7 of 11 live rankings returned valid output; the rest fell back deterministically."),
 
     dict(items=[*title("A month of operations"), *bullets(0.6, 1.6, 5.3, 5.2, [
         "e8-aura-p1: **3,531 issues**, 1 September to 6 October (simulated).",

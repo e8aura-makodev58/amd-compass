@@ -209,3 +209,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] ui — evidence counts rounded
 - Evidence tables showed fractional confidence weights unrounded ("n=9.4997…"); `formatPercent` now shows them to one decimal. E2E check added in control-room.spec.
+
+## [2026-10-17] docs — demo video recorded; deck slide 7 uses a live AMD record
+- Captured live MiMo rankings on the 3200 app at 5× (7 of 11 valid). `docs/submission/ResponseCompass-demo.webm` (1:40, burned-in captions) recorded by `build/record-video.mjs` from a paused scratch copy, featuring ISS-3642; deck slide 7 now shows that record. Video script doc rewritten to match.

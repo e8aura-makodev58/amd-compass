@@ -105,18 +105,21 @@ failures open the breaker; one probe is allowed after 60s.
 
 ---
 
-## 7. Live demo highlights
+## 7. A real MiMo ranking, end to end
 
 **On slide**
-- Live Floor: three floors, 2D map with 2.5D overview, issues and responders in real time.
-- Compass recommendation with rationale; offer, accept, reject; assistance for complex work.
-- Override and force-resolve controls; one-click audit trail per issue.
-- Two independent control rooms (e8-aura-p1, e8-aura-p2).
-- Visual: 2–3 screenshots (issue audit trail, Compass rationale, event feed disagreement marker).
+- Subtitle: ISS-3642, captured live on AMD Token Factory (MiMo-V2.6-Flash).
+- Nearest responder: **Optr375**, 0.8 min away, thin history on this fault.
+- Compass ranked **Engr370** first: deepest evidence, 92% success, 2 min away.
+- Offer accepted; resolved first time in **11.2 min**.
+- Every step, and the action taken, is in the issue's audit trail.
+- Visual: the record's Compass analysis, evidence table and resolution.
 
 **Notes**
-Point out the disagreement marker in the event feed: it marks disagreement with either baseline, not necessarily nearest.
-Open the recommendation record to identify which baseline and read the rationale.
+Captured live on 2026-10-17 (simulated 6 October). Both baselines picked someone else:
+nearest chose Optr375, the naive score chose Tech363. One good outcome is not proof of better
+performance; the disagreement is recorded so it can be reviewed. In that capture, 7 of 11 live
+rankings returned valid output; the rest fell back deterministically.
 
 ---
 

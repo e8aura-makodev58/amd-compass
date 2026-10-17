@@ -63,8 +63,8 @@ Open: the form did not show the options. Pick after the user pastes them.
 ## Page 2 — Media
 
 - **Cover image (16:9):** to be generated from the reviewed prompt below.
-- **Video presentation (required):** script in [demo-video-script.md](demo-video-script.md).
-- **Slide presentation (required, PDF):** content in [pitch-deck.md](pitch-deck.md).
+- **Video presentation (required):** `ResponseCompass-demo.webm` (1:40, captions); see [demo-video-script.md](demo-video-script.md).
+- **Slide presentation (required, PDF):** `ResponseCompass-deck.pdf` (from `ResponseCompass-deck.pptx`); content in [pitch-deck.md](pitch-deck.md).
 
 ### Cover image prompt (ChatGPT, 16:9)
 

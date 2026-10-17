@@ -1,9 +1,10 @@
 // Captures the slide screenshots from a running ResponseCompass (paused month seed,
-// providers forced off). Usage: node docs/submission/build/screenshots.mjs http://127.0.0.1:3013
+// providers forced off). Usage: node docs/submission/build/screenshots.mjs <baseUrl> [issueId stationId]
+// With issueId/stationId, also captures that issue's record (compass-record.png).
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
-const base = process.argv[2] ?? "http://127.0.0.1:3013";
+const [base = "http://127.0.0.1:3013", recordIssueId, recordStationId] = process.argv.slice(2);
 const out = (name) => fileURLToPath(new URL(`../assets/${name}`, import.meta.url));
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 });
@@ -14,6 +15,28 @@ await page.locator(".building").waitFor();
 await page.evaluate(() => document.fonts.ready);
 await page.waitForTimeout(800);
 await page.screenshot({ path: out("live-floor.png") });
+
+if (recordIssueId) {
+  const clickInPage = async (selector) => {
+    await page.waitForSelector(selector, { state: "attached" });
+    await page.evaluate((sel) => { const el = document.querySelector(sel); el.scrollIntoView({ block: "center" }); el.click(); }, selector);
+  };
+  await page.setViewportSize({ width: 1150, height: 1000 });
+  await page.getByRole("button", { name: "Maximise Dispatch / context" }).click();
+  await page.locator("#stations-tab").click();
+  await clickInPage(`[data-station-id="${recordStationId}"]`);
+  await clickInPage(`[data-station-history-issue-id="${recordIssueId}"]`);
+  await page.getByText("Compass analysis").first().waitFor();
+  await page.getByText("Compass analysis").first().evaluate((node) => node.scrollIntoView({ block: "start" }));
+  await page.waitForTimeout(600);
+  // Crop to the analysis, evidence table and resolution so it reads on a slide.
+  const top = await page.getByText("Compass analysis").first().boundingBox();
+  const bottom = await page.getByText("Action taken:").last().boundingBox();
+  const panel = await page.locator("#issue-summary").evaluate((node) => { const r = node.getBoundingClientRect(); return { x: r.x, width: r.width }; });
+  await page.screenshot({ path: out("compass-record.png"), clip: { x: panel.x - 12, y: top.y - 14, width: panel.width + 24, height: bottom.y + bottom.height - top.y + 34 } });
+  await page.getByRole("button", { name: "Restore Dispatch / context" }).click();
+  await page.setViewportSize({ width: 1600, height: 900 });
+}
 
 await page.locator("#analytics-tab").click();
 await page.locator("[data-analytics-level=MONTH]").click();
