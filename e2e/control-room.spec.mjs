@@ -57,6 +57,10 @@ test("Live controls, analytics, and Offline fallback complete without repair", a
   await expect(page.getByText("past 12 hours")).toBeVisible();
   await page.getByRole("tab", { name: "Week" }).click();
   await expect(page.getByText("past 4 weeks", { exact: false })).toBeVisible();
+  // Rate denominators can be fractional evidence weights; they display to one decimal.
+  for (const count of (await page.locator("#analytics-content").innerText()).match(/\(n=[^)]*\)/g) ?? []) {
+    expect(count).toMatch(/^\(n=\d+(\.\d)?\)$/);
+  }
   await page.getByRole("button", { name: "All equipment" }).click();
   await expect(page.locator(".equipment-directory-row")).toHaveCount(12);
   await page.getByLabel("Search equipment").fill("Station 3");

@@ -212,3 +212,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] docs — demo video recorded; deck slide 7 uses a live AMD record
 - Captured live MiMo rankings on the 3200 app at 5× (7 of 11 valid). `docs/submission/ResponseCompass-demo.webm` (1:40, burned-in captions) recorded by `build/record-video.mjs` from a paused scratch copy, featuring ISS-3642; deck slide 7 now shows that record. Video script doc rewritten to match.
+
+## [2026-10-17] ui — analytics denominators rounded
+- `analyticsRate` showed fractional evidence weights unrounded (e.g. "n=511.4537…"); it now uses the shared `formatCount` (one decimal). E2E check added to the analytics journey.
