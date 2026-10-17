@@ -24,9 +24,10 @@ async function dragRootDivider(page, delta) {
   await page.mouse.up();
 }
 
-test("desktop tiles cover the frame without gaps, overlaps or outbound requests", async ({ page }) => {
+test("desktop tiles cover the frame without gaps, overlaps or outbound requests", async ({ page, baseURL }) => {
+  const origin = new URL(baseURL).origin;
   const outbound = [], errors = [];
-  page.on("request", (request) => { if (new URL(request.url()).origin !== "http://127.0.0.1:3012") outbound.push(request.url()); });
+  page.on("request", (request) => { if (new URL(request.url()).origin !== origin) outbound.push(request.url()); });
   page.on("pageerror", (error) => errors.push(error.message));
   for (const [width, height] of [[1440, 900], [1280, 900], [920, 900], [1440, 720]]) {
     await page.setViewportSize({ width, height });

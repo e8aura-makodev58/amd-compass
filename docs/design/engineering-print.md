@@ -1,3 +1,5 @@
+> **Superseded by [Modern light](modern-light.md).** Retained as the historical design reference.
+
 # ResponseCompass visual design — "Engineering print"
 
 Every agent restyling the frontend follows this page so the views look like one product.

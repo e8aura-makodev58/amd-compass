@@ -22,8 +22,9 @@ continuity, the map/label layout, render lifecycle, store-failure recovery, and 
 (`wpNN-*.test.mjs`) plus a few feature-named files.
 
 `design-tokens-contrast.test.mjs` parses the CSS tokens and checks every paper-facing
-text colour at 4.5:1 against all three paper surfaces, including tokens used by the linked
-area stylesheets. It uses local file reads and WCAG sRGB luminance calculations only.
+text colour at 4.5:1 against all five light surfaces (including selection/alert washes), including tokens used by the linked
+area stylesheets. It also checks white primary-button text against both accent backgrounds. It uses
+local file reads and WCAG sRGB luminance calculations only.
 
 `tiling-layout.test.mjs` validates persisted layouts without a DOM or network: accepted
 panels, schema/version/size limits, injected parameters/constraints, duplicate/missing
