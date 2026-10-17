@@ -89,7 +89,9 @@ const statusLabel = (status) => String(status ?? "unknown").replaceAll("_", " ")
 const positionStyle = (entity, offset = {}) => `left:${((entity.x + (offset.x ?? 0)) / FLOOR_WIDTH) * 100}%;top:${((entity.y + (offset.y ?? 0)) / FLOOR_HEIGHT) * 100}%;`;
 const responderDisplayOffsets = { "R-TECH073": { x: -8, y: -14 }, "R-OPER142": { x: 0, y: 14 }, "R-ENGR104": { x: 8, y: -14 }, "R-OPER088": { x: -3, y: 14 }, "R-TECH216": { x: 3, y: -14 }, "R-ENGR028": { y: 14 } };
 const formatMinutes = (value) => value === null || value === undefined ? "No prior history" : `${Number(value).toFixed(Number.isInteger(value) ? 0 : 1)} min`;
-const formatPercent = (value, count = 3) => value === null || value === undefined ? "—" : count < 3 ? `Insufficient data (n=${count})` : `${Math.round(value * 100)}% (n=${count})`;
+// Evidence counts can be confidence weights (fractional); show them to one decimal.
+const formatCount = (count) => Number.isInteger(count) ? String(count) : count.toFixed(1);
+const formatPercent = (value, count = 3) => value === null || value === undefined ? "—" : count < 3 ? `Insufficient data (n=${formatCount(count)})` : `${Math.round(value * 100)}% (n=${formatCount(count)})`;
 const responderName = (state, id) => state.responders.find((responder) => responder.id === id)?.name ?? id ?? "—";
 const activeIssues = (state) => state.issues.filter((issue) => issue.status !== "RESOLVED");
 const latestRecommendation = (state, issueId) => [...(state.recommendations ?? [])].reverse().find((entry) => entry.issueId === issueId);

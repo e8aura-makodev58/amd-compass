@@ -32,6 +32,10 @@ test("Live controls, analytics, and Offline fallback complete without repair", a
   // deterministic and spends no provider credits.
   await expect(page.locator("#recommendation-panel")).toContainText("Eligible responder evidence");
   await expect(page.locator("#recommendation-panel")).toContainText("Offer sent to");
+  // Evidence counts can be fractional confidence weights; they display to one decimal.
+  const counts = (await page.locator("#recommendation-panel").innerText()).match(/\(n=[^)]*\)/g) ?? [];
+  expect(counts.length).toBeGreaterThan(0);
+  for (const count of counts) expect(count).toMatch(/^\(n=\d+(\.\d)?\)$/);
 
   await page.locator("#issue-list").getByRole("button", { name: /ISS-103/ }).click();
   await page.getByRole("button", { name: "Settings", exact: true }).click();
