@@ -137,3 +137,4 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] behavior — Candidate names allowed in Compass prose
 - `agent.mjs`: the no-digits prose check now ignores the supplied candidates' `responderId` / `displayName`; the system instruction allows naming candidates that way. Other digits and unsupplied IDs are still rejected. Test added in `wp5-agent.test.mjs`.
 - Pages updated: concepts/agent-boundary.md, backend/model-providers.md; `docs/decisions.md` entry.
+- Live re-check after the change (rankings only, 3 samples): MiMo-V2.6-Flash 3/3 valid (was 1/3); DeepSeek-V4-Flash 1/3, now failing on incomplete rankings rather than digits.

@@ -86,7 +86,11 @@ The single valid MiMo ranking picked `R-ENGR028`. Most ranking failures come fro
 `containsNumericLeakage` in `agent.mjs`, which then rejected any digit, while models wrote
 responder IDs or numbers in their rationale. Since 2026-10-17 (user decision) the supplied
 candidates' `responderId` / `displayName` are allowed in prose; every other digit is still
-rejected. Prompt hardening plus one revalidated repair attempt is being built on top. The planner is
+rejected. Prompt hardening plus one revalidated repair attempt is being built on top.
+A ranking-only re-check right after that change (2026-10-17, 3 samples): **MiMo-V2.6-Flash
+3/3 valid** (median 28.4s; it picked `R-ENGR028` in 1 of 3 and other eligible candidates
+otherwise). DeepSeek-V4-Flash (default reasoning) was 1/3: it left candidates out of the
+ranking. The planner is
 reliable on MiMo and DeepSeek. Re-measure after that fix and the provider limiter merge.
 
 Output speed is roughly 25 tokens/s, so a ranking takes 20–40s; the agent timeout defaults
