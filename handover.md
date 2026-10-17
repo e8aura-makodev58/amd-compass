@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no task) |
+| codex | RUN (round 4 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none (header E2E + boot model check merged `a2dad5b`) | — |
+| codex | Separate model per role (ranking vs event planner) | 4 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -196,6 +196,49 @@ round 2 apply.
   (main agent, `93272ec`), prompt hardened, one revalidated repair within the same deadline.
 
 - **codex — Header regression E2E + saved-model check at boot.** Done: merged `a2dad5b`.
+
+**Round 4 (2026-10-17).** Measurement showed no model is best at both jobs: DeepSeek-V4-Flash
+ranked 3/3 but planned 1/3; MiMo-V2.6-Flash planned 3/3 and ranked 2/3. The user asked the
+main agent to choose next work for codex and itself.
+
+- **codex — Separate model per role (ranking vs event planner).** Start with `git merge
+  master` and `npm install`; use port 3021.
+  - **Goal:** the operator can pick one model + reasoning level for Compass rankings and
+    another for the event planner. Default: both MiMo-V2.6-Flash / `none` (no behaviour
+    change until someone chooses).
+  - **Settings shape** (`backend/src/provider-settings.mjs`, you own it): store a selection
+    per role, e.g. `models.amd = { compass: {modelId, reasoningEffort}, eventPlanner: {…} }`
+    (your call on naming). **Backward compatible:** an existing
+    `provider-settings.json` with the old single `{modelId, reasoningEffort}` must load and
+    apply to both roles, and must not be rewritten until the operator saves. Keep the
+    owner-only credential file untouched.
+  - `requestOptions("compass")` / `requestOptions("event-planner")` return their own role's
+    model. The boot catalog check (`modelValidation`) must cover each role separately; a
+    missing model falls back to `AMD_DEFAULT_MODEL_ID` for that role only, keeping the
+    saved choice and logging `provider_saved_model_missing` with the role.
+  - **Env seed:** keep `AMD_TOKEN_FACTORY_MODEL` / `_REASONING_EFFORT` as the seed for both
+    roles; add optional `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` /
+    `AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT` that override the planner seed only.
+    Add them to `.env.example` and `project-state/operations/running-and-config.md`.
+  - **API:** the settings save route accepts a role and validates model + reasoning level
+    against the cached catalog as today. Snapshot shows both roles. Reject unknown roles.
+  - **UI** (Settings → API in `frontend/app.js`, and its styles if needed): two labelled
+    pickers, "Ranking (Compass)" and "Event planner", each with model + reasoning level and
+    its own validation status. Keep existing IDs working or update their tests' setup, never
+    their assertions' intent. Must fit at 375px and 1280px with no horizontal overflow.
+  - **Tests:** unit tests for old-file migration, per-role save/validation, per-role boot
+    fallback, env planner override; extend `e2e/provider-settings.spec.mjs` for the two
+    pickers. No live AMD calls (fake fetch / mocked catalog).
+  - **Do not touch:** `model-provider.mjs`, `provider-controls.mjs`, `agent.mjs`,
+    `event-planner.mjs` (callers already take `modelId` from `requestOptions`; if wiring
+    truly needs a change there, ask first), `scripts/measure-amd-models.mjs` (main agent).
+  - Update `project-state/backend/model-providers.md` (**Selection & discovery** section
+    only), add a `docs/decisions.md` entry and a `project-state/log.md` entry.
+
+- **main agent — Larger live measurement at the app's real timeouts.** 10 samples per model,
+  60s ranking / 30s planner timeouts (the app defaults), through the provider controls, to
+  choose the default model per role. Then sets the recommended defaults once codex's
+  per-role settings merge.
 
 - **main agent:** reviews and merges. Measured live 2026-10-16 (see codex's bullet). Re-measures with more
   samples once the provider controls land (codex's validity fix is merged).
