@@ -691,3 +691,16 @@ Vendor only Latin variable-weight normal/italic WOFF2 faces, CSS and licences th
 app identifiers, ARIA changes or simulation behavior changes are introduced.
 The Engineering print spec remains as a superseded historical reference. Codex completed
 Gemini's WIP at the user's explicit request, resolving its unfinished master merge first.
+
+## 2026-10-17 — Allow supplied candidate names in Compass prose
+
+- Decision: `validateAgentResult` now removes the supplied candidates' own `responderId`
+  and `displayName` (whole-word, case-insensitive) before its no-digits check, and the
+  system instruction lets the model name candidates that way. Every other digit, and any
+  ID that was not in the candidate packet, is still rejected.
+- Reason: User decision. The live measurement of 2026-10-16 showed most ranking rejections
+  came from models naming candidates such as `Engr028`, which carry digits. Those names are
+  already in the packet and on screen, so they leak no numeric evidence and nothing about
+  `ResponderSkill`. This replaces the 2026-09 rule that forbade IDs and display codes in prose.
+- Impact: Fewer live rankings fall back for a harmless reason. Rules 3 and 4 are unchanged:
+  numbers in prose (distances, counts, rates) are still rejected.

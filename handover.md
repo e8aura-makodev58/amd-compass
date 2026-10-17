@@ -201,19 +201,21 @@ round 2 apply.
     - **rankings:** only 1 of 15 valid across MiMo, GLM-5.3, Qwen3.8-Flash-Next, DeepSeek-V4-Flash
       and MiniCPM5-2B;
     - **planner:** MiMo 3/3 in about 4.5s, DeepSeek 3/3 in about 7s.
-  - **Main failure:** `prose introduces numeric evidence`. `containsNumericLeakage` in
-    `agent.mjs` rejects any digit, and models write responder IDs (`Engr028`) or numbers in
-    their rationale.
+  - **Main failure:** `prose introduces numeric evidence`: models wrote responder IDs
+    (`Engr028`) or numbers in their rationale. **Already done on master (main agent,
+    2026-10-17, user decision):** the supplied candidates' `responderId` / `displayName` are
+    now allowed in prose (`candidateNamePattern` in `agent.mjs`); every other digit is still
+    rejected. Merge master first so you build on it.
   - **Do, in order:**
-    1. Harden `SYSTEM_INSTRUCTION`: no digits anywhere in prose, including responder IDs;
-       say "this candidate", "the nearer candidate", and so on. Add one short compliant
-       example.
+    1. Harden `SYSTEM_INSTRUCTION` against the remaining failure: no numbers in prose
+       (distances, counts, rates, minutes). Candidate names are fine. Add one short
+       compliant example.
     2. Add **one** bounded repair attempt: on `validation-failed`, re-ask once with the
        validator's error list. It is one extra request that must fit the **same** overall
        deadline (skip it if too little time remains). The result is still fully revalidated; never
        accept unvalidated output.
-  - **Do not** loosen `containsNumericLeakage` or any validator (`AGENTS.md` rule 3) without
-    asking the main agent first.
+  - **Do not** loosen `containsNumericLeakage` or any validator further (`AGENTS.md` rule 3)
+    without asking the main agent first.
   - Hermetic tests with fake fetch: a numeric-prose reply triggers exactly one repair; a
     second failure falls back; the repair is skipped when the deadline is too short.
   - Record it in `docs/decisions.md`. The main agent re-measures live afterwards.

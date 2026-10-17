@@ -133,3 +133,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] docs — Model measurement and E2E ports recorded
 - `backend/model-providers.md`: added the `npm run measure:amd` tool and its 2026-10-16 three-sample results (rankings mostly rejected for digits in prose; planner reliable on MiMo and DeepSeek).
 - `operations/testing.md`: documented `COMPASS_E2E_PORT`, the per-port data root, and that `measure:amd` is the only live-calling script.
+
+## [2026-10-17] behavior — Candidate names allowed in Compass prose
+- `agent.mjs`: the no-digits prose check now ignores the supplied candidates' `responderId` / `displayName`; the system instruction allows naming candidates that way. Other digits and unsupplied IDs are still rejected. Test added in `wp5-agent.test.mjs`.
+- Pages updated: concepts/agent-boundary.md, backend/model-providers.md; `docs/decisions.md` entry.

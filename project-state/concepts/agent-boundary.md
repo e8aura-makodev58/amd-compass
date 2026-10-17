@@ -23,7 +23,9 @@ Exactly two bounded jobs:
 2. **Compass agent** (`agent.mjs`) — **rank the eligible candidates it is handed**, with a
    qualitative summary and a tradeoff per candidate. Validated against
    `AGENT_RESULT_JSON_SCHEMA`: contiguous ranks, known candidate ids only, the top pick
-   consistent with rank 1, and **no numeric leakage** in the prose.
+   consistent with rank 1, and **no numeric leakage** in the prose. The only digits allowed in
+   prose are the supplied candidates' own `responderId` / `displayName` (user decision,
+   2026-10-17).
 
 ## Never trust the model
 

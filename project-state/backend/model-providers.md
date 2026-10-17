@@ -44,7 +44,7 @@ terms are in [`Compass_AMD_Token_Factory_Integration_Guide.md`](../../Compass_AM
   for DeepSeek-V4-Flash (HTTP 400 "does not support JSON schema output mode"), so the
   output schema is appended to the system message as guidance. `json_object` guarantees
   only syntactically valid JSON: **the callers' validators are the real contract** —
-  `validateAgentResult` (IDs, ranks, tradeoffs, no digits in prose) and
+  `validateAgentResult` (IDs, ranks, tradeoffs, no digits in prose apart from supplied candidate names) and
   `validateEventProposal` (eligible equipment, issue class, ceilings).
 - Any separate reasoning trace (`message.reasoning`) is ignored — never parsed, stored, or
   shown.
@@ -83,9 +83,10 @@ it is manual and never part of `npm test`. Options: `--models id[:effort],…` (
 | MiniCPM5-2B (default) | 0/3 | — | 0/3 | — | Schema errors; unknown equipment. |
 
 The single valid MiMo ranking picked `R-ENGR028`. Most ranking failures come from
-`containsNumericLeakage` in `agent.mjs`: it rejects any digit, and models write responder
-IDs or numbers in their rationale. The validator stays strict (rules 3 and 4); the fix
-being built is prompt hardening plus one revalidated repair attempt. The planner is
+`containsNumericLeakage` in `agent.mjs`, which then rejected any digit, while models wrote
+responder IDs or numbers in their rationale. Since 2026-10-17 (user decision) the supplied
+candidates' `responderId` / `displayName` are allowed in prose; every other digit is still
+rejected. Prompt hardening plus one revalidated repair attempt is being built on top. The planner is
 reliable on MiMo and DeepSeek. Re-measure after that fix and the provider limiter merge.
 
 Output speed is roughly 25 tokens/s, so a ranking takes 20–40s; the agent timeout defaults

@@ -89,7 +89,7 @@ test("system instruction matches the SOW contract text and forbids fabrication/n
   assert.match(SYSTEM_INSTRUCTION, /Rank only the supplied eligible candidates/);
   assert.match(SYSTEM_INSTRUCTION, /Do not invent facts or candidates/);
   assert.match(SYSTEM_INSTRUCTION, /Do not repeat numeric evidence in generated prose/);
-  assert.match(SYSTEM_INSTRUCTION, /Do not reproduce responder IDs or display codes in prose/);
+  assert.match(SYSTEM_INSTRUCTION, /exact displayName or responderId; those are the only digits allowed in prose/);
   assert.match(SYSTEM_INSTRUCTION, /using no digits at all/);
   assert.match(SYSTEM_INSTRUCTION, /Every ranked candidate must include a tradeoff/);
 });
@@ -180,6 +180,27 @@ test("validation rejects generated prose that leaks numeric evidence", () => {
   const { valid, errors } = validateAgentResult(packet, leaked);
   assert.equal(valid, false);
   assert.ok(errors.some((error) => error.includes("numeric evidence")));
+});
+
+test("validation allows supplied candidate names in prose but no other digits", () => {
+  const packet = scenarioAPacket();
+  const named = validAgentResult();
+  named.topRecommendation.rationale = "Engr028 has stronger same-issue evidence than R-ENGR104, and engr028 is closer.";
+  named.rankedCandidates[0].tradeoff.explanation = "Preferred over Engr104 (fewer resolved cases).";
+  assert.deepEqual(validateAgentResult(packet, named), { valid: true, errors: [] });
+
+  for (const rationale of [
+    "Engr028 is 22 meters away.",
+    "Engr999 is a better fit.",
+    "Engr0281 is a better fit.",
+    "XEngr028 is a better fit.",
+  ]) {
+    const leaked = validAgentResult();
+    leaked.topRecommendation.rationale = rationale;
+    const { valid, errors } = validateAgentResult(packet, leaked);
+    assert.equal(valid, false, rationale);
+    assert.ok(errors.some((error) => error.includes("numeric evidence")), rationale);
+  }
 });
 
 test("validation rejects an incomplete or duplicated ranking", () => {

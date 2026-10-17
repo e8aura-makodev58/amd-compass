@@ -29,9 +29,9 @@ Explain why the top candidate is preferred over meaningful alternatives.
 
 Do not repeat numeric evidence in generated prose.
 Refer to evidence qualitatively because the UI renders authoritative numbers.
-Do not reproduce responder IDs or display codes in prose; refer to candidates qualitatively.
+You may name a supplied candidate by its exact displayName or responderId; those are the only digits allowed in prose.
 Every ranked candidate must include a tradeoff that compares it to a different supplied candidate.
-Write recommendationSummary, every tradeoff explanation, topRecommendation.rationale, and uncertaintyNote using no digits at all: no counts, percentages, minutes, distances, sample sizes, or numerals of any kind. Spell any ordinal as a word.
+Apart from supplied candidate names, write recommendationSummary, every tradeoff explanation, topRecommendation.rationale, and uncertaintyNote using no digits at all: no counts, percentages, minutes, distances, sample sizes, or numerals of any kind. Spell any ordinal as a word.
 
 Return only the required structured output.`;
 
@@ -151,15 +151,32 @@ export function checkAgentResultShape(value) {
   return errors;
 }
 
-function containsNumericLeakage(...prose) {
-  return prose.some((text) => typeof text === "string" && /\d/.test(text));
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Names of the supplied candidates (responderId and displayName) are the only
+ * digit-bearing tokens allowed in prose. They are matched whole and
+ * case-insensitively, and removed before the digit check, so any other number,
+ * or an ID that was not supplied, is still rejected.
+ */
+function candidateNamePattern(candidatePacket) {
+  const names = candidatePacket.candidates
+    .flatMap((candidate) => [candidate.responderId, candidate.displayName])
+    .filter((name) => typeof name === "string" && name.length > 0)
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp);
+  return names.length ? new RegExp(`(?<!\\w)(?:${names.join("|")})(?!\\w)`, "gi") : null;
+}
+
+function containsNumericLeakage(namePattern, ...prose) {
+  return prose.some((text) => typeof text === "string" && /\d/.test(namePattern ? text.replace(namePattern, " ") : text));
 }
 
 /**
  * Full SOW §24 validation pipeline. The model is never trusted: every ID is
  * checked against the candidate packet that was actually sent, and any
  * generated prose that leaks numeric evidence is rejected outright rather
- * than repaired.
+ * than repaired. Supplied candidate names are the one allowed exception.
  */
 export function validateAgentResult(candidatePacket, result) {
   const errors = checkAgentResultShape(result);
@@ -173,6 +190,7 @@ export function validateAgentResult(candidatePacket, result) {
   }
 
   const eligibleIds = new Set(candidatePacket.candidates.map((candidate) => candidate.responderId));
+  const namePattern = candidateNamePattern(candidatePacket);
   const seenIds = new Set();
   for (const candidate of result.rankedCandidates) {
     if (!eligibleIds.has(candidate.responderId)) {
@@ -182,7 +200,7 @@ export function validateAgentResult(candidatePacket, result) {
       errors.push(`rankedCandidates references ${candidate.responderId} more than once`);
     }
     seenIds.add(candidate.responderId);
-    if (containsNumericLeakage(candidate.recommendationSummary, candidate.tradeoff?.explanation)) {
+    if (containsNumericLeakage(namePattern, candidate.recommendationSummary, candidate.tradeoff?.explanation)) {
       errors.push(`rankedCandidates[${candidate.responderId}] prose introduces numeric evidence`);
     }
     if (candidate.tradeoff) {
@@ -218,7 +236,7 @@ export function validateAgentResult(candidatePacket, result) {
   } else if (rankOne && result.topRecommendation.responderId !== rankOne.responderId) {
     errors.push("topRecommendation must match the rank-1 candidate");
   }
-  if (containsNumericLeakage(result.topRecommendation.rationale, result.uncertaintyNote)) {
+  if (containsNumericLeakage(namePattern, result.topRecommendation.rationale, result.uncertaintyNote)) {
     errors.push("topRecommendation or uncertaintyNote prose introduces numeric evidence");
   }
 
