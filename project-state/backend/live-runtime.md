@@ -57,9 +57,18 @@ outcome. See [../concepts/agent-boundary.md](../concepts/agent-boundary.md).
 ## Agent activity & deferred work
 
 `live-runtime.mjs` tracks a visible agent-activity status (so the UI can show when the
-planner or Compass is "thinking") and a deferred-work queue for model calls that are
-in flight, so a slow provider never blocks a tick. A model call that fails or times out
-marks the recommendation `UNAVAILABLE` and dispatch proceeds on the baseline.
+planner or Compass is "thinking"). Model-bound work started by the **real-time loop**
+(`runScheduledTick`: event planning, Compass ranking after a resolution or workforce
+change, support matching, the autonomous-dispatch pass) runs in a single serialized
+**agent lane**, so a slow provider never holds the clock: ticks keep advancing time and
+handling resolutions, offers and shifts while a call is in flight. At most one
+autonomous-dispatch pass is queued at a time; it re-reads state when it runs. The loop
+context is carried with `AsyncLocalStorage`, so every other caller (API actions, tests,
+`advanceSimulation` in offline history generation) still runs that work inline and in the
+original order. `agentWorkIdle()` resolves when the lane is empty (tests). A queued event
+plan is in memory only: if the process stops first, that event is skipped, never
+duplicated. A model call that fails or times out marks the recommendation `UNAVAILABLE`
+and dispatch proceeds on the baseline.
 
 ## Configuration
 

@@ -200,3 +200,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] ui — speed menu capped at 5×
 - Header speed menu offers 1×/5× only; a faster room shows its speed as a disabled "above recommended" option. API unchanged. New `e2e/speed-select.spec.mjs` (2 tests). Pages updated: frontend/overview.md, backend/http-api.md; README; `docs/decisions.md` entry (also records the open clock-blocking defect).
+
+## [2026-10-17] fix — model calls no longer hold the live clock
+- `live-runtime.mjs`: real-time loop runs model-bound work in a serialized agent lane (AsyncLocalStorage marks the loop context; other callers stay inline). New `agentWorkIdle()`. Regression test in wp10. Pages updated: backend/live-runtime.md; `docs/decisions.md` entry.

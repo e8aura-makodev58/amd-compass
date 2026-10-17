@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createEventPlanningService } from "./event-planner.mjs";
 import { createLiveAssignmentService } from "./live-assignment-service.mjs";
 import { createLiveRecommendationService } from "./live-recommendation-service.mjs";
@@ -26,6 +27,34 @@ export function createLiveRuntime({
   let tickRunning = false;
   let autonomousDispatchRunning = false;
   const deferredAgentWork = [];
+  // Model-bound work started by the real-time loop runs in this serialized lane
+  // so a slow provider never holds the clock. Every other caller (API actions,
+  // tests, offline history generation) runs it inline, which keeps their
+  // ordering, and generated history, exactly as before.
+  const loopContext = new AsyncLocalStorage();
+  const agentQueue = [];
+  let agentLane = null;
+  let dispatchQueued = false;
+
+  function inLoop() { return loopContext.getStore() === true; }
+
+  function startAgentLane() {
+    if (agentLane) return;
+    agentLane = loopContext.exit(async () => {
+      try {
+        while (agentQueue.length) {
+          try { await agentQueue.shift()(); }
+          catch (error) { logger?.log(JSON.stringify({ timestamp: new Date().toISOString(), event: "live_agent_work_error", error: error.message })); }
+        }
+      } finally { agentLane = null; }
+    });
+  }
+
+  function runAgentWork(work) {
+    if (!inLoop()) return work();
+    agentQueue.push(work);
+    startAgentLane();
+  }
   const agentActivity = {
     eventPlanner: { agent: "EVENT_PLANNER", status: "IDLE", detail: "Waiting for the next event opportunity.", startedAtRealTime: null, completedAtRealTime: null },
     compass: { agent: "COMPASS", status: "IDLE", detail: "Waiting for a recommendation request.", startedAtRealTime: null, completedAtRealTime: null },
@@ -90,7 +119,7 @@ export function createLiveRuntime({
   }
 
   async function drainDeferredAgentWork() {
-    while (deferredAgentWork.length) await deferredAgentWork.shift()();
+    while (deferredAgentWork.length) await runAgentWork(deferredAgentWork.shift());
   }
 
   async function requestComplexAssistanceIfNeeded(issueId, { defer = false } = {}) {
@@ -105,7 +134,7 @@ export function createLiveRuntime({
   }
 
   const scheduler = createScheduler(store, {
-    onEventDue: async (trigger) => {
+    onEventDue: (trigger) => runAgentWork(async () => {
       const planned = await trackAgent(
         "eventPlanner",
         "Generating and validating the next operational event.",
@@ -118,7 +147,7 @@ export function createLiveRuntime({
       );
       const result = planned.result ?? planned;
       if (result.status === "PERSISTED") await recommendPending();
-    },
+    }),
     onResolutionDue: async (trigger) => {
       const resolved = await resolution.handleResolutionDue(trigger);
       if (["RESOLVED", "REOPENED"].includes(resolved.result.status)) deferredAgentWork.push(() => recommendPending());
@@ -172,7 +201,12 @@ export function createLiveRuntime({
   async function advanceSimulation(realElapsedMilliseconds) {
     const transaction = await scheduler.tick(realElapsedMilliseconds);
     await drainDeferredAgentWork();
-    await ensureAutonomousDispatch();
+    if (!inLoop()) await ensureAutonomousDispatch();
+    else if (!dispatchQueued) {
+      // One queued dispatch pass at a time: it re-reads state when it runs.
+      dispatchQueued = true;
+      runAgentWork(async () => { dispatchQueued = false; await ensureAutonomousDispatch(); });
+    }
     return transaction.result;
   }
 
@@ -194,7 +228,7 @@ export function createLiveRuntime({
     try {
       const snapshot = await store.snapshot();
       if (snapshot.simulationState.status === "RUNNING") {
-        await advanceSimulation(elapsed);
+        await loopContext.run(true, () => advanceSimulation(elapsed));
       }
     } catch (error) {
       logger?.log(JSON.stringify({ timestamp: new Date().toISOString(), event: "live_scheduler_error", error: error.message }));
@@ -262,6 +296,8 @@ export function createLiveRuntime({
     async tick(realElapsedMilliseconds) { return withState(await advanceSimulation(realElapsedMilliseconds)); },
     async reconcileStartup() { const result = await scheduler.reconcileClaimedTriggers(); await drainDeferredAgentWork(); return result; },
     runScheduledTick,
+    /** Resolves once model-bound work started by the real-time loop has finished. */
+    async agentWorkIdle() { while (agentLane) await agentLane; },
     // Retained as a standalone capability (e.g. a single-runtime test or a
     // consumer with no Control Room manager) — never called from the
     // production boot path, which drives every room from one shared

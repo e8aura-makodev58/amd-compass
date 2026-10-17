@@ -844,6 +844,21 @@ unowned events remain growing canonical evidence, not a constant-space guarantee
 - The UI offers 1× and 5×. The API, schema and clock still accept 10× and 60× (offline
   history generation and the soak evaluation use them). A room already faster shows its
   speed as a disabled "above recommended" option until lowered.
-- Known defect, not yet fixed: the live tick awaits model calls, so the clock stops while a
-  ranking or event plan is in flight and then jumps ahead. Visible at any speed when AMD is
-  slow; `project-state/backend/live-runtime.md` describes the intended non-blocking design.
+- The live tick then awaited model calls, so the clock stopped while a ranking or event
+  plan was in flight and jumped ahead afterwards. Fixed the same day (next entry).
+
+## 2026-10-17 — Model calls no longer hold the live clock (main agent)
+
+- **Defect:** `runScheduledTick` awaited the scheduler's handlers and the dispatch pass,
+  which await the event planner and Compass. With AMD taking 40–90s (all three rankings
+  timed out at 90s on 2026-10-17), the clock froze for each call and then jumped ahead by
+  the whole wait, contradicting the documented "a slow provider never blocks a tick".
+- **Fix:** model-bound work started by the real-time loop runs in one serialized agent lane;
+  the tick returns at once. `AsyncLocalStorage` marks the loop context, so API actions,
+  tests and offline generation keep running the work inline in the original order (the
+  committed month seed stays reproducible). Serializing the lane keeps one model call in
+  flight per room, as before; the dispatch pass is deduplicated.
+- **Accepted trade-off:** event plans queued in the lane are in memory; a restart skips them
+  rather than duplicating them (token checks still apply).
+- Regression test in `wp10-live-runtime.test.mjs`: the loop advances time while a planner
+  call is pending, and the event persists once it completes.

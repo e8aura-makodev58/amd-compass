@@ -144,6 +144,48 @@ test("runtime snapshots expose an event planner while it is working in the backg
   assert.match(completed.agentActivity.eventPlanner.detail, /deterministic fallback/);
 });
 
+test("the real-time loop keeps the clock moving while a model call is in flight", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "compass-live-loop-"));
+  const store = createLiveStore({ filePath: join(directory, "live.json") });
+  let releaseProvider;
+  let markProviderCalled;
+  const providerResponse = new Promise((resolve) => { releaseProvider = resolve; });
+  const providerCalled = new Promise((resolve) => { markProviderCalled = resolve; });
+  const runtime = createLiveRuntime({
+    store,
+    plannerOptions: { mode: "live", apiKey: "test-key", modelId: "test-model", fetchImpl: () => { markProviderCalled(); return providerResponse; } },
+    agentOptions: { mode: "force-failure" },
+  });
+  const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  await runtime.setSpeed(60);
+  await runtime.start();
+  // Make the next event due now, so the next loop tick claims it.
+  await store.mutate("event-due-now", (state) => { state.simulationState.nextEventAt = state.simulationState.simulationTime; });
+
+  await runtime.runScheduledTick();
+  await pause(20);
+  await runtime.runScheduledTick();
+  await providerCalled;
+  const before = (await store.snapshot()).simulationState.simulationTime;
+
+  // The planner's provider call is still pending. Before the fix this tick
+  // was skipped (the previous one never returned) and the clock stood still.
+  await pause(20);
+  const tick = runtime.runScheduledTick().then(() => "returned");
+  assert.equal(await Promise.race([tick, pause(1_000).then(() => "blocked")]), "returned");
+  const after = (await store.snapshot()).simulationState.simulationTime;
+  assert.ok(Date.parse(after) > Date.parse(before), "simulation time advanced while the planner waited");
+  assert.equal((await runtime.snapshot()).agentActivity.eventPlanner.status, "RUNNING");
+
+  releaseProvider({ ok: false, status: 503, headers: { get: () => null }, text: async () => "test provider unavailable" });
+  await runtime.agentWorkIdle();
+  const completed = await runtime.snapshot();
+  assert.equal(completed.agentActivity.eventPlanner.status, "COMPLETED");
+  assert.match(completed.agentActivity.eventPlanner.detail, /deterministic fallback/);
+  const persisted = /New event (ISS-\d+)/.exec(completed.agentActivity.eventPlanner.detail)?.[1];
+  assert.ok(completed.issues.some((issue) => issue.id === persisted), "the event was still persisted once the planner finished");
+});
+
 test("Live and Offline switch through one application runtime without cross-mode reset", async () => {
   const { app } = await createFixture();
   await app.forceNextEvent();
