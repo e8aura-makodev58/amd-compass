@@ -339,7 +339,8 @@ extends the demo video (other features) and will add the fix segment after this 
 - **Updated:** 2026-10-17
 - **Task:** Round 8 — hidden faults, measurable fix ranking and month history. Merged master `11ba02c`; dependencies installed.
 - **Plan:** First commit catalog, latent fault privacy, migration and fix-dependent attempt outcomes; second commit bounded model/fallback ranking, runtime lane, UI/analytics and tests; final commit regenerated month plus evidence and handoff. Both suites at each step. Existing responseAction is retained as an incident note; applied catalog fixes become actionTaken for new attempts. Existing running attempts retain legacy mechanics.
-- **Progress:** Core implementation and regression verification underway; no live provider calls or running-deployment access.
+- **Progress:** Core commit `fca4b40` passed 281 unit tests and 51 E2E tests. Model/runtime/UI/analytics step now passes 286 unit tests and 53 E2E tests, including 375px/1280px applied-fix audits and non-blocking provider waits. Month regeneration is running from the original week with forced provider failures; no live API calls or deployment access.
+- **Boundary:** Fix calls share the ranking role and unchanged provider controls. A tracked provider wait initiated from the agent lane yields to responder work. Work beginning before a reply freezes the deterministic pick; late results cannot rewrite an active fix. Private causes/effectiveness never enter issue/audit bundles, public payloads or packets. Legacy actions remain excluded from fix evidence.
 
 ---
 

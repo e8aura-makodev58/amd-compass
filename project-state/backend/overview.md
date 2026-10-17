@@ -67,3 +67,12 @@ one TypeScript type file; there is no build step.
 | Module | Responsibility |
 |--------|----------------|
 | `domain.ts` | TypeScript type definitions and status enums for the domain model. Types only; not imported at runtime by the `.mjs` code. |
+
+## Troubleshooting modules
+
+- `fix-catalog.mjs`: public synthetic procedures and catalog validation.
+- `fault-truth.mjs`: engine-only seeded diagnosis/effectiveness; public-boundary guard.
+- `fix-evidence.mjs`: observed aggregate packets, deterministic order, class-frequency
+  comparator and immutable applied selection for new attempts.
+- `fix-ranking.mjs`: bounded structured model/fixture request and strict validator.
+- `fix-recommendation-service.mjs`: request/result persistence, fallback and late/reset guards.

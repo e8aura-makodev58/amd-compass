@@ -45,6 +45,7 @@ export function compactHistory(state, days = retentionDays(), { force = false } 
     ...state.assignments.filter((row) => row.status === "ACTIVE").map((row) => row.issueId),
     ...(state.dispatchOffers ?? []).filter((row) => row.status === "PENDING" || row.responseDueToken || row.responseDispatchToken).map((row) => row.issueId),
     ...state.recommendations.filter((row) => row.status === "PENDING_MODEL").map((row) => row.issueId),
+    ...state.issues.filter((row) => row.fixRecommendation?.status === "PENDING_MODEL").map((row) => row.id),
     ...(state.workforceContinuity?.temporaryRepairs ?? []).filter((row) => ["SCHEDULED", "CLAIMED"].includes(row.status)).map((row) => row.issueId),
   ]);
   const selected = state.issues.filter((issue) => issue.status === "RESOLVED" && Date.parse(issue.resolvedAt) < cutoff && !protectedIds.has(issue.id));
@@ -64,6 +65,11 @@ export function compactHistory(state, days = retentionDays(), { force = false } 
     const { id, equipmentId, issueClass, raisedAt, resolvedAt, downtimeStartedAt } = issue;
     retention.facts.issues.push({ id, equipmentId, issueClass, status: "RESOLVED", raisedAt, resolvedAt,
       description: issue.description, responseAction: issue.responseAction,
+      ...(issue.symptom ? { symptom: issue.symptom } : {}),
+      ...(issue.fixRecommendation ? { fixRecommendation: { source: issue.fixRecommendation.source, status: issue.fixRecommendation.status,
+        baselineFixId: issue.fixRecommendation.baselineFixId, disagreement: issue.fixRecommendation.disagreement,
+        modelAttempted: issue.fixRecommendation.modelAttempted ?? false, createdAt: issue.fixRecommendation.createdAt,
+        recommendedFixId: issue.fixRecommendation.rankedFixes[0].fixId } } : {}),
       ...(downtimeStartedAt ? { downtimeStartedAt } : {}) });
     retention.archives[id] = resolvedAt.slice(0, 10);
   }

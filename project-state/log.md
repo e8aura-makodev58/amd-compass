@@ -222,3 +222,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-17] feature — Latent faults and measurable catalog fixes
 - Added engine-only seeded fault truth, overlapping public symptoms, public synthetic procedures, observed fix evidence and deterministic troubleshooting. Applied fixes scale attempt duration and success; legacy running attempts retain mechanics. Added privacy/migration/outcome tests and updated direct workforce test setup for the new invariant.
 - Pages updated: backend/simulation.md, backend/domain-model.md; own handoff records staged implementation.
+
+## [2026-10-17] feature — Rank fixes from observed evidence without blocking dispatch
+- Added strict model/fixture ranking with the ranking role's settings and deterministic fallback, tracked non-blocking runtime work, per-attempt applied audit, responsive Recommended fix/evidence UI and period first-time fix/agreement analytics. Retention preserves exact fix evidence and recommendation facts; tests extend lane, validation, archive and browser coverage.
+- Pages updated: backend/live-runtime.md, backend/http-api.md, backend/overview.md, backend/model-providers.md, frontend/overview.md, concepts/agent-boundary.md, concepts/analytics-and-ethics.md, operations/testing.md; docs/history-retention.md and docs/decisions.md explain the boundary.

@@ -78,3 +78,15 @@ pending/current-work references. Retention metadata and canonical observation ro
 private. History pages return at most 100 summaries; archived detail is fetched only by
 issue audit. Invalid page sizes or unknown cursors return 400. Analytics uses retained
 compact facts and exact observations, never archive I/O on requests.
+
+## Fix evidence in existing resources
+
+No new mutation endpoint is required. Live issue snapshots and issue audits include the
+public symptom and `fixRecommendation` (observed candidate evidence, ranking, rationale,
+source, baseline/fallback picks and disagreement). Pending inference displays its usable
+deterministic order. Active attempts include `fixApplied` and the frozen `fixDecision`;
+audit resolution rows include the procedure, attempt number, outcome and applied source.
+Legacy actions have no applied catalog fix and are labelled/excluded from fix evidence.
+`/analytics` adds `fixes`; every analytics period also adds `fixes` with first-time fix
+rate and recommended-vs-baseline agreement, denominators and the usual thin-sample status.
+Hidden fault state and effectiveness never occur in these responses.

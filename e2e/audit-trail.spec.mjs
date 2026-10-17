@@ -33,8 +33,8 @@ test("Live: two events for one issue show distinct event detail above one chrono
   await expect(panel).toContainText("Dispatch outcome");
   await expect(panel).toContainText("Compass analysis");
   await expect(panel).toContainText("Response and resolution");
-  // The response action is the industry-neutral playbook text, never a bare placeholder.
-  await expect(panel).toContainText(/Response action:\s*\S+/);
+  // The planner note remains readable and distinct from applied catalog fixes.
+  await expect(panel).toContainText(/Incident note:\s*\S+/);
 
   await assigned.click();
   await expect(summary).toContainText("Responder Assigned");

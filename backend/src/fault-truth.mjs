@@ -36,7 +36,9 @@ export function ensureIssueFault(state, issue) {
 export function initializeFaults(state, { recover = false } = {}) {
   for (const issue of state.issues) {
     ensureIssueFault(state, issue);
-    if (recover && issue.fixRecommendation?.status === 'PENDING_MODEL') issue.fixRecommendation.status = 'INTERRUPTED';
+    if (recover && issue.fixRecommendation?.status === 'PENDING_MODEL') {
+      issue.fixRecommendation.status = 'INTERRUPTED'; issue.fixRecommendation.modelAttempted = false; delete issue.fixRecommendation.requestToken;
+    }
   }
   return state;
 }

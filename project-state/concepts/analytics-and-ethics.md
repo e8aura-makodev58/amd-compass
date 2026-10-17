@@ -42,3 +42,15 @@ Analytics also surface where Compass **disagreed** with the deterministic baseli
 (nearest-available and the `naive-score-v1` formula in `BASELINE_CONFIG`), and along which
 dimension (travel time, observed performance, evidence strength, or a qualitative
 tradeoff). This is what makes the agent's added value auditable rather than assumed.
+
+## Fix analytics
+
+First-time fix rate is successful **first completed attempts** divided by all completed
+first attempts with an applied catalog fix. A prior legacy attempt prevents a later try
+being counted as first-time; legacy outcomes are excluded from fix evidence. Agreement
+compares each completed recommendation's first proposed fix with the most frequently
+applied fix for its class (catalog tie order). It is not a causal comparison of outcomes;
+a late recommendation can differ from the fix already applied. Rates retain denominators
+and the fewer-than-three suppression rule. Period membership uses observed completion
+or recommendation timestamps and the existing UTC boundaries. Canonical observations and
+compact issue recommendation facts preserve exact archived/unarchived equality.

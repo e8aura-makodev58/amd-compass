@@ -112,3 +112,13 @@ recovery after an injected failure between archive durability and live-file comm
 `e2e/station-issue-history.spec.mjs` includes an archived issue absent from `/state`,
 loaded through station history and inspected through audit. Generator tests use scratch
 roots and throwing network/credential guards, never the running deployment.
+
+## Troubleshooting coverage
+
+`fix-troubleshooting.test.mjs` checks catalogs, seeded/private fault migration, every public
+and model packet, fix-dependent outcomes with identical draws, next-fix sequencing and
+observed fallback evidence. `fix-ranking.test.mjs` checks strict output validation,
+fixture isolation, one repair, stale/completed results and non-blocking clock/dispatch
+under an unresolved provider request. Retention tests also compare fix evidence and
+analytics and scan raw bundles for latent fault fields. Browser fix tests exercise forced
+provider failure, expandable evidence and applied audit at 375px and 1280px.

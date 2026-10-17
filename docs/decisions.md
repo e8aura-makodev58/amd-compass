@@ -862,3 +862,36 @@ unowned events remain growing canonical evidence, not a constant-space guarantee
   rather than duplicating them (token checks still apply).
 - Regression test in `wp10-live-runtime.test.mjs`: the loop advances time while a planner
   call is pending, and the event persists once it completes.
+
+## 2026-10-17 — Applied fixes are measurable; latent diagnosis stays private
+
+Round 8 extends the bounded-ranking role to public catalog fixes. Code creates latent
+fault causes with a dedicated seeded stream and equipment-dependent priors, then exposes
+only an overlapping symptom. Engine-only cause/fix effectiveness multiplies the existing
+team success probability (clamped at the team cap) and scales duration. Roster changes do
+not re-roll causes, applied fixes or outcomes. Failed work takes the next untried ranked
+procedure; exhausting the catalog restarts the sequence. Six domain-neutral procedures
+per class have code-owned titles/steps. Legacy attempts retain their original mechanics
+and actions; new attempts record the applied catalog fix as actionTaken. The planner's
+free text remains an incident note for compatibility.
+
+This fits AGENTS rules 3 and 4: application code owns truth, eligibility, observed evidence,
+metrics and every mutation. The Compass ranking role can only rank supplied fix IDs and
+explain observed tradeoffs. It never receives a diagnosis, effectiveness or responder
+skill. Private causes live outside issues/audit bundles and the fault guard is invoked by
+the existing public-boundary guard. Hidden response parameters are never model evidence.
+Catalog and output validation reject invented procedures; fallback uses smoothed observed
+same-symptom success, count and catalog order. Baseline is the class's most frequent fix.
+
+Fix work is initiated from the live agent lane, with at most one tracked fix provider wait
+per room; that wait yields the lane so it cannot hold responder dispatch or the clock.
+Both tasks share unchanged provider rate/concurrency controls. Work beginning before the
+model reply uses and records fallback; late replies cannot rewrite applied work. Request
+identity prevents reset races and completed issues cancel late rankings. Offline uses a
+stored fixture through shared evidence and attempt math, with no API access.
+
+First-time fix rate uses completed first attempts, excluding legacy actions, with explicit
+denominators and thin-sample suppression. Recommended/baseline agreement compares choices,
+not causal effectiveness. Exact fix observations and compact recommendation facts survive
+retention without archive reads on analytics requests. Weekly month-seed results will be
+reported as produced; no monotonic-improvement tuning or claims are assumed.

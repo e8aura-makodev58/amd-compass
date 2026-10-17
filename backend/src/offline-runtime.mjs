@@ -1,3 +1,6 @@
+import { initializeFaults } from './fault-truth.mjs';
+import { deterministicFixRecommendation, buildFixPacket } from './fix-evidence.mjs';
+import { requestFixRanking } from './fix-ranking.mjs';
 /**
  * The API-free Offline Demo runtime. Extracted from server.mjs unchanged so
  * the Control Room manager (control-room-manager.mjs) can construct one of
@@ -30,6 +33,7 @@ export function createDemoRuntime(agentOptions = {}, auditStore = createAuditSto
     state.operationalEvents = [];
     state.assignments = [{ id: "offline-assignment-001", issueId: "ISS-103", responderId: "R-OPER142", attemptId: null, role: "PRIMARY", status: "ACTIVE", createdAt: startedAt, joinedAt: startedAt, endedAt: null, endReason: null, roleHistory: [{ role: "PRIMARY", startedAt, endedAt: null }] }];
     state.resolutionAttempts = [];
+    initializeFaults(state);
     const attempt = createAttempt(state, "ISS-103");
     state.assignments[0].attemptId = attempt.id;
     moveResponderToIssue(state, state.responders.find((row) => row.id === "R-OPER142"), state.issues.find((row) => row.id === "ISS-103"), "PRIMARY", "STATE_RECONCILIATION");
@@ -171,6 +175,13 @@ export function createDemoRuntime(agentOptions = {}, auditStore = createAuditSto
   }
 
   async function completeRecommendation(issueId) {
+    const fixIssue = demoState.issues.find((row) => row.id === issueId);
+    if (!fixIssue.fixRecommendation?.modelAttempted) {
+      const fixOutcome = await requestFixRanking(buildFixPacket(demoState, issueId), { mode: 'fixture' });
+      fixIssue.fixRecommendation = { ...deterministicFixRecommendation(demoState, fixIssue), modelAttempted: true,
+        ...(fixOutcome.status === 'ok' ? { status: 'READY', source: 'FIXTURE', rankedFixes: fixOutcome.result.rankedFixes, modelInfo: fixOutcome.modelInfo } : {}) };
+      fixIssue.fixRecommendation.disagreement = fixIssue.fixRecommendation.rankedFixes[0].fixId !== fixIssue.fixRecommendation.baselineFixId;
+    }
     const packet = workflow.candidatePacket;
     const requestId = packet.recommendationRequestId;
     const outcome = await requestAgentRecommendation(packet, agentOptions);

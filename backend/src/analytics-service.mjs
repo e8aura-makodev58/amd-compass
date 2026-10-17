@@ -184,13 +184,23 @@ function observedHistoryStart(state, snapshotMs) {
   return timestamps.length ? Math.min(...timestamps) : snapshotMs;
 }
 
+function fixMetrics(state, bounds = null, snapshotMs = Date.parse(state.simulationState.simulationTime)) {
+  const first = state.resolutionHistory.filter((r) => r.fixApplied?.id && !r.legacyFix && r.fixAttemptNumber === 1 && (!bounds || (Date.parse(r.resolvedAt) >= bounds.start && Date.parse(r.resolvedAt) < Math.min(bounds.end, snapshotMs))));
+  const recommendations = state.issues.map((r) => r.fixRecommendation).filter((r) => r?.modelAttempted && ['READY', 'FALLBACK'].includes(r.status) && (!bounds || (Date.parse(r.createdAt) >= bounds.start && Date.parse(r.createdAt) < Math.min(bounds.end, snapshotMs))));
+  return { firstTimeFixRate: rateWithDenominator(first.filter((r) => r.success).length, first.length),
+    recommendedVsBaselineAgreement: rateWithDenominator(recommendations.filter((r) => !r.disagreement).length, recommendations.length),
+    modelRecommendations: recommendations.filter((r) => r.source === 'AMD_MODEL').length,
+    deterministicRecommendations: recommendations.filter((r) => r.source === 'DETERMINISTIC').length,
+    definition: 'Successful first completed fix attempts / all completed first fix attempts; legacy actions excluded. Agreement compares proposed first fixes, not causal outcome improvements.' };
+}
+
 function periodSummary(state, level, bounds, snapshotMs, historyStartMs = observedHistoryStart(state, snapshotMs)) {
   const startIso = new Date(bounds.start).toISOString(), endIso = new Date(bounds.end).toISOString();
   const eventCount = (type) => state.operationalEvents.filter((event) => event.eventType === type && Date.parse(event.simulationTimestamp) >= bounds.start && Date.parse(event.simulationTimestamp) < Math.min(bounds.end, snapshotMs)).length;
   const activeAt = (at) => state.issues.filter((issue) => Date.parse(issue.raisedAt) <= at && Date.parse(issue.resolvedAt ?? new Date(snapshotMs + 1).toISOString()) > at).length;
   const staffingActions = (state.workforceContinuity?.staffingAudit ?? []).filter((entry) => Date.parse(entry.simulationTimestamp) >= bounds.start && Date.parse(entry.simulationTimestamp) < Math.min(bounds.end, snapshotMs) && entry.action !== "NO_ACTION").length;
   const status = bounds.start < historyStartMs ? "INSUFFICIENT_HISTORY" : bounds.end > snapshotMs ? "PARTIAL" : "COMPLETE";
-  return { level, start: startIso, end: endIso, status, raised: eventCount("ISSUE_RAISED"), resolved: eventCount("ISSUE_RESOLVED"), reopened: eventCount("ISSUE_REOPENED"), backlogStart: activeAt(bounds.start), backlogEnd: activeAt(Math.min(bounds.end, snapshotMs)), downtimeMinutes: unionDowntime(state, bounds.start, bounds.end, snapshotMs), staffingActions };
+  return { level, start: startIso, end: endIso, status, fixes: fixMetrics(state, bounds, snapshotMs), raised: eventCount("ISSUE_RAISED"), resolved: eventCount("ISSUE_RESOLVED"), reopened: eventCount("ISSUE_REOPENED"), backlogStart: activeAt(bounds.start), backlogEnd: activeAt(Math.min(bounds.end, snapshotMs)), downtimeMinutes: unionDowntime(state, bounds.start, bounds.end, snapshotMs), staffingActions };
 }
 
 export function buildPeriodAnalytics(state, { level = "DAY" } = {}) {
@@ -290,6 +300,7 @@ export function buildAnalytics(state) {
     operationalTimeline: operationalTimeline(state, snapshotTime),
     compassRecords: compassRecords(state),
     workforce: workforceAnalytics(state),
+    fixes: fixMetrics(state),
     periodAnalytics: buildPeriodAnalytics(state, { level: "DAY" }),
   };
   assertNoResponderSkill(analytics);

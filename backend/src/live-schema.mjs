@@ -1,3 +1,5 @@
+import { deterministicFixRecommendation } from './fix-evidence.mjs';
+import { fixById, fixesFor } from './fix-catalog.mjs';
 import { assertNoFaultTruth, validateFaultTruth } from './fault-truth.mjs';
 export { assertNoFaultTruth } from './fault-truth.mjs';
 /**
@@ -30,6 +32,16 @@ function assertUnique(entries, key, label) {
 export function validateLiveState(state) {
   assert(state && typeof state === "object", "state must be an object");
   validateFaultTruth(state);
+  for (const issue of state.issues ?? []) if (issue.fixRecommendation) {
+    const rows = issue.fixRecommendation.rankedFixes;
+    assert(Array.isArray(rows) && rows.length === fixesFor(issue.issueClass).length && new Set(rows.map((r) => r.fixId)).size === rows.length && rows.every((r, i) => fixById(issue.issueClass, r.fixId) && r.rank === i + 1), 'Invalid stored fix ranking');
+    assertNoResponderSkill(issue.fixRecommendation);
+  }
+  for (const attempt of state.resolutionAttempts ?? []) if (attempt.fixApplied) {
+    const issue = state.issues.find((i) => i.id === attempt.issueId);
+    const fix = fixById(issue?.issueClass, attempt.fixApplied.id);
+    assert(fix && fix.title === attempt.fixApplied.title && fix.steps === attempt.fixApplied.steps, 'Invalid applied fix');
+  }
   assert(state.schemaVersion === LIVE_SCHEMA_VERSION, "schemaVersion is unsupported");
   assert(Number.isInteger(state.revision) && state.revision >= 0, "revision must be a non-negative integer");
   if (state.historyRetention) {
@@ -249,7 +261,7 @@ export function createPublicLiveSnapshot(state, { validated = false } = {}) {
     if (latest) recommendationIds.add(latest.id);
   }
   const publicState = structuredClone({ ...base,
-    issues: [...state.issues.filter((row) => issueIds.has(row.id)), ...(state.historyRetention?.facts.issues ?? []).filter((row) => issueIds.has(row.id))],
+    issues: [...state.issues.filter((row) => issueIds.has(row.id)), ...(state.historyRetention?.facts.issues ?? []).filter((row) => issueIds.has(row.id))].map((row) => row.status !== "RESOLVED" && row.symptom && !row.fixRecommendation ? { ...row, fixRecommendation: deterministicFixRecommendation(state, row) } : row),
     assignments: state.assignments.filter((row) => row.status === "ACTIVE"),
     resolutionAttempts: state.resolutionAttempts.filter((row) => row.status === "ACTIVE"),
     recommendations: state.recommendations.filter((row) => recommendationIds.has(row.id)),

@@ -15,7 +15,7 @@ reproducible from the persisted RNG streams. A model never computes any of them.
 
 ## What a model may do
 
-Exactly two bounded jobs:
+Two model roles, with three bounded jobs:
 
 1. **Event planner** (`event-planner.mjs`) — propose **one** plausible next `ISSUE_RAISED`
    event for an eligible equipment item and an allowed issue class, as industry-neutral
@@ -26,6 +26,14 @@ Exactly two bounded jobs:
    consistent with rank 1, and **no numeric leakage** in the prose. The only digits allowed in
    prose are the supplied candidates' own `responderId` / `displayName` (user decision,
    2026-10-17).
+
+3. **Fix ranking** (`fix-ranking.mjs`) — the Compass ranking role ranks only supplied
+   catalog fix IDs from code-built observed evidence. Titles and steps are authoritative
+   catalog text, never generated procedures. Strict validation requires every supplied ID
+   exactly once, contiguous ranks, bounded rationale and numeric tokens present in the
+   packet. One repair shares the ranking deadline. It cannot diagnose latent causes or
+   set effectiveness. Deterministic fallback orders smoothed same-symptom success,
+   evidence count and catalog order; the comparator is class-frequency, not hidden truth.
 
 ## Never trust the model
 
@@ -43,6 +51,9 @@ outage degrades explanation quality, never correctness or availability.
   model, the planner packet, a public snapshot, the normal UI/API, or analytics — directly
   or through responder-specific or skill-shaped inputs. See
   [../backend/domain-model.md](../backend/domain-model.md#invariant-responderskill-is-hidden-truth).
+- **Hidden fault truth.** Causes, cause-dependent effectiveness and the private fault RNG
+  are never model, UI/API, analytics or log inputs. Only public overlapping symptoms and
+  observed fix outcomes enter fix evidence. Guards apply to archive-backed audits too.
 - **Priority and staffing are application-owned.** Queue/demand triage and workforce
   continuity are deterministic; models retain only the bounded ranking/qualitative role
   above. See [../backend/simulation.md](../backend/simulation.md).

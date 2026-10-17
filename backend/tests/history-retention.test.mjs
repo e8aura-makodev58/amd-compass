@@ -10,6 +10,8 @@ import { buildAnalytics, buildPeriodAnalytics } from "../src/analytics-service.m
 import { assertNoResponderSkill, createIssueAuditRecord } from "../src/live-schema.mjs";
 import { HISTORY_COLLECTIONS, compactHistory, analyticHistory, retentionDays } from "../src/history-retention.mjs";
 import { buildEventPlannerPacket } from "../src/event-planner.mjs";
+import { buildFixPacket } from '../src/fix-evidence.mjs';
+import { assertNoFaultTruth } from '../src/fault-truth.mjs';
 import { buildCandidatePacket } from "../src/context-engine.mjs";
 import { bootstrapDemoSeed } from "../src/demo-seed-bootstrap.mjs";
 
@@ -47,6 +49,9 @@ test("multi-day retention preserves decisions, exact analytics, audits, and cras
   const live = JSON.parse(await readFile(retained, "utf8"));
   const archived = await bundles(`${retained}.history`);
   assert.ok(archived.length > 20);
+  for (const bundle of archived) assertNoFaultTruth(bundle);
+  assert.deepEqual(live.faultTruth, full.faultTruth);
+  for (const issue of live.issues.filter((row) => row.status !== "RESOLVED")) assert.deepEqual(buildFixPacket(live, issue.id), buildFixPacket(full, issue.id));
   for (const collection of HISTORY_COLLECTIONS) {
     const moved = collection === "issues" ? archived.map((bundle) => bundle.issue) : archived.flatMap((bundle) => bundle[collection]);
     assert.deepEqual(sorted([...live[collection], ...moved]), sorted(full[collection]), collection);
