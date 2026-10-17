@@ -249,6 +249,7 @@ test("planner environment overrides seed only the planner, while defaults stay M
     { AMD_TOKEN_FACTORY_MODEL: "DeepSeek-V4-Flash", AMD_TOKEN_FACTORY_REASONING_EFFORT: "high" },
     { AMD_TOKEN_FACTORY_MODEL: "DeepSeek-V4-Flash", AMD_TOKEN_FACTORY_REASONING_EFFORT: "high", AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL: "GLM-5.3-Flash", AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT: "low" },
     { AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT: "default" },
+    { AMD_TOKEN_FACTORY_REASONING_EFFORT: "none", AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL: "GLM-5.3-Flash" },
   ]) {
     const service = createProviderSettingsService({ filePath: await scratchPath(), apiKeys: {}, environment });
     const snapshot = await service.snapshot();
@@ -257,7 +258,9 @@ test("planner environment overrides seed only the planner, while defaults stay M
     assert.equal(snapshot.roles.compass.reasoningEffort, environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(sharedModel));
     const plannerModel = environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL || sharedModel;
     assert.equal(snapshot.roles["event-planner"].modelId, plannerModel);
-    assert.equal(snapshot.roles["event-planner"].reasoningEffort, environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT || environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(plannerModel));
+    const inheritedEffort = plannerModel === sharedModel ? snapshot.roles.compass.reasoningEffort : defaultReasoningEffortFor(plannerModel);
+    assert.equal(snapshot.roles["event-planner"].reasoningEffort, environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT || inheritedEffort);
+    assert.ok(reasoningEffortsForModel(plannerModel).includes(snapshot.roles["event-planner"].reasoningEffort));
   }
 });
 

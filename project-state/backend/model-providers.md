@@ -144,8 +144,9 @@ samples: re-measure before relying on these numbers.
 - **Env seeding.** A fresh install seeds from `AMD_TOKEN_FACTORY_MODEL` /
   `AMD_TOKEN_FACTORY_REASONING_EFFORT` for both roles. Optional
   `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` / `_REASONING_EFFORT` override only the planner
-  seed. An explicit shared effort is inherited unless overridden; otherwise the selected
-  model's default effort applies. Persisted selections override environment seeds.
+  seed. The planner inherits the shared effort only when it uses the shared model (a
+  different family may reject it, e.g. GLM has no `none`); otherwise its own model's
+  default effort applies. Persisted selections override environment seeds.
 - **Credential.** The env/file key is the bootstrap; a key saved in Settings is kept in the
   owner-only `provider-credentials.json` and takes precedence. Snapshots only ever expose a
   masked hint.

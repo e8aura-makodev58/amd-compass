@@ -170,3 +170,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - Added per-role model/effort persistence, backward-compatible single-pin loading without writes, role-specific validation/fallback/logging and planner-only environment seeds. Credential storage and the provider call path are unchanged.
 - Settings now has two independently saved pickers with individual status and draft preservation; mocked browser coverage checks 375px/1280px without API spend or real settings writes.
 - Pages updated: backend/model-providers.md (Selection & discovery), backend/http-api.md, frontend/overview.md, operations/running-and-config.md, operations/testing.md; docs/decisions.md and .env.example also updated.
+
+## [2026-10-17] fix — planner seed effort for a different planner model
+- A planner-only `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` no longer inherits the shared `AMD_TOKEN_FACTORY_REASONING_EFFORT` (e.g. `none` with GLM would be rejected with HTTP 422); it uses that model's default unless `_EVENT_PLANNER_REASONING_EFFORT` is set. Pages updated: backend/model-providers.md, operations/running-and-config.md.

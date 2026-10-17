@@ -61,7 +61,7 @@ baselines.
 | `AMD_TOKEN_FACTORY_MODEL` | `MiMo-V2.6-Flash` | Seeds the model on a fresh install. |
 | `AMD_TOKEN_FACTORY_REASONING_EFFORT` | `none` for MiMo, else `default` | Seeds the reasoning level; `default` omits the field. |
 | `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` | shared model seed | Optional model seed override for the event planner only. |
-| `AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT` | shared explicit effort, otherwise the planner model's default | Optional reasoning seed override for the event planner only. |
+| `AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT` | the shared effort when the planner uses the shared model, otherwise the planner model's default | Optional reasoning seed override for the event planner only. |
 | `AMD_TOKEN_FACTORY_MAX_OUTPUT_TOKENS` | `4096` | `max_tokens` per call; a truncated reply fails closed. |
 | `AMD_TOKEN_FACTORY_APP_RPM` | `10` | Local limit on AMD request starts per rolling minute, shared by every caller in the process. |
 | `AMD_TOKEN_FACTORY_APP_CONCURRENCY` | `2` | Local limit on AMD requests in flight. Up to 32 more wait in a queue. |

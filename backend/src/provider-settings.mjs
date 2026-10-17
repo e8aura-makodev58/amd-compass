@@ -136,12 +136,14 @@ export function createProviderSettingsService({
     reasoningEffort: environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(seedModelId),
   };
   const plannerModelId = environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL || seedModelId;
+  // The shared effort was chosen for the shared model; a different planner
+  // model may reject it (GLM has no "none"), so it falls back to its own default.
+  const plannerEffortFallback = plannerModelId === seedModelId ? sharedSeed.reasoningEffort : defaultReasoningEffortFor(plannerModelId);
   const seed = {
     compass: sharedSeed,
     "event-planner": {
       modelId: plannerModelId,
-      reasoningEffort: environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT
-        || environment.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(plannerModelId),
+      reasoningEffort: environment.AMD_TOKEN_FACTORY_EVENT_PLANNER_REASONING_EFFORT || plannerEffortFallback,
     },
   };
   let settings = normalizeSettings({ models: { amd: seed } }, seed);
