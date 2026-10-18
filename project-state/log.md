@@ -279,3 +279,6 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
   repair default to global fetch. Rationales reject all digits except supplied option IDs,
   even when a number appears in the packet; authoritative numbers stay in the UI tables.
 - Pages updated: backend/live-runtime.md, concepts/agent-boundary.md, operations/testing.md.
+## [2026-10-18] fix — Busy responders stay lawful extension options
+- `lawfulStaffingOptions` only offered an extension to a responder who was idle at that moment, so a recommendation made while the top option was between jobs went STALE when central command approved it a minute later, after the responder had picked up work. Found in a live AMD check on 3200. Extensions now require only that the responder is on duty, on the current crew and within the duty limits; the 16 h duty, 12 h rest, staff-cap and surge rules are unchanged. Regression test in `staffing.test.mjs`; the stale-approval test now uses a responder who has gone off duty.
+- Pages updated: none (rules unchanged in backend/simulation.md).

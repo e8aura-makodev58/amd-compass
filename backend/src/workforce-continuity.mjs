@@ -390,7 +390,9 @@ export function lawfulStaffingOptions(state, now = state.simulationState.simulat
   for (const r of state.responders) {
     const dutyHours = r.dutyStartedAt ? hoursSince(now, r.dutyStartedAt) : 0;
     const restHours = r.lastDutyEndedAt ? hoursSince(now, r.lastDutyEndedAt) : null;
-    if (r.availability === "AVAILABLE" && r.crewId === crewForTime(now) && !r.surgeKind && !r.extensionEndsAt && r.dutyStartedAt && dutyHours >= 0 && dutyHours <= NORMAL_SHIFT_HOURS) {
+    // An on-duty responder can be extended whether idle or mid-job: legality is the duty
+    // and rest limits, not whether they happen to be between assignments when approved.
+    if (r.availability !== "UNAVAILABLE" && r.crewId === crewForTime(now) && !r.surgeKind && !r.extensionEndsAt && r.dutyStartedAt && dutyHours >= 0 && dutyHours <= NORMAL_SHIFT_HOURS) {
       options.push({ optionId: `EXTENSION:${r.id}`, responderId: r.id, displayName: r.name, kind: "EXTENSION", dutyHours, restHours,
         legalEndsAt: plusHours(now, Math.min(6, MAX_DUTY_HOURS - dutyHours)) });
     }

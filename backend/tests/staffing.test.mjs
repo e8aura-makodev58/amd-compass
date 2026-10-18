@@ -46,7 +46,7 @@ test('review does not mutate staffing; approve alternative and reject are audite
 });
 test('stale approvals apply nothing; newer reviews supersede; deadlines never cross handover',()=>{
  const s=seed(),r=review(s),newer=review(s,'test-2');assert.equal(r.status,'SUPERSEDED');
- const selected=newer.packet.candidates.find((c)=>c.optionId===newer.rankedOptions[0].optionId);s.responders.find((r)=>r.id===selected.responderId).availability='ASSIGNED';const before=structuredClone(s.responders);
+ const selected=newer.packet.candidates.find((c)=>c.optionId===newer.rankedOptions[0].optionId);s.responders.find((r)=>r.id===selected.responderId).availability='UNAVAILABLE';const before=structuredClone(s.responders);
  assert.equal(decideStaffing(s,newer.id,{decision:'approve',optionId:selected.optionId,expectedRevision:0}).status,'STALE');assert.deepEqual(s.responders,before);
  const late=seed();late.simulationState.simulationTime='2026-09-01T19:50:00.000Z';const last=review(late);assert.equal(last.deadline,'2026-09-01T20:00:00.000Z');
 });
@@ -171,4 +171,12 @@ test('reset reusing a recommendation ID and timestamp cannot accept an old model
  assert.equal(replacement.requestToken,currentToken);assert.equal(replacement.rankingStatus,'PENDING_MODEL');
  releaseNew({status:'ok',result:ranked(replacement.packet)});await newWork;
  assert.equal(replacement.rankingStatus,'READY');assert.equal(replacement.source,'FIXTURE');
+});
+
+test('an on-duty responder who is busy on a job remains a lawful extension, so approval does not go stale', () => {
+  const s = seed();
+  const busy = s.responders.find((r) => r.availability === 'AVAILABLE' && lawfulStaffingOptions(s).some((o) => o.responderId === r.id && o.kind === 'EXTENSION'));
+  assert.ok(busy, 'fixture has an extension candidate');
+  busy.availability = 'ASSIGNED';
+  assert.ok(lawfulStaffingOptions(s).some((o) => o.optionId === `EXTENSION:${busy.id}`));
 });
