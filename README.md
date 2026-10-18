@@ -79,22 +79,40 @@ Offline Demo is always hard-pinned to the committed fixture, regardless of Live 
 
 ## Docker deployment
 
-The supplied Compose service runs ResponseCompass on port 3000 with a named `compass-data` volume. It is intentionally configured with a read-only container filesystem, a writable `/tmp` tmpfs, dropped Linux capabilities, and a non-root application user. The `.env` file is read only at container runtime and is excluded from the image build context.
+`compose.yaml` runs ResponseCompass as Compose project **`responsecompass`**: container
+`responsecompass`, host port **3200** → container 3000, named volume
+**`responsecompass-data`** at `/app/data`, `restart: unless-stopped`. The container runs as
+the non-root `node` user with a read-only root filesystem, a `/tmp` tmpfs, all Linux
+capabilities dropped and no-new-privileges. `.env` is read at runtime only and excluded
+from the image. The AMD key never enters the image or `.env`: Compose mounts the host file
+named by `AMD_TOKEN_FACTORY_API_KEY_FILE` in `.env` as a read-only secret at
+`/run/secrets/amd_token_factory_key`, and the container reads it from there.
 
 ```sh
-docker compose up -d --build
-docker compose ps
+docker compose -p responsecompass up -d --build
+docker compose -p responsecompass ps
 ```
 
-The health check calls `GET /api/control-rooms` and passes only when every configured room reports `READY`.
+The health check calls `GET /api/control-rooms` and passes only when every room reports
+`READY`. These names are deliberately distinct from the older Compass deployment on the
+same host (project `compass`, volume `compass-data`, port 3000); never point this file at
+that volume. `docker-compose.yml` is a separate development setup (port 3100).
 
 ### Switchover, data migration, and rollback
 
-Stop the existing non-container ResponseCompass process before binding Docker to port 3000. Do not run both processes against the same state directory or port.
+A room is a checkpoint file plus a change journal (see
+`project-state/backend/live-runtime.md`), so always copy **whole directories**.
 
-Docker begins with an empty named volume. To retain an existing local deployment, first stop ResponseCompass, take a verified backup of its complete `backend/data/` directory, then copy that backup into the **empty** `compass-data` volume using a one-off container. Do not automate or retry-copy into a nonempty volume: legacy room migration is intentionally conflict-safe and must not be bypassed by overwriting state. Start Compose only after validating the copied file set and retain the source backup.
+1. Pause the rooms and stop the non-container process on 3200; never run two writers
+   against the same data.
+2. Back up the complete `backend/data/` directory and verify the copy (`diff -rq`).
+3. Create `responsecompass-data` and confirm it is **empty**; copy the data in once as root
+   with a one-off container, then `chown -R 1000:1000`. Never copy into a non-empty volume.
+4. `docker compose -p responsecompass up -d --build`; require `healthy`, every room
+   `READY`, and the Settings credential reported as configured.
 
-If the container fails its health check or a post-switchover validation, stop Compose, keep the named volume unchanged for inspection, and restart the former process from the verified backup/data directory. Do not delete the volume as a rollback step. See `docs/handover-history.md` for the operator checklist.
+Rollback: `docker compose -p responsecompass down` (the volume is kept), then restart the
+former process against the verified backup. Do not delete the volume as a rollback step.
 
 ## Demo controls
 

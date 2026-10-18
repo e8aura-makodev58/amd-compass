@@ -1,9 +1,19 @@
+# ResponseCompass production deployment.
+# Run with: docker compose -p responsecompass up -d --build
+# The project name, container, volume and host port are all distinct from the
+# older Compass deployment on this host (project "compass", volume "compass-data",
+# port 3000); never point this file at that volume.
+name: responsecompass
+
 services:
-  compass:
+  responsecompass:
     build:
       context: .
+    image: responsecompass:latest
+    container_name: responsecompass
     ports:
-      - "3000:3000"
+      # Host 3200 -> container 3000.
+      - "3200:3000"
     env_file:
       - path: .env
         required: false
@@ -11,11 +21,16 @@ services:
       COMPASS_HOST: 0.0.0.0
       COMPASS_PORT: "3000"
       COMPASS_DATA_DIR: /app/data
+      # The host key path in .env is not visible inside the container; the key is
+      # mounted read-only as a Compose secret and read from here instead.
+      AMD_TOKEN_FACTORY_API_KEY_FILE: /run/secrets/amd_token_factory_key
       # Copies the tracked paused demo seed only into an empty volume. It
       # never overwrites existing runtime state after a pull or restart.
       COMPASS_BOOTSTRAP_DEMO_SEED: "true"
+    secrets:
+      - amd_token_factory_key
     volumes:
-      - compass-data:/app/data
+      - responsecompass-data:/app/data
     restart: unless-stopped
     init: true
     read_only: true
@@ -26,7 +41,11 @@ services:
     security_opt:
       - no-new-privileges:true
 
+secrets:
+  amd_token_factory_key:
+    # Host path of the key file, taken from AMD_TOKEN_FACTORY_API_KEY_FILE in .env.
+    file: ${AMD_TOKEN_FACTORY_API_KEY_FILE:?set AMD_TOKEN_FACTORY_API_KEY_FILE in .env to the host key file}
+
 volumes:
-  compass-data:
-    external: true
-    name: compass-data
+  responsecompass-data:
+    name: responsecompass-data

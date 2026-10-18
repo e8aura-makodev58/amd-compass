@@ -296,3 +296,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] fix — Trigger Next Event queues model work in real rooms too
 - Rooms pass provider options as functions over the saved settings, so the earlier "is the provider live?" check (which read `.mode` on a plain object) never matched on a real server and Trigger Next Event still waited for the AMD planner (7–42 s on 3200). The check now resolves the options per call. The regression test covers both option shapes.
 - Pages updated: none (behaviour now matches backend/live-runtime.md).
+
+## [2026-10-18] ops — ResponseCompass deployed as the `responsecompass` container
+- `compose.yaml` now deploys project `responsecompass` on host port 3200 with its own `responsecompass-data` volume (the old file pointed at `compass-data`, which belongs to the separate Compass deployment) and mounts the AMD key as a read-only Compose secret. The 3200 process's data was backed up, verified and copied into the empty volume; the container is healthy with both rooms READY and the credential configured.
+- Pages updated: operations/running-and-config.md; README Docker section.

@@ -58,7 +58,7 @@ baselines.
 |----------|---------|---------|
 | `AMD_TOKEN_FACTORY_BASE_URL` | `https://developer.amd.com.cn/radeon/api/v1` | OpenAI-compatible base URL. |
 | `AMD_TOKEN_FACTORY_API_KEY` | — | Team key (`rc-…`). Wins over the key file. |
-| `AMD_TOKEN_FACTORY_API_KEY_FILE` | — | Path to a file containing only the key. A host path is not visible inside Docker. |
+| `AMD_TOKEN_FACTORY_API_KEY_FILE` | — | Path to a file containing only the key. In Docker, `compose.yaml` mounts the host file named here as a read-only secret and overrides the variable to `/run/secrets/amd_token_factory_key`. |
 | `AMD_TOKEN_FACTORY_MODEL` | `MiMo-V2.6-Flash` | Seeds the model on a fresh install. |
 | `AMD_TOKEN_FACTORY_REASONING_EFFORT` | `none` for MiMo, else `default` | Seeds the reasoning level; `default` omits the field. |
 | `AMD_TOKEN_FACTORY_EVENT_PLANNER_MODEL` | shared model seed | Optional model seed override for the event planner only. |
@@ -102,3 +102,13 @@ The committed plant-1 seed is now a gzip manifest plus payload. Bootstrap and
 `generate:history` decode it automatically. Manual installation must materialize ordinary
 JSON and copy its archives; use the command in `docs/demo-history.md`, after backing up the
 whole target room. The compressed artifact does not compress runtime storage or memory.
+
+## Production container (m920)
+
+Since 2026-10-18 ResponseCompass runs on m920 as the Docker Compose project
+`responsecompass` (container `responsecompass`, host port 3200, volume
+`responsecompass-data`, `restart: unless-stopped`, so it starts with Docker after a reboot).
+The earlier non-container process on 3200 is retired; its data was copied into the volume
+and the pre-switchover backup is `.cache/backups/data-pre-docker-20261018T042107Z`. See
+the README's Docker section for switchover and rollback.
+
