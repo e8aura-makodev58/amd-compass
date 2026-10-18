@@ -454,6 +454,7 @@ queues behind that chain.
 
 ### Merge log
 
+- 2026-10-18 — **codex** `28b0fed` → merge `4e0cfb8`: user-directed operational UI refinements (decision-first staffing, phone workspace, analytics layout) and strict staffing prose `ce2b7c2`. Clean merge. `npm test` 319/319, E2E 71/71. Handoff archived. Round 10 (store performance) still open.
 - 2026-10-18 — **codex** `9e82f9e` → merge `a37849a`: overtime recommendations with command-center approval, Staffing tile and display screen, staffing analytics, regenerated month (round 9). Conflicts with the main agent's Pareto screen resolved by keeping both. Main agent fixed the staffing ranking's missing transport on master. `npm test` 316/316, E2E 67/67. Handoff archived.
 - 2026-10-18 — **main agent** on master: wall-display screens, Issue Pareto panel, live fix-ranking transport and prose fix, non-blocking Trigger Next Event.
 - 2026-10-18 — **codex** `f3b3cbc` → merge `0373037`: hidden fault causes, fix catalog and ranked fix recommendations, fix-enabled month seed (round 8). Clean merge. `npm test` 291/291, E2E 53/53. Handoff archived.
@@ -476,16 +477,9 @@ queues behind that chain.
 
 ## codex
 
-- **Status:** READY FOR MERGE
+- **Status:** IDLE
 - **Updated:** 2026-10-18
-- **Task:** User-directed professional UI enhancements, authorized after the visual review. Master `d73d00e` merged before implementation. This user task took precedence over the round 10 store-performance assignment; that performance work has not been started here.
-- **Decision visibility:** Staffing leads with the recommended person, source, simulated deadline, rationale and indigo approval. Alternatives/reason, ranked evidence, coverage and history expand separately. Short desktop tiles expose approval without scrolling through evidence. Wall screens use larger type/actions. Pending requests stay disabled across changing polls/shared views; a failed submission plus failed immediate refresh restores an editable decision. Backend approval/revision/lawfulness rules are unchanged.
-- **Phone workspace:** Issues / Floor / Decisions / Events buttons reuse existing DOM and state. Issues is the default. Pending decisions have an actual count; issue/feed/keyboard-search selections reveal and focus details directly. Returning to desktop retains the original map and five-tile Dockview behavior. Wall displays bypass phone navigation. Updated existing phone/audit/staffing journeys for the new entry points.
-- **Visuals / reporting:** Name-first issue rows, compact semantic badges, quiet event markers, clearer machine/person glyphs, grouped map controls, shared spacing/empty states and reduced-motion support. Analytics places the retained Pareto node directly below headline metrics, adds section links and collapses long response/experience tables while preserving expansion/search/focus. Suppressed headline rates show an em dash plus the unchanged explanation/denominator. Provider settings separate shared credentials from balanced role cards. Room identity uses the URL ID until existing directory/rename responses supply its display name; no extra boot directory request or room polling scope change.
-- **Verification:** `npm test` **319/319 passed**. Full `COMPASS_E2E_PORT=3021 LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` **71/71 passed**, forced providers and no spend. After the final wall-only CSS sizing adjustment, all **12 display/staffing checks passed** again. Four new browser tests cover action visibility, duplicate-submission protection, phone/search/breakpoint navigation, Analytics persistence and failure recovery. Manual preview at 375, 390, 700, 900, 920, 1280, 1440 and 1920 widths: no horizontal page overflow or browser script errors. `git diff --check` clean; owned ports 3021/3121 freed.
-- **Review / docs:** `docs/design/operational-ui-refinement.md` describes the final interaction and styling contract and embeds committed desktop/phone captures under `docs/assets/ui-refinement-*.png`. Updated frontend/testing knowledge pages and appended the project-state log. Additional review captures are in `.cache/ui-enhance/` (including the readable wall view).
-- **Boundaries:** Application source changes are frontend-only; no simulation, ranking inputs, eligibility, provider settings/control logic, seed month, backend/data, submission files, other worktrees or master working files changed by this UI task. Live 3200 was not accessed. No push. The branch retains the previously handed-off strict staffing-prose follow-up `ce2b7c2` as well. Watcher remains stopped; it was not restarted for this user-directed UI task.
-- **Questions for main:** None. Ready for review and merge.
+- **Task:** Round 10 (store performance) is open in Assignments. UI refinements merged; see `docs/handover-history.md`.
 
 ---
 
