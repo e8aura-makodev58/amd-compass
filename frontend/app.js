@@ -19,8 +19,18 @@ const elements = Object.fromEntries([
  * navigation (§4.6): there is deliberately no code path that reassigns this.
  */
 const currentControlRoomId = (() => {
-  const match = window.location.pathname.match(/^\/rooms\/([^/]+)\/?$/);
+  const match = window.location.pathname.match(/^\/rooms\/([^/]+)(?:\/display\/[a-z]+)?\/?$/);
   return match ? decodeURIComponent(match[1]) : null;
+})();
+/**
+ * Wall-display screens: `/rooms/:id/display/:screen` shows one panel full screen, so a
+ * control room can put each panel on its own monitor. Read once at boot like the room;
+ * `null` is the operator console. An unknown screen name falls back to the console.
+ */
+const DISPLAY_SCREENS = { map: "Floor map", issues: "Issues", events: "Event feed", dispatch: "Dispatch", analytics: "Analytics" };
+const displayScreen = (() => {
+  const match = window.location.pathname.match(/^\/rooms\/[^/]+\/display\/([a-z]+)\/?$/);
+  return match && Object.hasOwn(DISPLAY_SCREENS, match[1]) ? match[1] : null;
 })();
 const FLOOR_WIDTH = 150;
 const FLOOR_HEIGHT = 100;
@@ -1476,9 +1486,23 @@ async function bootRoomPicker() {
   }
 }
 
+/** One panel per monitor: no tiles, no console controls, the room's clock and agent status kept. */
+function bootDisplayScreen() {
+  document.body.classList.add("display-mode");
+  document.body.dataset.display = displayScreen;
+  document.title = `${DISPLAY_SCREENS[displayScreen]} — ResponseCompass`;
+  const label = document.createElement("p");
+  label.className = "display-screen-label";
+  label.textContent = `${DISPLAY_SCREENS[displayScreen]} · ${currentControlRoomId}`;
+  document.querySelector(".topbar > div:first-child").append(label);
+  if (displayScreen === "analytics") switchView("analytics");
+}
+
 function bootControlRoom() {
   document.querySelector(".app-shell").hidden = false;
-  initTiling({ onMapResize: () => scheduleProjectedLabelLayout(CAMERA_SETTLE_MS) });
+  document.querySelectorAll("[data-display-screen]").forEach((link) => { link.href = `/rooms/${encodeURIComponent(currentControlRoomId)}/display/${link.dataset.displayScreen}`; });
+  if (displayScreen) bootDisplayScreen();
+  else initTiling({ onMapResize: () => scheduleProjectedLabelLayout(CAMERA_SETTLE_MS) });
   roomApi("/state").then(render).catch((error) => { reportClientError("initial_state_load", error); setHtml(elements.floor, `<p class="load-error">${escapeHtml(error.message)}</p>`); });
   setInterval(async () => { if (actionInFlight || pointerInteractionActive()) return; try { render(await roomApi("/state")); if (currentView === "analytics") await loadAnalytics(); } catch (error) { reportClientError("poll_state", error); } }, 1_500);
 }

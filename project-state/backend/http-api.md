@@ -62,6 +62,8 @@ prefix: `POST /issues/:issueId/raise`, `POST /recommend`, `POST /confirm`,
 - `GET /rooms/:id` also serves `index.html` — it is a client-side route the frontend
   parses from `location.pathname` at boot, so a direct link or reload does not 404
   (`ROOM_PAGE_PATTERN` in `server.mjs`).
+- `GET /rooms/:id/display/:screen` serves the same page for a wall-display screen (see
+  `frontend/overview.md`, Wall-display screens).
 - Any other `GET` serves a matching file from `frontend/`, constrained to that directory.
 
 See [control-rooms.md](control-rooms.md) for why settings/logs stay global while

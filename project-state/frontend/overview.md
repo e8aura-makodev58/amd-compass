@@ -87,6 +87,18 @@ AMD ranking takes about 40–90s, so above 5× it arrives long after the simulat
 moved on. A room already running faster (the API still accepts 10× and 60×) shows its speed
 as a disabled "above recommended" option until the operator lowers it.
 
+## Wall-display screens
+
+A control room can put each panel on its own monitor. `/rooms/:id/display/:screen` shows
+one panel full screen (`DISPLAY_SCREENS` in `app.js`: `map`, `issues`, `events`,
+`dispatch`, `analytics`), with the room's simulated clock, run state and agent activity,
+and none of the console controls (view tabs, mode, speed, pause, reset, search). It is
+the same page and state as the console, so panels stay interactive. Tiling is not
+started on a display screen. An unknown screen name falls back to the console. The
+console's **Screens** menu (next to Find in Control Room) opens each screen in a new
+window. Layout rules are in `layout.css` under `.display-mode`; `e2e/display-screens.spec.mjs`
+covers each screen at 1920×1080.
+
 ## Tabs
 
 - **Live Floor** — the map plus the context panel (selected issue: staffing roster, offers,

@@ -234,3 +234,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] fix — Keep fix audits inside the context tile
 - Constrained audit grid/heading widths and checked both document and panel overflow at 375px/1280px. Fix rates show one decimal so the measured final-week decrease remains visible; added explicit thin-sample and legacy-retry metric coverage.
 - Pages updated: frontend/overview.md; docs/demo-history.md records HTTP and cold-start measurements.
+
+## [2026-10-18] feature — Wall-display screens, one panel per monitor
+- Added `/rooms/:id/display/:screen` (map, issues, events, dispatch, analytics) and a console Screens menu, so a control room can show each panel on its own monitor while the app runs autonomously. Same page and state; console controls hidden; tiling not started.
+- Pages updated: frontend/overview.md, backend/http-api.md.

@@ -44,8 +44,9 @@ function mutationResponse(response, result) {
 // A room URL (/rooms/:id) has no matching file on disk — it's a client-side
 // route the frontend parses from location.pathname at boot (see
 // Control_Rooms_SOW_v1_DRAFT.md §4.5) — so serve the same index.html rather
-// than 404ing on a page reload or a direct link to a specific room.
-const ROOM_PAGE_PATTERN = /^\/rooms\/[^/]+\/?$/;
+// than 404ing on a page reload or a direct link to a specific room. The same
+// page serves a room's wall-display screens (/rooms/:id/display/:screen).
+const ROOM_PAGE_PATTERN = /^\/rooms\/[^/]+(?:\/display\/[a-z]+)?\/?$/;
 
 async function serveStatic(pathname, response) {
   const requestedPath = pathname === "/" || ROOM_PAGE_PATTERN.test(pathname) ? "/index.html" : pathname;
