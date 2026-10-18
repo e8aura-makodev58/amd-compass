@@ -427,9 +427,12 @@ eligible responder by ID), and the result only appears in Settings → Demo.
 
 ## codex
 
-- **Status:** IDLE
+- **Status:** IN PROGRESS
 - **Updated:** 2026-10-18
-- **Task:** Round 9 assigned (see Assignments). Round 8 merged; see `docs/handover-history.md`.
+- **Task:** Round 9 — Compass overtime recommendations with central-command approval. Master `50054ea` merged. Implementation and documentation complete; final month packaging and final regression run pending.
+- **Changes:** Code lists lawful extensions/call-ins; separate observed class/symptom evidence and bounded ranking-role transport. Default operator approval, alternatives, rejection, stale conflicts, durable deadline claim/recovery, supersession and audited auto-approval policy. Replacement recommendations retain the earlier deadline so repeated rechecks cannot postpone the answer; no-action reviews leave pending work to expire naturally. Shared Staffing tile, Settings outlook/policy, wall display, compact lifetime/period analytics and legacy migration.
+- **Validation so far:** Full suite passed 306 unit and 64 E2E before the final deadline-starvation correction; latest focused staffing tests pass 15/15. Synthetic generation test repeats all four operational paths byte-for-byte with zero network/credential reads. Final seed is being regenerated from the round 8 base, with a disclosed bounded Force Event window for synthetic operator examples. No live data, provider controls, submission files or port 3200 touched.
+- **Questions for main:** None. Do not merge until this status becomes READY FOR MERGE with the final seed counts and sample IDs.
 
 ---
 

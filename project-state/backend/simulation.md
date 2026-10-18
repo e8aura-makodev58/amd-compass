@@ -50,9 +50,24 @@ Policy version `wc-2`. Provisions 24 synthetic responders across four crews
 at `ROTATION_ANCHOR`. Enforces `MIN_REST_HOURS = 12`, `NORMAL_SHIFT_HOURS = 12`,
 `MAX_DUTY_HOURS = 16`, and a `MAX_ACTIVE_STAFF = 8` on-shift cap. Drives shift handovers,
 legal surge staffing, queue-first priority dispatch, and a `MAX_ACTIONABLE_ISSUES = 10`
-cap. The provisioning seed never advances the simulation RNG streams. Priority and staffing
-are application-owned and deterministic — they do not consult hidden skill or any
-responder-specific evidence.
+cap. The provisioning seed never advances the simulation RNG streams. Eligibility, caps and staffing mutations remain application-owned and deterministic.
+`staffing-service.mjs` separately builds observed responder history for a bounded Compass
+ranking; it never affects lawful eligibility or resolution outcomes. Hidden skill is excluded.
+
+Reviews create pending recommendations rather than applying surge. Ordinary issue arrivals,
+resolutions and explicit releases request coalesced rechecks. Every lawful available
+on-shift extension and rested off-shift call-in is supplied, with its legal duty endpoint.
+Default policy is `OPERATOR`; central command approves a listed option or rejects it.
+Approval rechecks shortfall, duty/rest, active cap and surge limit at the current time.
+Stale choices change no staffing. A newer recommendation supersedes open work while retaining the earlier deadline, so
+rechecks cannot defer the answer indefinitely. A no-action recheck leaves pending work
+open; approval still revalidates its current need and legality. Deadlines default
+to thirty simulated minutes and never cross the next handover; unanswered work expires,
+recording unmet risk when demand still exceeds active staff. Explicit `AUTO_APPROVE_TOP`
+policy attempts the top option at deadline, with the same legality guard and a policy audit.
+Extensions remain lawful across handover until their recorded endpoint; new call-ins have
+an explicit twelve-hour endpoint. Legacy call-ins retain their existing rest/duty behavior.
+Claimed deadline tokens are durable, redispatched on restart and consumed only once.
 
 ## Responder location (`responder-location.mjs`)
 

@@ -92,3 +92,25 @@ Legacy actions have no applied catalog fix and are labelled/excluded from fix ev
 `/analytics` adds `fixes`; every analytics period also adds `fixes` with first-time fix
 rate and recommended-vs-baseline agreement, denominators and the usual thin-sample status.
 Hidden fault state and effectiveness never occur in these responses.
+
+## Staffing approval
+
+Live `/state` includes `workforceContinuity.backlog` (code-owned priority/class/symptom
+counts), policy and policy revision, one open staffing recommendation and the latest five
+closed recommendations. Public records carry ranked lawful options, observed evidence,
+source, baseline comparison, deadline and recommendation revision; private scheduler and
+request identities are omitted. The existing thirty-row staffing audit tail remains.
+
+- `POST /staffing/:recommendationId/approve`: `{optionId, expectedRevision}`.
+- `POST /staffing/:recommendationId/reject`: `{reason?, expectedRevision}` (reason ≤360 chars).
+- `PATCH /demo/staffing-policy`: `{staffingApproval: "OPERATOR" | "AUTO_APPROVE_TOP", expectedRevision}`
+  uses the policy's independent revision.
+
+These are room-scoped under `/api/control-rooms/:id`. Revision/terminal conflicts and stale
+approvals return 409, unknown recommendations 404, invalid options/reasons 400. Approval
+revalidates current legal options inside the serialized mutation. No staffing changes on
+stale/rejected/expired work. Offline rejects these Live-only mutations with a mode conflict.
+
+`/analytics` includes `workforce.recommendations` outcomes, baseline agreement and unmet-risk
+counts. Each `/analytics/period` row includes the same `staffingRecommendations` metrics for
+its UTC decision/risk interval; compact canonical audit facts make archived months exact.

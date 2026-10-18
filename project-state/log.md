@@ -238,3 +238,11 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] feature — Wall-display screens, one panel per monitor
 - Added `/rooms/:id/display/:screen` (map, issues, events, dispatch, analytics) and a console Screens menu, so a control room can show each panel on its own monitor while the app runs autonomously. Same page and state; console controls hidden; tiling not started.
 - Pages updated: frontend/overview.md, backend/http-api.md.
+
+
+## [2026-10-18] feature — ranked overtime with central-command approval
+- Added code-owned lawful staffing options, observed evidence and bounded Compass ranking;
+  operator approval/rejection, durable deadlines, explicit audited policy, compact analytics,
+  shared Staffing console/display/Settings UI and API-free regenerated month examples.
+- Pages updated: backend simulation, live-runtime, http-api, domain-model, overview;
+  frontend overview; concepts agent-boundary, analytics-and-ethics; operations testing.

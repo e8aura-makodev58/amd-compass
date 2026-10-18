@@ -1,3 +1,4 @@
+import {buildStaffingPacket} from '../src/staffing-service.mjs';
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtemp, readFile, writeFile, readdir, rm } from "node:fs/promises";
@@ -63,6 +64,8 @@ test("multi-day retention preserves decisions, exact analytics, audits, and cras
   assert.deepEqual(live.responderSkills, full.responderSkills);
   for (const issue of live.issues.filter((row) => row.status !== "RESOLVED")) assert.deepEqual(buildCandidatePacket(live, issue.id, "equivalence"), buildCandidatePacket(full, issue.id, "equivalence"));
   assert.deepEqual(live.workforceContinuity, full.workforceContinuity);
+  assert.deepEqual(buildStaffingPacket(live, "retention-proof"), buildStaffingPacket(full, "retention-proof"));
+  assert.deepEqual(buildAnalytics(live).workforce.recommendations, buildAnalytics(full).workforce.recommendations);
   assert.deepEqual(buildEventPlannerPacket(live), buildEventPlannerPacket(full));
   assert.equal(live.revision, full.revision);
   assert.deepEqual(buildAnalytics(live), buildAnalytics(full));

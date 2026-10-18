@@ -128,6 +128,16 @@ async function handleRoomScopedRoute({ request, response, path, runtime, logger,
     const result = await runtime.updateWorkforceScenario(await readJsonBody(request));
     return mutationResponse(response, result);
   }
+  const staffingMatch = path.match(/^\/staffing\/([^/]+)\/(approve|reject)$/);
+  if (request.method === 'POST' && staffingMatch) {
+    const {optionId, reason, expectedRevision} = await readJsonBody(request);
+    const result = await runtime.decideStaffing(decodeURIComponent(staffingMatch[1]), {optionId, reason, expectedRevision, decision: staffingMatch[2]});
+    if (result.action?.status === 'STALE') return sendJson(response, 409, {error:'Staffing option is stale; nothing applied',code:'STAFFING_STALE',conflict:result.action});
+    if (result.action?.status === 'NOT_FOUND') return sendJson(response, 404, {error:'Staffing recommendation not found'});
+    if (result.action?.status?.startsWith('INVALID_')) return sendJson(response, 400, {error:result.action.status});
+    return mutationResponse(response, result);
+  }
+  if (request.method === 'PATCH' && path === '/demo/staffing-policy') return mutationResponse(response, await runtime.updateStaffingPolicy(await readJsonBody(request)));
   const issueAuditMatch = path.match(/^\/issues\/([^/]+)\/audit$/);
   if (request.method === "GET" && issueAuditMatch) {
     const record = await runtime.issueAudit(decodeURIComponent(issueAuditMatch[1]));

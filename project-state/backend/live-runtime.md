@@ -113,3 +113,23 @@ engines with `backend/fixtures/fix-rankings.json`, always API-free.
 
 Paused rooms do not start new fix inference. The fix-work selector uses the queued
 read-only projection rather than cloning all history just to inspect pending work.
+
+## Staffing approval work
+
+`staffing-service.mjs` creates a deterministic usable recommendation inside the workforce
+transaction. `staffing-ranking.mjs` requests the Compass ranking role, validates every
+supplied option ID exactly once and allows one bounded repair through `callChatCompletion`.
+The real-time agent lane initiates one tracked staffing request per room and yields during
+the provider wait. Clock, deadlines, resolutions and dispatch keep running; `agentWorkIdle`
+drains staffing and fix work too. Sequential generation awaits the same service inline.
+Paused rooms start no inference. Results are tied to a private UUID request identity;
+reset, supersession, approval and deadline passage make late results inapplicable.
+Restart migration retries interrupted pending inference without reopening terminal reviews.
+
+The recommendation revision, rather than the constantly changing room revision, guards
+operator decisions. API input cannot set the internal policy approval bypass. Full packets
+retain only the latest thirty closed recommendations plus the open one. Compact outcome
+facts stay canonical in `staffingAudit`, preserving counts across every archive period.
+Public snapshots expose the open recommendation and five recent decisions, stripping
+scheduler/request tokens. Policy changes and every recommendation/decision are operational
+facts, with operator actions attributed to **Central command**.

@@ -22,6 +22,10 @@ function minutesBetween(start, end) {
   return Math.max(0, (Date.parse(end) - Date.parse(start)) / 60_000);
 }
 
+function staffingApplied(row) {
+  return ['EXTENSION','CALL_IN'].includes(row.action) || ['APPROVED_TOP','APPROVED_ALTERNATIVE','AUTO_APPROVED'].includes(row.outcome);
+}
+
 export function rateWithDenominator(numerator, denominator) {
   return {
     numerator,
@@ -198,9 +202,9 @@ function periodSummary(state, level, bounds, snapshotMs, historyStartMs = observ
   const startIso = new Date(bounds.start).toISOString(), endIso = new Date(bounds.end).toISOString();
   const eventCount = (type) => state.operationalEvents.filter((event) => event.eventType === type && Date.parse(event.simulationTimestamp) >= bounds.start && Date.parse(event.simulationTimestamp) < Math.min(bounds.end, snapshotMs)).length;
   const activeAt = (at) => state.issues.filter((issue) => Date.parse(issue.raisedAt) <= at && Date.parse(issue.resolvedAt ?? new Date(snapshotMs + 1).toISOString()) > at).length;
-  const staffingActions = (state.workforceContinuity?.staffingAudit ?? []).filter((entry) => Date.parse(entry.simulationTimestamp) >= bounds.start && Date.parse(entry.simulationTimestamp) < Math.min(bounds.end, snapshotMs) && entry.action !== "NO_ACTION").length;
+  const staffingActions = (state.workforceContinuity?.staffingAudit ?? []).filter((entry) => Date.parse(entry.simulationTimestamp) >= bounds.start && Date.parse(entry.simulationTimestamp) < Math.min(bounds.end, snapshotMs) && staffingApplied(entry)).length;
   const status = bounds.start < historyStartMs ? "INSUFFICIENT_HISTORY" : bounds.end > snapshotMs ? "PARTIAL" : "COMPLETE";
-  return { level, start: startIso, end: endIso, status, fixes: fixMetrics(state, bounds, snapshotMs), raised: eventCount("ISSUE_RAISED"), resolved: eventCount("ISSUE_RESOLVED"), reopened: eventCount("ISSUE_REOPENED"), backlogStart: activeAt(bounds.start), backlogEnd: activeAt(Math.min(bounds.end, snapshotMs)), downtimeMinutes: unionDowntime(state, bounds.start, bounds.end, snapshotMs), staffingActions };
+  return { level, start: startIso, end: endIso, status, staffingRecommendations: staffingAnalytics(state, bounds, snapshotMs), fixes: fixMetrics(state, bounds, snapshotMs), raised: eventCount("ISSUE_RAISED"), resolved: eventCount("ISSUE_RESOLVED"), reopened: eventCount("ISSUE_REOPENED"), backlogStart: activeAt(bounds.start), backlogEnd: activeAt(Math.min(bounds.end, snapshotMs)), downtimeMinutes: unionDowntime(state, bounds.start, bounds.end, snapshotMs), staffingActions };
 }
 
 export function buildPeriodAnalytics(state, { level = "DAY" } = {}) {
@@ -273,6 +277,15 @@ function compassRecords(state) {
   }));
 }
 
+function staffingAnalytics(state, bounds = null, snapshotMs = null) {
+  const audit = (state.workforceContinuity?.staffingAudit ?? []).filter((row) => !bounds || (Date.parse(row.simulationTimestamp) >= bounds.start && Date.parse(row.simulationTimestamp) < Math.min(bounds.end, snapshotMs)));
+  const decisions = audit.filter((row) => row.action === 'STAFFING_DECISION');
+  const compared = decisions.filter((r) => r.baselineOptionId && r.topOptionId);
+  return { totalDecisions: decisions.length,
+    outcomes: Object.fromEntries(['APPROVED_TOP','APPROVED_ALTERNATIVE','REJECTED','EXPIRED','AUTO_APPROVED','STALE','SUPERSEDED'].map((status)=>[status,rateWithDenominator(decisions.filter((r)=>r.outcome===status).length,decisions.length)])),
+    baselineAgreement: rateWithDenominator(compared.filter((r)=>!r.disagreement).length,compared.length),
+    unmetRiskCount: audit.filter((r)=>r.action==='UNMET_STAFFING_RISK').length };
+}
 function workforceAnalytics(state) {
   const active = state.issues.filter((issue) => ACTIVE_STATUSES.has(issue.status));
   const bands = ["CRITICAL", "HIGH", "STANDARD", "DEFERRED"];
@@ -281,7 +294,8 @@ function workforceAnalytics(state) {
     activeBacklogByPriority: Object.fromEntries(bands.map((band) => [band, active.filter((issue) => issue.priorityBand === band || (band === "STANDARD" && !issue.priorityBand)).length])),
     actionableIssueCap: continuity.maxActionableIssues ?? state.simulationConfig.maxActiveIssues,
     deferredDemandCount: continuity.deferredDemand?.length ?? 0,
-    staffingActions: rateWithDenominator((continuity.staffingAudit ?? []).filter((entry) => entry.action && entry.action !== "NO_ACTION").length, continuity.staffingAudit?.length ?? 0),
+    recommendations: staffingAnalytics(state),
+    staffingActions: rateWithDenominator((continuity.staffingAudit ?? []).filter(staffingApplied).length, (continuity.staffingAudit ?? []).filter((entry)=>entry.token).length),
     handoverCount: continuity.handovers?.length ?? 0,
   };
 }

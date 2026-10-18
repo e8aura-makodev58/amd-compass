@@ -123,6 +123,12 @@ export function migrateLiveState(input) {
     upgraded.workforceContinuity ??= createWorkforceConfig(424242);
     upgraded.workforceContinuity.scenario ??= createWorkforceConfig(424242).scenario;
     upgraded.workforceContinuity.scenario.activeScenario ??= null;
+  upgraded.workforceContinuity.staffingApproval ??= "OPERATOR";
+  upgraded.workforceContinuity.staffingPolicyRevision ??= 0;
+  upgraded.workforceContinuity.staffingDeadlineMinutes ??= 30;
+  upgraded.workforceContinuity.staffingSequence ??= 0;
+  upgraded.workforceContinuity.staffingRecommendations ??= [];
+  for (const rec of upgraded.workforceContinuity.staffingRecommendations) if (rec.status === 'PENDING' && rec.rankingStatus === 'PENDING_MODEL') rec.rankingStatus = 'WAITING';
     if (needsWorkforceReconciliation) upgraded.workforceContinuity = { ...createWorkforceConfig(upgraded.workforceContinuity.workforceProvisioningSeed ?? 424242), ...upgraded.workforceContinuity, version: WORKFORCE_POLICY_VERSION };
     provisionWorkforce(upgraded);
     if (needsWorkforceReconciliation) reconcileWorkforceDuty(upgraded);
@@ -140,6 +146,12 @@ export function migrateLiveState(input) {
   state.workforceContinuity ??= createWorkforceConfig(424242);
   state.workforceContinuity.scenario ??= createWorkforceConfig(424242).scenario;
   state.workforceContinuity.scenario.activeScenario ??= null;
+  state.workforceContinuity.staffingApproval ??= "OPERATOR";
+  state.workforceContinuity.staffingPolicyRevision ??= 0;
+  state.workforceContinuity.staffingDeadlineMinutes ??= 30;
+  state.workforceContinuity.staffingSequence ??= 0;
+  state.workforceContinuity.staffingRecommendations ??= [];
+  for (const rec of state.workforceContinuity.staffingRecommendations) if (rec.status === 'PENDING' && rec.rankingStatus === 'PENDING_MODEL') rec.rankingStatus = 'WAITING';
   state.issues.forEach((issue) => { issue.complexity ??= deterministicComplexity(issue); });
   state.resolutionAttempts = state.assignments.filter((row) => row.status === "ACTIVE").map((row, index) => legacyAttempt(state, row, index));
   // Establish one canonical historical attempt identity before assignments are

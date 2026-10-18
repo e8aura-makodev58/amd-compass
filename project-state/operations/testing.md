@@ -127,3 +127,16 @@ provider failure, expandable evidence and applied audit at 375px and 1280px.
 fresh-root bootstrap with archives, checksum failure and payload-path rejection. Additional
 fix tests cover Offline payload privacy, interrupted request recovery, replaced request
 identity, paused-room no-call behavior and automatic dispatch while fix inference waits.
+
+## Staffing approval coverage
+
+`staffing.test.mjs` checks every lawful option, duty/rest/cap/surge, observed class/symptom
+packets and hidden-field scans, fallback/comparator ordering, validated ranking and one
+repair, explicit policy, operator revisions, invalid/stale choices, supersession, durable
+deadline claims/restart/idempotency, late/reset-safe model work and a non-blocking live
+clock. Closed packet pruning preserves exact compact outcome counts. Retention tests compare
+staffing packets and analytics between archived/unarchived deterministic runs.
+`e2e/staffing.spec.mjs` creates a real backlog with forced provider failure, approves and
+rejects through the actual room API, saves policy in Settings, preserves rejection drafts,
+and checks 375px, 1280px and the 1920×1080 staffing display. Existing tiling/layout tests
+require five tiles and explicitly reset legacy four-panel stored layouts.

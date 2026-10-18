@@ -1,3 +1,4 @@
+import { createStaffingService, createStaffingReview, finishStaffingDeadline, decideStaffing, updateStaffingPolicy } from './staffing-service.mjs';
 import { createFixRecommendationService } from './fix-recommendation-service.mjs';
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createEventPlanningService } from "./event-planner.mjs";
@@ -9,7 +10,7 @@ import { createScheduler } from "./scheduler.mjs";
 import { createSimulationClock } from "./simulation-clock.mjs";
 import { buildAnalytics, buildPeriodAnalytics } from "./analytics-service.mjs";
 import { createIssueAuditRecord } from "./live-schema.mjs";
-import { applyWorkforceTrigger, selectNextQueuedIssue, priorityForIssue } from "./workforce-continuity.mjs";
+import { applyWorkforceTrigger, selectNextQueuedIssue, priorityForIssue, requestStaffingRecheck } from "./workforce-continuity.mjs";
 
 export function createLiveRuntime({
   store = createLiveStore(),
@@ -17,6 +18,7 @@ export function createLiveRuntime({
   agentOptions = { mode: process.env.COMPASS_LIVE_COMPASS_MODE ?? "live" },
   requestRecommendation,
   requestFixRecommendation,
+  requestStaffingRecommendation,
   logger = null,
 } = {}) {
   const clock = createSimulationClock(store);
@@ -25,6 +27,9 @@ export function createLiveRuntime({
   const recommendations = createLiveRecommendationService(store, { agentOptions, ...(requestRecommendation ? { requestRecommendation } : {}) });
   const assignments = createLiveAssignmentService(store);
   const fixRecommendations = createFixRecommendationService(store, { agentOptions, ...(requestFixRecommendation ? { requestRanking: requestFixRecommendation } : {}) });
+  const staffingService = createStaffingService(store, { agentOptions, ...(requestStaffingRecommendation ? { requestRanking: requestStaffingRecommendation } : {}) });
+  let staffingWork = null;
+  let staffingWorkQueued = false;
   let fixWork = null;
   let fixWorkQueued = false;
   let loop = null;
@@ -61,6 +66,7 @@ export function createLiveRuntime({
     startAgentLane();
   }
   const agentActivity = {
+    staffing: { agent: "STAFFING_RANKING", status: "IDLE", detail: "Waiting for staffing review." },
     fixes: { agent: "FIX_RANKING", status: "IDLE", detail: "Waiting for fix evidence.", startedAtRealTime: null, completedAtRealTime: null },
     eventPlanner: { agent: "EVENT_PLANNER", status: "IDLE", detail: "Waiting for the next event opportunity.", startedAtRealTime: null, completedAtRealTime: null },
     compass: { agent: "COMPASS", status: "IDLE", detail: "Waiting for a recommendation request.", startedAtRealTime: null, completedAtRealTime: null },
@@ -152,11 +158,17 @@ export function createLiveRuntime({
         },
       );
       const result = planned.result ?? planned;
-      if (result.status === "PERSISTED") await recommendPending();
+      if (result.status === "PERSISTED") {
+        await store.mutate('issue-staffing-recheck', (state) => requestStaffingRecheck(state, 'ISSUE_RAISED'));
+        await recommendPending();
+      }
     }),
     onResolutionDue: async (trigger) => {
       const resolved = await resolution.handleResolutionDue(trigger);
-      if (["RESOLVED", "REOPENED"].includes(resolved.result.status)) deferredAgentWork.push(() => recommendPending());
+      if (["RESOLVED", "REOPENED"].includes(resolved.result.status)) {
+        await store.mutate('release-staffing-recheck', (state) => requestStaffingRecheck(state, 'ASSIGNMENT_RELEASED'));
+        deferredAgentWork.push(() => recommendPending());
+      }
     },
     onOfferDue: async (trigger) => {
       const responded = await assignments.handleOfferDue(trigger);
@@ -170,7 +182,7 @@ export function createLiveRuntime({
       if (reviewed.result.status === "REQUESTED") deferredAgentWork.push(() => matchAndOffer(reviewed.result.issueId, { purpose: "ASSISTANCE", trigger: reviewed.result.trigger }));
     },
     onWorkforceDue: async (trigger) => {
-      await store.mutate(`workforce-${trigger.kind.toLowerCase()}`, (state) => applyWorkforceTrigger(state, trigger));
+      await store.mutate(`workforce-${trigger.kind.toLowerCase()}`, (state) => ['STAFFING_REVIEW_DUE','STAFFING_RECHECK'].includes(trigger.kind) ? createStaffingReview(state, trigger) : trigger.kind === 'STAFFING_DEADLINE_DUE' ? finishStaffingDeadline(state, trigger) : applyWorkforceTrigger(state, trigger));
       deferredAgentWork.push(() => recommendPending());
     },
   });
@@ -234,6 +246,14 @@ export function createLiveRuntime({
       dispatchQueued = true;
       runAgentWork(async () => { dispatchQueued = false; await ensureAutonomousDispatch(); });
     }
+    if (!inLoop()) await staffingService.rankNext();
+    else if (!staffingWork && !staffingWorkQueued) {
+      staffingWorkQueued = true;
+      runAgentWork(async () => {
+        staffingWorkQueued = false;
+        if (!staffingWork) staffingWork = trackAgent('staffing', 'Ranking lawful staffing options.', () => staffingService.rankNext(), () => 'Staffing ranking checked.').catch(() => {}).finally(() => { staffingWork = null; });
+      });
+    }
     await scheduleFixWork();
     return transaction.result;
   }
@@ -281,6 +301,8 @@ export function createLiveRuntime({
     async setSpeed(speed) { return withState(await clock.setSpeed(speed)); },
     async forceNextEvent() { return withState(await scheduler.forceNextEvent()); },
     async forceResolve(issueId) { const result = await scheduler.forceResolve(issueId); await drainDeferredAgentWork(); return withState(result); },
+    async decideStaffing(id, {decision,optionId,reason,expectedRevision}) { return withState(await store.mutate('staffing-decision', (state) => decideStaffing(state, id, {decision,optionId,reason,expectedRevision}))); },
+    async updateStaffingPolicy(input) { return withState(await store.mutate('staffing-policy', (state) => updateStaffingPolicy(state, input))); },
     async updateWorkforceScenario({ scenario, expectedRevision }) {
       const result = await store.mutate("workforce-scenario-update", (state) => {
         const config = state.workforceContinuity;
@@ -314,7 +336,11 @@ export function createLiveRuntime({
       if (requested.result.status !== "REQUESTED") return withState(requested);
       return withState(await matchAndOffer(issueId, { purpose: "ASSISTANCE", trigger: "OPERATOR_REQUEST" }));
     },
-    async releaseResponder(input) { return withState(await assignments.releaseResponder(input)); },
+    async releaseResponder(input) {
+      const result = await assignments.releaseResponder(input);
+      if (result.result.status === 'RELEASED') await store.mutate('operator-release-staffing-recheck', (state) => requestStaffingRecheck(state, 'ASSIGNMENT_RELEASED'));
+      return withState(result);
+    },
     async transferResponder(input) {
       const moved = await assignments.transferResponder(input);
       if (moved.result.status === "TRANSFERRED") await requestComplexAssistanceIfNeeded(moved.result.targetIssueId);
@@ -325,7 +351,7 @@ export function createLiveRuntime({
     async reconcileStartup() { const result = await scheduler.reconcileClaimedTriggers(); await drainDeferredAgentWork(); return result; },
     runScheduledTick,
     /** Resolves once model-bound work started by the real-time loop has finished. */
-    async agentWorkIdle() { while (agentLane || fixWork) { if (agentLane) await agentLane; if (fixWork) await fixWork; } },
+    async agentWorkIdle() { while (agentLane || fixWork || staffingWork) { if (agentLane) await agentLane; if (fixWork) await fixWork; if (staffingWork) await staffingWork; } },
     // Retained as a standalone capability (e.g. a single-runtime test or a
     // consumer with no Control Room manager) — never called from the
     // production boot path, which drives every room from one shared
@@ -385,6 +411,8 @@ export function createApplicationRuntime({ liveRuntime, offlineRuntime, initialM
     async setSimulationSpeed(speed) { requireMode("LIVE", "Simulation controls require Live mode"); return liveRuntime.setSpeed(speed); },
     async forceNextEvent() { requireMode("LIVE", "Simulation controls require Live mode"); return liveRuntime.forceNextEvent(); },
     async forceResolve(issueId) { requireMode("LIVE", "Simulation controls require Live mode"); return liveRuntime.forceResolve(issueId); },
+    async decideStaffing(id, input) { requireMode("LIVE", "Staffing approval requires Live mode"); return liveRuntime.decideStaffing(id, input); },
+    async updateStaffingPolicy(input) { requireMode("LIVE", "Staffing policy requires Live mode"); return liveRuntime.updateStaffingPolicy(input); },
     async updateWorkforceScenario(input) { requireMode("LIVE", "Demo settings require Live mode"); return liveRuntime.updateWorkforceScenario(input); },
     async recommendLive(issueId) { requireMode("LIVE", "Live recommendation requires Live mode"); return liveRuntime.recommend(issueId); },
     async decideLive(input) { requireMode("LIVE", "Live assignment requires Live mode"); return liveRuntime.decide(input); },

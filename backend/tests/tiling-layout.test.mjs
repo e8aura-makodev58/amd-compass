@@ -3,7 +3,7 @@ import test from "node:test";
 import { parseStoredLayout } from "../../frontend/tiling.js";
 
 function saved() {
-  const ids = ["map", "context", "issues", "events"];
+  const ids = ["map", "context", "issues", "events", "staffing"];
   return {
     version: 1,
     layout: {
@@ -48,4 +48,8 @@ test("stored tiling rejects invalid, old, oversized, hidden, detached or foreign
     (s) => { s.layout.grid.root.data[1].data.id = "group-map"; },
   ];
   for (const change of changes) { const value = saved(); change(value); assert.equal(parse(value), null, String(change)); }
+});
+
+test("four-panel stored layouts reset so the new Staffing tile is never hidden", () => {
+ const old=saved();delete old.layout.panels.staffing;old.layout.grid.root.data.pop();assert.equal(parse(old),null);
 });

@@ -54,3 +54,21 @@ a late recommendation can differ from the fix already applied. Rates retain deno
 and the fewer-than-three suppression rule. Period membership uses observed completion
 or recommendation timestamps and the existing UTC boundaries. Canonical observations and
 compact issue recommendation facts preserve exact archived/unarchived equality.
+
+## Staffing decisions
+
+`workforce.recommendations` counts approved-top, approved-alternative, rejected, expired,
+auto-approved, stale and superseded recommendations from compact terminal `staffingAudit`
+facts. Each outcome uses all terminal decisions as denominator; baseline agreement uses
+terminal decisions with a supplied top and comparator, including deterministic fallback
+rankings (it is agreement, not evidence that AMD caused better outcomes). Unmet risk is an
+event count, not unique incidents. Every rate uses the shared fewer-than-three suppression.
+These canonical compact facts survive hot-detail pruning and issue archiving exactly.
+Observed staffing experience is contextual backlog evidence, never an employee leaderboard;
+no skill, hidden causes, HR fields or pay enter packets or analytics.
+
+Every hour/day/week/month period also contains `staffingRecommendations`, grouped by the
+terminal decision or risk timestamp with the existing UTC half-open period boundaries.
+The shared period selector drives a locally scrolling outcome-count/denominator table;
+period baseline rates use the same thin-sample suppression. Staffing-action totals now
+count applied approvals plus legacy extension/call-in actions, not pending review rows.

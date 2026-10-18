@@ -104,3 +104,15 @@ operational events, resolution observations or issue archive bundles. Issues exp
 catalog symptom; attempts/observations expose the applied public procedure and decision
 source. Missing applied fixes identify legacy evidence and are excluded from fix ranking.
 Migration assigns symptoms/causes only to open issues, preserving old actions and attempts.
+
+## Staffing recommendation state
+
+`workforceContinuity` adds `staffingApproval` (default `OPERATOR`), independent
+`staffingPolicyRevision`, `staffingDeadlineMinutes` (30), monotone `staffingSequence` and
+`staffingRecommendations`. A recommendation owns a revision, pending/terminal status,
+code-built packet, ranked options, source, baseline/disagreement, deadline tokens and an
+optional private model request UUID. `domain.ts` documents the public contracts. Full
+packets are bounded to thirty closed plus one pending record; `/state` returns five closed
+plus the pending one. `staffingAudit` retains compact terminal comparison/outcome facts.
+Migration adds defaults, preserves legacy audit and never reopens an old review. Interrupted
+new inference is retryable; claimed deadline dispatch tokens survive restart.
