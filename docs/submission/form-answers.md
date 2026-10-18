@@ -72,7 +72,7 @@ Factory API). Antigravity: only if the user actually used it.
 
 ## Page 2 — Media
 
-- **Cover image (16:9):** to be generated from the reviewed prompt below.
+- **Cover image (16:9):** `assets/AMDResponseCompass.png` (generated 2026-10-18; indigo palette and control-room tagline, matching the refined UI). The prompt below is the earlier teal version, kept for the record.
 - **Video presentation (required):** `ResponseCompass-demo.webm` (≤3:00, captions; being re-recorded); see [demo-video-script.md](demo-video-script.md).
 - **Slide presentation (required, PDF):** `ResponseCompass-deck.pdf` (from `ResponseCompass-deck.pptx`); content in [pitch-deck.md](pitch-deck.md).
 
