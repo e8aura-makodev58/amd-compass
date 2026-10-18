@@ -53,7 +53,10 @@ export interface Issue {
   createdAt?: string;
   downtimeStartedAt?: string;
   description?: string;
+  /** Legacy planner text retained as an incident note, not the applied procedure. */
   responseAction?: string;
+  symptom?: { code: string; text: string };
+  fixRecommendation?: FixRecommendation;
   assignedResponderId?: string;
   pendingOfferId?: string;
   offeredResponderId?: string;
@@ -74,6 +77,12 @@ export interface ResolutionHistory {
   reopened: boolean;
   resolvedAt: string;
   actionTaken?: string;
+  fixApplied?: AppliedFix | null;
+  legacyFix?: boolean;
+  symptomCode?: string | null;
+  equipmentId?: string;
+  fixAttemptNumber?: number | null;
+  fixDecision?: { source: string; recommendedFixId: string; baselineFixId: string; baselineAgreement: boolean; ranking: string[] };
   attemptId: string;
   assisted: boolean;
   participants: Array<{
@@ -238,4 +247,20 @@ export interface OperationalEvent {
   source: string;
   payload: Record<string, unknown>;
   createdAtRealTime: string;
+}
+
+/** Public procedure; effectiveness and latent diagnosis are deliberately absent. */
+export interface AppliedFix { id: string; title: string; steps: string }
+export interface FixEvidence {
+  attempts: number; successes: number; firstAttempts: number; firstTimeSuccesses: number;
+  smoothedSuccess: number; medianMinutes: number | null; lastUsed: string | null;
+}
+export interface FixRecommendation {
+  status: "PENDING_MODEL" | "READY" | "FALLBACK" | "INTERRUPTED" | "CANCELLED";
+  source: "AMD_MODEL" | "DETERMINISTIC" | "FIXTURE";
+  createdAt: string;
+  rankedFixes: Array<{ fixId: string; rank: number; rationale: string }>;
+  packet: { issueId: string; issueClass: string; equipmentId: string; symptom: { code: string; text: string };
+    candidates: Array<{ fixId: string; title: string; steps: string; sameClass: FixEvidence; sameSymptom: FixEvidence; sameEquipment: FixEvidence }> };
+  fallbackFixId: string; baselineFixId: string; disagreement: boolean;
 }

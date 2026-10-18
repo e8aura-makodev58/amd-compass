@@ -60,3 +60,14 @@ Deterministic positioning: on assignment a responder moves beside the issue's eq
 with a small role-seeded offset (Primary vs. Support), and on release returns to a
 persisted duty station. Movement is recorded as `RESPONDER_MOVED` operational-event
 snapshots rather than continuous coordinates. No hidden skill or RNG is consulted.
+
+## Faults and applied fixes
+
+`fault-truth.mjs` assigns each new issue one of four latent causes in its class with a
+separate persisted fault RNG stream and equipment-dependent priors. Overlapping public
+symptoms carry signal without disclosing a cause. `fix-catalog.mjs` supplies six synthetic
+procedures per class. New attempts freeze an applied fix and troubleshooting order;
+its private effectiveness multiplies team success (clamped at the existing cap) and
+scales duration through segment rates. Roster changes preserve the same fix and draw.
+Failure reopens the issue and selects the next untried fix; after exhausting the catalog,
+the sequence restarts. Legacy running attempts keep their pre-upgrade mechanics.

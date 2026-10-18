@@ -1,7 +1,7 @@
 # Model provider
 
-ResponseCompass calls a model in exactly two places — the **Compass agent** (`agent.mjs`, ranks
-candidates) and the **event planner** (`event-planner.mjs`, proposes the next issue). Both
+ResponseCompass uses two model roles — the **Compass agent** (`agent.mjs`, ranks
+candidates) and the **event planner** (`event-planner.mjs`, proposes the next issue). Fix ranking (`fix-ranking.mjs`) reuses the Compass ranking role and settings. All
 send JSON-output chat-completion requests and parse JSON results. The ranking agent can
 make one revalidated repair request within its original deadline. Provider mechanics
 are isolated in `model-provider.mjs`; everything that must never depend on the provider
@@ -252,3 +252,12 @@ boot is described under Selection & discovery.
 The Settings → API tab renders the provider list from the `/api/settings` response
 (`settings.providers`), so it shows the single AMD entry with no client change. See
 [frontend/overview.md](../frontend/overview.md).
+
+## Fix-ranking requests
+
+`fix-ranking.mjs` uses the existing ranking role's model, reasoning and credential settings
+and `callChatCompletion` provider controls. Its strict contract ranks supplied catalog IDs
+only; application-owned observed evidence and procedure text form the packet. One bounded
+validation repair shares the default 90s ranking budget. Fixture and forced-failure modes
+never read credentials or call a provider. Existing recorded model-validity measurements
+are responder/planner measurements, not measurements of this new fix-ranking task.

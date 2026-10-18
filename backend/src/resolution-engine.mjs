@@ -56,9 +56,11 @@ export function finalizeResolutionAttemptState(state, attempt, forced = false) {
   }
   const participants = [...participantsByResponder.values()];
   const primary = active.find((row) => row.role === "PRIMARY") ?? [...assignments].reverse().find((row) => row.roleHistory?.at(-1)?.role === "PRIMARY");
-  const actionTaken = issue.responseAction ?? "Inspect the affected process, apply the required correction, and verify stable operation.";
+  const actionTaken = attempt.fixApplied ? `${attempt.fixApplied.id}: ${attempt.fixApplied.title}. ${attempt.fixApplied.steps}` : issue.responseAction ?? "Inspect the affected process, apply the required correction, and verify stable operation.";
   const history = { id: nextId(state.resolutionHistory, "H", state.historyRetention?.highWater?.resolutionHistory ?? 0), issueId: issue.id, attemptId: attempt.id,
     responderId: primary?.responderId, issueClass: issue.issueClass, resolutionMinutes: durationMinutes, success,
+    fixApplied: attempt.fixApplied ?? null, legacyFix: !attempt.fixApplied,
+    symptomCode: issue.symptom?.code ?? null, equipmentId: issue.equipmentId, fixAttemptNumber: attempt.fixAttemptNumber ?? null, fixDecision: attempt.fixDecision ?? null,
     reopened: !success, resolvedAt: state.simulationState.simulationTime, actionTaken, assisted: participants.length > 1, participants };
   state.resolutionHistory.push(history);
   attempt.status = success ? "SUCCEEDED" : "FAILED"; attempt.completedAt = state.simulationState.simulationTime;
@@ -89,10 +91,10 @@ export function finalizeResolutionAttemptState(state, attempt, forced = false) {
       const id = `temporary-repair-${attempt.id}`;
       state.workforceContinuity.temporaryRepairs.push({ id, token: `temporary-repair-due-${state.workforceContinuity.temporaryRepairs.length + 1}`, issueId: issue.id, equipmentId: issue.equipmentId, issueClass: issue.issueClass, status: "SCHEDULED", dueAt: new Date(Date.parse(state.simulationState.simulationTime) + (30 + (next % 61)) * 60_000).toISOString() });
     }
-    appendEvent(state, "ISSUE_RESOLVED", issue, primary?.responderId, { attemptId: attempt.id, resolutionMinutes: durationMinutes, success: true, forced, issueDescription: issue.description ?? null, actionTaken, participants: participants.map(({ responderId }) => ({ responderId })) });
+    appendEvent(state, "ISSUE_RESOLVED", issue, primary?.responderId, { attemptId: attempt.id, fixApplied: attempt.fixApplied ?? null, legacyFix: !attempt.fixApplied, fixAttemptNumber: attempt.fixAttemptNumber ?? null, resolutionMinutes: durationMinutes, success: true, forced, issueDescription: issue.description ?? null, actionTaken, participants: participants.map(({ responderId }) => ({ responderId })) });
   } else {
     issue.status = "PENDING"; issue.reopenCount = (issue.reopenCount ?? 0) + 1;
-    appendEvent(state, "ISSUE_REOPENED", issue, primary?.responderId, { attemptId: attempt.id, resolutionMinutes: durationMinutes, success: false, forced, issueDescription: issue.description ?? null, actionTaken, participants: participants.map(({ responderId }) => ({ responderId })) });
+    appendEvent(state, "ISSUE_REOPENED", issue, primary?.responderId, { attemptId: attempt.id, fixApplied: attempt.fixApplied ?? null, legacyFix: !attempt.fixApplied, fixAttemptNumber: attempt.fixAttemptNumber ?? null, resolutionMinutes: durationMinutes, success: false, forced, issueDescription: issue.description ?? null, actionTaken, participants: participants.map(({ responderId }) => ({ responderId })) });
   }
   return { status: success ? "RESOLVED" : "REOPENED", issueId: issue.id, responderId: primary?.responderId, historyId: history.id,
     pendingIssueIds: state.issues.filter((row) => row.status === "PENDING").map((row) => row.id) };

@@ -1,3 +1,4 @@
+import { createFixRecommendationService } from './fix-recommendation-service.mjs';
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createEventPlanningService } from "./event-planner.mjs";
 import { createLiveAssignmentService } from "./live-assignment-service.mjs";
@@ -15,6 +16,7 @@ export function createLiveRuntime({
   plannerOptions = { mode: process.env.COMPASS_EVENT_PLANNER_MODE ?? "live" },
   agentOptions = { mode: process.env.COMPASS_LIVE_COMPASS_MODE ?? "live" },
   requestRecommendation,
+  requestFixRecommendation,
   logger = null,
 } = {}) {
   const clock = createSimulationClock(store);
@@ -22,6 +24,9 @@ export function createLiveRuntime({
   const resolution = createResolutionEngine(store);
   const recommendations = createLiveRecommendationService(store, { agentOptions, ...(requestRecommendation ? { requestRecommendation } : {}) });
   const assignments = createLiveAssignmentService(store);
+  const fixRecommendations = createFixRecommendationService(store, { agentOptions, ...(requestFixRecommendation ? { requestRanking: requestFixRecommendation } : {}) });
+  let fixWork = null;
+  let fixWorkQueued = false;
   let loop = null;
   let lastRealTick = null;
   let tickRunning = false;
@@ -56,6 +61,7 @@ export function createLiveRuntime({
     startAgentLane();
   }
   const agentActivity = {
+    fixes: { agent: "FIX_RANKING", status: "IDLE", detail: "Waiting for fix evidence.", startedAtRealTime: null, completedAtRealTime: null },
     eventPlanner: { agent: "EVENT_PLANNER", status: "IDLE", detail: "Waiting for the next event opportunity.", startedAtRealTime: null, completedAtRealTime: null },
     compass: { agent: "COMPASS", status: "IDLE", detail: "Waiting for a recommendation request.", startedAtRealTime: null, completedAtRealTime: null },
   };
@@ -192,6 +198,27 @@ export function createLiveRuntime({
     }
   }
 
+  async function rankNextFix() {
+    const select = (state) => state.simulationState.status !== 'RUNNING' ? null : state.issues.find((row) => row.status !== 'RESOLVED' && row.fixRecommendation?.status !== 'PENDING_MODEL' && !row.fixRecommendation?.modelAttempted)?.id;
+    const issueId = store.project ? await store.project(select) : select(await store.snapshot());
+    if (!issueId) return;
+    return trackAgent('fixes', `Ranking supplied fixes for ${issueId}.`, () => fixRecommendations.recommend(issueId),
+      (outcome) => `Fix ranking for ${issueId}: ${outcome?.result?.status ?? outcome?.status ?? 'complete'}.`);
+  }
+
+  async function scheduleFixWork() {
+    if (!inLoop()) { await rankNextFix(); return; }
+    if (fixWork || fixWorkQueued) return;
+    fixWorkQueued = true;
+    runAgentWork(async () => {
+      fixWorkQueued = false;
+      if (fixWork) return;
+      // Initiated by the live agent lane, but the tracked provider wait yields
+      // that lane to responder dispatch. At most one fix request per room.
+      fixWork = rankNextFix().catch(() => { /* trackAgent records bounded failure status */ }).finally(() => { fixWork = null; });
+    });
+  }
+
   async function withState(action) {
     return { mode: "LIVE", action: action?.result ?? action ?? null, agentActivity: structuredClone(agentActivity), ...(await store.publicSnapshot()) };
   }
@@ -207,6 +234,7 @@ export function createLiveRuntime({
       dispatchQueued = true;
       runAgentWork(async () => { dispatchQueued = false; await ensureAutonomousDispatch(); });
     }
+    await scheduleFixWork();
     return transaction.result;
   }
 
@@ -297,7 +325,7 @@ export function createLiveRuntime({
     async reconcileStartup() { const result = await scheduler.reconcileClaimedTriggers(); await drainDeferredAgentWork(); return result; },
     runScheduledTick,
     /** Resolves once model-bound work started by the real-time loop has finished. */
-    async agentWorkIdle() { while (agentLane) await agentLane; },
+    async agentWorkIdle() { while (agentLane || fixWork) { if (agentLane) await agentLane; if (fixWork) await fixWork; } },
     // Retained as a standalone capability (e.g. a single-runtime test or a
     // consumer with no Control Room manager) — never called from the
     // production boot path, which drives every room from one shared

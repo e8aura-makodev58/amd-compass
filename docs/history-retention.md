@@ -72,3 +72,14 @@ unowned operational events remain canonical and grow with history. This delibera
 preserves decision evidence; it is not constant-space storage. A future observation or
 workforce compaction needs a separate equivalence proof. Reset epochs preserve old files
 for operator recovery rather than deleting them automatically.
+
+## Fix evidence extension
+
+Canonical resolution observations now also carry applied catalog fix, public symptom,
+equipment, attempt ordinal and frozen decision evidence. Fix packets and period metrics
+read these exact observed rows, excluding legacy actions. Compact archived issue facts
+carry the completed fix recommendation's source, first pick, baseline, disagreement and
+timestamp, without duplicating its full packet. A pending fix-model request protects its
+issue from compaction. Latent causes stay in private canonical `faultTruth`, never in an
+issue bundle or compact fact. Archive/unarchived tests compare fix packets, private RNG
+state, fix analytics and privacy of every issue bundle.

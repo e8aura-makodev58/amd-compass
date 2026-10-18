@@ -1,3 +1,4 @@
+import { initializeFaults, assertNoFaultTruth } from './fault-truth.mjs';
 /**
  * Single-process atomic persistence for v4 Live Simulation.
  * This is intentionally a small JSON-domain store rather than an event-sourced
@@ -49,6 +50,7 @@ async function createPreV2Backup(filePath, state) {
 
 function normalizeCurrentDraft(state) {
   for (const issue of state.issues ?? []) issue.complexity ??= issue.issueClass === "C" ? "COMPLEX" : "STANDARD";
+  initializeFaults(state);
   return state;
 }
 
@@ -81,7 +83,7 @@ export function createLiveStore({ filePath = process.env.COMPASS_LIVE_STATE_PATH
       }
       cachedState = migrated;
     } else {
-      cachedState = validateLiveState(seedFactory());
+      cachedState = validateLiveState(initializeFaults(seedFactory()));
       await writeAtomically(filePath, cachedState);
     }
     return cachedState;
@@ -129,6 +131,7 @@ export function createLiveStore({ filePath = process.env.COMPASS_LIVE_STATE_PATH
         if (before && cursor === -1) throw Object.assign(new Error("Unknown issue history cursor"), { statusCode: 400 });
         const start = cursor + 1;
         const page = issues.slice(start, start + limit);
+        assertNoFaultTruth(page);
         return { mode: "LIVE", simulationTime: state.simulationState.simulationTime, total: issues.length, issues: structuredClone(page), next: start + page.length < issues.length ? page.at(-1)?.id : null };
       });
     },
@@ -150,7 +153,7 @@ export function createLiveStore({ filePath = process.env.COMPASS_LIVE_STATE_PATH
     },
     reset() {
       return queue(async () => {
-        const state = validateLiveState(seedFactory());
+        const state = validateLiveState(initializeFaults(seedFactory()));
         const previous = await ensureLoaded();
         const archiveFiles = await readdir(archiveRoot).catch((error) => { if (error.code === "ENOENT") return []; throw error; });
         if (previous.historyRetention?.epoch || archiveFiles.length) resetRetention(state, (previous.historyRetention?.epoch ?? 0) + 1);

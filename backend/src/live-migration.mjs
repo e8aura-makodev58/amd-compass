@@ -1,3 +1,4 @@
+import { initializeFaults } from './fault-truth.mjs';
 import { LIVE_SCHEMA_VERSION, validateLiveState } from "./live-schema.mjs";
 import { createBuildingEquipment } from "../seed/floor-layout.mjs";
 import { createWorkforceConfig, provisionWorkforce, reconcileWorkforceDuty, WORKFORCE_POLICY_VERSION } from "./workforce-continuity.mjs";
@@ -127,6 +128,7 @@ export function migrateLiveState(input) {
     if (needsWorkforceReconciliation) reconcileWorkforceDuty(upgraded);
     reconcileResponderLocations(upgraded);
     upgraded.schemaVersion = LIVE_SCHEMA_VERSION;
+    initializeFaults(upgraded, { recover: true });
     validateLiveState(upgraded);
     return upgraded;
   }
@@ -168,6 +170,7 @@ export function migrateLiveState(input) {
   provisionWorkforce(state);
   reconcileWorkforceDuty(state);
   reconcileResponderLocations(state);
+  initializeFaults(state, { recover: true });
   validateLiveState(state);
   return state;
 }

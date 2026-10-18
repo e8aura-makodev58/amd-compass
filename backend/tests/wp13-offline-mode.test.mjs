@@ -84,7 +84,9 @@ test("Offline uses the same two-person roles with scripted API-free support acce
   assert.ok(Date.parse(state.resolutionAttempts.find((row) => row.issueId === "ISS-104").resolutionDueAt) < Date.parse(soloDueAt));
   currentTime += 30_000;
   state = await app.snapshot();
-  assert.ok(["RESOLVED", "PENDING"].includes(state.issues.find((row) => row.id === "ISS-104").status));
+  const finalIssue = state.issues.find((row) => row.id === "ISS-104");
+  assert.equal(finalIssue.status, state.workflow.resolution.status === "RESOLVED" ? "RESOLVED" : "RECOMMENDATION_READY");
+  assert.ok(state.resolutionHistory.some((row) => row.issueId === "ISS-104" && row.fixApplied?.id), "the completed attempt records the applied catalog fix");
   assert.ok(["RESOLVED", "REOPENED"].includes(state.workflow.resolution.status));
   assert.equal(JSON.stringify(state).includes("contributionShare"), false);
   await assert.rejects(() => app.transferResponder({}), (error) => error.statusCode === 409 && error.code === "OFFLINE_TRANSFER_UNAVAILABLE");

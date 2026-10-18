@@ -93,3 +93,14 @@ back to `responseAction` by `live-migration.mjs`, without changing the caller's 
 Historical extra provenance fields may remain in old files, but are not required or
 used for recommendation evidence. New recommendations have aggregate candidate
 snapshots and the generic ranking result only.
+
+## Private fault state and observable fixes
+
+An optional `faultTruth` block contains per-issue latent causes; the separate `fault` RNG
+stream is private too. Only `fault-truth.mjs` reads cause/effectiveness tables.
+`assertNoFaultTruth`, also called by the existing privacy guard, rejects private fault
+keys and identifiers across public/model boundaries. Causes are never copied into issues,
+operational events, resolution observations or issue archive bundles. Issues expose a
+catalog symptom; attempts/observations expose the applied public procedure and decision
+source. Missing applied fixes identify legacy evidence and are excluded from fix ranking.
+Migration assigns symptoms/causes only to open issues, preserving old actions and attempts.

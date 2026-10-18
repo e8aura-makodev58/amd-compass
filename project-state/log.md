@@ -218,3 +218,19 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 
 ## [2026-10-17] docs — demo video extended to 2:17
 - Added search palette, tiles, the Offline dispatch loop (offer, override control, support, reopen), Compass-vs-baseline and issue-class analytics, and the Settings Demo tab. A slot remains for the round-8 fix recommendation segment (cap 3:00).
+
+## [2026-10-17] feature — Latent faults and measurable catalog fixes
+- Added engine-only seeded fault truth, overlapping public symptoms, public synthetic procedures, observed fix evidence and deterministic troubleshooting. Applied fixes scale attempt duration and success; legacy running attempts retain mechanics. Added privacy/migration/outcome tests and updated direct workforce test setup for the new invariant.
+- Pages updated: backend/simulation.md, backend/domain-model.md; own handoff records staged implementation.
+
+## [2026-10-17] feature — Rank fixes from observed evidence without blocking dispatch
+- Added strict model/fixture ranking with the ranking role's settings and deterministic fallback, tracked non-blocking runtime work, per-attempt applied audit, responsive Recommended fix/evidence UI and period first-time fix/agreement analytics. Retention preserves exact fix evidence and recommendation facts; tests extend lane, validation, archive and browser coverage.
+- Pages updated: backend/live-runtime.md, backend/http-api.md, backend/overview.md, backend/model-providers.md, frontend/overview.md, concepts/agent-boundary.md, concepts/analytics-and-ethics.md, operations/testing.md; docs/history-retention.md and docs/decisions.md explain the boundary.
+
+## [2026-10-18] feature — Ship fix-enabled month with lossless seed packaging
+- Generated 3,512 issues / 4,820 observations to 6 October, including 4,237 catalog-fix outcomes; published honest weekly first-time rates and review IDs. Added checksum-verified compressed seed loading for bootstrap/generation, retaining exact runtime JSON and complete archives. Strengthened privacy/restart/lane tests and prevented paused inference.
+- Pages updated: backend/control-rooms.md, backend/overview.md, backend/live-runtime.md, operations/running-and-config.md, operations/testing.md; README, docs/demo-history.md and docs/decisions.md document packaging, installation and cold-start limitations.
+
+## [2026-10-18] fix — Keep fix audits inside the context tile
+- Constrained audit grid/heading widths and checked both document and panel overflow at 375px/1280px. Fix rates show one decimal so the measured final-week decrease remains visible; added explicit thin-sample and legacy-retry metric coverage.
+- Pages updated: frontend/overview.md; docs/demo-history.md records HTTP and cold-start measurements.

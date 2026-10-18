@@ -862,3 +862,51 @@ unowned events remain growing canonical evidence, not a constant-space guarantee
   rather than duplicating them (token checks still apply).
 - Regression test in `wp10-live-runtime.test.mjs`: the loop advances time while a planner
   call is pending, and the event persists once it completes.
+
+## 2026-10-17 — Applied fixes are measurable; latent diagnosis stays private
+
+Round 8 extends the bounded-ranking role to public catalog fixes. Code creates latent
+fault causes with a dedicated seeded stream and equipment-dependent priors, then exposes
+only an overlapping symptom. Engine-only cause/fix effectiveness multiplies the existing
+team success probability (clamped at the team cap) and scales duration. Roster changes do
+not re-roll causes, applied fixes or outcomes. Failed work takes the next untried ranked
+procedure; exhausting the catalog restarts the sequence. Six domain-neutral procedures
+per class have code-owned titles/steps. Legacy attempts retain their original mechanics
+and actions; new attempts record the applied catalog fix as actionTaken. The planner's
+free text remains an incident note for compatibility.
+
+This fits AGENTS rules 3 and 4: application code owns truth, eligibility, observed evidence,
+metrics and every mutation. The Compass ranking role can only rank supplied fix IDs and
+explain observed tradeoffs. It never receives a diagnosis, effectiveness or responder
+skill. Private causes live outside issues/audit bundles and the fault guard is invoked by
+the existing public-boundary guard. Hidden response parameters are never model evidence.
+Catalog and output validation reject invented procedures; fallback uses smoothed observed
+same-symptom success, count and catalog order. Baseline is the class's most frequent fix.
+
+Fix work is initiated from the live agent lane, with at most one tracked fix provider wait
+per room; that wait yields the lane so it cannot hold responder dispatch or the clock.
+Both tasks share unchanged provider rate/concurrency controls. Work beginning before the
+model reply uses and records fallback; late replies cannot rewrite applied work. Request
+identity prevents reset races and completed issues cancel late rankings. Offline uses a
+stored fixture through shared evidence and attempt math, with no API access.
+
+First-time fix rate uses completed first attempts, excluding legacy actions, with explicit
+denominators and thin-sample suppression. Recommended/baseline agreement compares choices,
+not causal effectiveness. Exact fix observations and compact recommendation facts survive
+retention without archive reads on analytics requests. Weekly month-seed results will be
+reported as produced; no monotonic-improvement tuning or claims are assumed.
+
+## 2026-10-18 — Package the expanded month losslessly without trimming evidence
+
+The fix-enabled month restores to 26,996,348 bytes, exceeding the 20 MB committed-file
+limit. Keep every canonical observation and audit detail; package it as a small JSON
+manifest plus a 1,753,758-byte deterministic gzip payload, with uncompressed byte count and
+SHA-256 checked by `demo-seed-reader.mjs`. Bootstrap and generation accept both ordinary
+JSON and this format. Daily archive JSON files remain below 3.3 MB. Runtime persistence
+is still ordinary JSON; compression does not fix its size, cold-load time or memory use.
+Operators must materialize the manifest before manual installation and back up the room.
+
+Generated first-time fix rates by complete week were 67.1%, 74.9%, 76.5%, 75.6%: not a
+monotonic improvement or a causal model-versus-baseline result. No outcome was rewritten.
+New fix requests are gated on RUNNING; their read-only selector avoids full history clones.
+Existing running attempts retain legacy actions and are labelled separately in the UI.

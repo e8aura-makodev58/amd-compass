@@ -49,7 +49,8 @@ async function generate(options) {
   const insideData = relative(dataDirectory, outputDirectory);
   if (insideData === "" || (!insideData.startsWith("..") && !isAbsolute(insideData))) throw new Error("Refusing to write backend/data; use a scratch output or a committed seed");
   await mkdir(dirname(out), { recursive: true });
-  let state = JSON.parse(await readFile(from, "utf8"));
+  const { readDemoSeedState } = await import('../backend/src/demo-seed-reader.mjs');
+  let state = await readDemoSeedState(from);
   let fetchCalls = 0;
   let credentialReads = 0;
   globalThis.fetch = () => { fetchCalls += 1; throw new Error("Network is forbidden during history generation"); };

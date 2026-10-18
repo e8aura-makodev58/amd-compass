@@ -120,3 +120,19 @@ records” for the next page. Selecting an archived summary fetches the existing
 endpoint to restore full detail. Cache identity checks prevent delayed responses from
 replacing a newer selection; switching modes or resetting clears the history cache.
 The current operational search uses the bounded snapshot. Offline remains API-free.
+
+## Recommended fixes
+
+The issue panel shows its observable symptom, recommendation source (AMD model,
+deterministic or Offline fixture), recommended procedure and baseline disagreement.
+Expandable troubleshooting order includes catalog steps and an observed evidence table
+(success/attempts, first-time successes, smoothed same-symptom success, median, class and
+equipment counts, last used). The table scrolls locally at phone widths; Live Floor tiles
+retain their existing sizing. Active applied fixes are labelled separately from a later
+recommendation. Both audit paths show each applied fix and outcome, or label legacy
+free-text actions. Analytics adds first-time fix and agreement summaries plus period rows.
+The planner's retained free-text response is labelled Incident note.
+
+Fix-rate percentages use one decimal place so small week-to-week decreases remain
+visible. Audit grid columns and evidence scroll areas are constrained to their context
+tile; mobile tests check overflow after opening the full applied-fix chronology too.

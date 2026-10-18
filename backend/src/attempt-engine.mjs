@@ -1,3 +1,5 @@
+import { ensureIssueFault, faultEffect } from './fault-truth.mjs';
+import { selectAttemptFix } from './fix-evidence.mjs';
 import { originalLength } from "./history-retention.mjs";
 import { getPerformanceSummary } from "./context-engine.mjs";
 
@@ -64,14 +66,15 @@ export function openRosterSegment(state, attempt, at = state.simulationState.sim
   const roster = activeRoster(state, attempt.issueId).sort((a, b) => a.role.localeCompare(b.role));
   if (!issue || roster.length === 0) return null;
   const profiles = roster.map((row) => internalOutcomeProfile(state, row.responderId, issue.issueClass));
-  const rates = effectiveRates(profiles);
+  const effect = attempt.fixApplied ? faultEffect(state, issue, attempt.fixApplied.id) : { durationMultiplier: 1, successMultiplier: 1 };
+  const rates = effectiveRates(profiles).map((rate) => rate / effect.durationMultiplier);
   const segment = {
     id: `${attempt.id}-segment-${attempt.segments.length + 1}`,
     startedAt: at,
     endedAt: null,
     roster: roster.map((row, index) => ({ responderId: row.responderId, role: row.role, effectiveRate: rates[index] })),
     teamRate: rates.reduce((sum, value) => sum + value, 0),
-    successProbability: teamProbability(profiles),
+    successProbability: Math.min(TEAM_SUCCESS_CAP, Math.max(0, teamProbability(profiles) * effect.successMultiplier)),
     workCompleted: 0,
   };
   attempt.segments.push(segment);
@@ -113,10 +116,13 @@ export function replanAttempt(state, attempt, { at = state.simulationState.simul
 }
 
 export function createAttempt(state, issueId) {
+  const faultIssue = state.issues.find((row) => row.id === issueId);
+  ensureIssueFault(state, faultIssue);
+  const fix = selectAttemptFix(state, faultIssue);
   const id = `attempt-${String(originalLength(state, "resolutionAttempts") + 1).padStart(3, "0")}`;
   const durationFactor = 0.70 + nextRandom(state) * 0.60;
   const attempt = {
-    id, issueId, modelVersion: ATTEMPT_MODEL_VERSION, status: "ACTIVE",
+    id, issueId, ...fix, modelVersion: ATTEMPT_MODEL_VERSION, status: "ACTIVE",
     startedAt: state.simulationState.simulationTime, completedAt: null,
     durationFactor, successDraw: nextRandom(state), workTotal: durationFactor, completedWork: 0,
     participantWork: {}, segments: [], rosterVersion: 1, scheduleGeneration: 0,

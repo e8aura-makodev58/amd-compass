@@ -97,3 +97,8 @@ the JSON when resuming generation; install it as the room's `history-archive/` d
 alongside `live-simulation.json`. `--retention-days` overrides the default seven simulated
 days; zero disables new archiving but does not restore already archived detail.
 See [demo-history.md](../../docs/demo-history.md) for reproduction and operator handoff.
+
+The committed plant-1 seed is now a gzip manifest plus payload. Bootstrap and
+`generate:history` decode it automatically. Manual installation must materialize ordinary
+JSON and copy its archives; use the command in `docs/demo-history.md`, after backing up the
+whole target room. The compressed artifact does not compress runtime storage or memory.

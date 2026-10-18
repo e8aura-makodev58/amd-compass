@@ -93,3 +93,23 @@ adapter, comparable-case retrieval, case citation, or response-plan result contr
 `live-recommendation-service.mjs` snapshots the aggregates and rejects results when
 those candidate facts change during inference. Offline uses the same packet builder
 with its API-free fixture.
+
+## Fix recommendation work
+
+`fix-recommendation-service.mjs` snapshots aggregate evidence for the six class procedures
+and requests a bounded ranking using the Compass role's settings. Normal scheduled ticks
+initiate at most one fix request per room from the live agent lane. Its provider wait is
+tracked separately and yields that lane so responder work, offers and the clock continue;
+the process-wide provider controls still apply to both jobs. `agentWorkIdle()` drains both
+tracked tasks. Sequential history generation awaits fix work after dispatch for repeatable
+ordering. At work start, `attempt-engine.mjs` freezes the current order and applied fix;
+if the model is pending, it uses and records the deterministic pick. Later model results
+cannot change an active attempt. A resolved issue cancels late results; request identity
+prevents reset races. Interrupted requests are made eligible for retry on load.
+
+`responseAction` remains accepted as the planner's incident note. New resolution actions
+come from the applied catalog procedure. Offline uses the same evidence and attempt
+engines with `backend/fixtures/fix-rankings.json`, always API-free.
+
+Paused rooms do not start new fix inference. The fix-work selector uses the queued
+read-only projection rather than cloning all history just to inspect pending work.
