@@ -32,7 +32,7 @@
       </header>
       <section id="control-room-view">
         <section id="simulation-controls" class="simulation-bar" aria-label="Simulation controls">
-          <div><span class="eyebrow">Simulation time</span><strong id="simulation-time">—</strong></div><div><span class="eyebrow">State</span><strong id="simulation-status">—</strong></div>
+          <div class="room-identity"><span class="eyebrow">Control room</span><strong id="active-room-name">—</strong></div><div><span class="eyebrow">Simulation time</span><strong id="simulation-time">—</strong></div><div><span class="eyebrow">State</span><strong id="simulation-status">—</strong></div>
           <label>Speed<select id="speed-select"><option value="1">1×</option><option value="5">5×</option></select></label>
           <button id="pause-resume-button" type="button">Start</button><button id="reset-button" class="secondary-button" type="button">Reset</button>
         </section>
@@ -48,6 +48,7 @@
             <p class="search-help">Up to 5 matches per category · ↑ ↓ to move · Enter to select · Esc to close</p>
           </div>
         </section>
+        <nav id="workspace-nav" class="workspace-nav" aria-label="Workspace panels"><button type="button" data-workspace="issues" aria-pressed="true">Issues <span data-issues-count>0</span></button><button type="button" data-workspace="floor" aria-pressed="false">Floor</button><button type="button" data-workspace="staffing" aria-pressed="false">Decisions <span data-decisions-count hidden>0</span></button><button type="button" data-workspace="events" aria-pressed="false">Events</button></nav>
         <section class="dashboard" aria-label="ResponseCompass operational dashboard">
           <section class="floor-section" aria-labelledby="floor-heading">
             <div class="section-heading"><div><p class="eyebrow">Persistent environment</p><h2 id="floor-heading">Manufacturing Floor</h2></div><div class="legend"><span><i class="legend-dot equipment-dot"></i>Normal</span><span><i class="legend-dot issue-dot"></i>Issue</span><span><i class="legend-dot responder-dot"></i>Available</span><span><i class="legend-dot assigned-dot"></i>Assigned</span></div></div>
@@ -86,7 +87,7 @@
         <div id="demo-continuity" class="demo-continuity-grid" aria-live="polite"></div>
       </section>
       </section>
-      <section id="analytics-view" class="analytics-view" hidden><div class="section-heading"><div><p class="eyebrow">Same persistent state</p><h2>Operational analytics</h2></div></div><div id="analytics-content"><p class="workflow-prompt">Analytics are loading…</p></div><section id="pareto-panel" class="analytics-panel pareto-panel" aria-labelledby="pareto-heading"></section></section>
+      <section id="analytics-view" class="analytics-view" hidden><div class="section-heading"><div><p class="eyebrow">Same persistent state</p><h2>Operational analytics</h2></div></div><nav class="analytics-section-nav" aria-label="Analytics sections"><a href="#analytics-overview">Overview</a><a href="#analytics-reliability">Reliability</a><a href="#analytics-staffing">Staffing</a><a href="#analytics-experience">Experience</a></nav><div id="analytics-content"><p class="workflow-prompt">Analytics are loading…</p></div><section id="pareto-panel" class="analytics-panel pareto-panel" aria-labelledby="pareto-heading"></section></section>
     </main>
     <script type="module" src="/app.js"></script>
   </body>

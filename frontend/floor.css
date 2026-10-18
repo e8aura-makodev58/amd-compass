@@ -74,3 +74,23 @@
 .responder.assigned .node-shape { border-color: var(--warn); }
 .responder.unavailable .node-shape { border-color: var(--muted); }
 .active-equipment .node-shape { border-color: var(--danger); }
+
+/* Name-first task rows and a quiet, structured event timeline. */
+.issue-card { gap: 6px; padding: 12px; border-radius: var(--radius-sm); }
+.issue-card .issue-row-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
+.issue-card .issue-row-heading strong { font-family: var(--font-sans); font-size: .88rem; }
+.issue-card .issue-row-description { color: var(--ink-2); font-family: var(--font-sans); font-size: .76rem; line-height: 1.4; }
+.issue-card .issue-row-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
+.issue-card .issue-row-meta span { font-size: .68rem; color: var(--ink-3); }
+.issue-card .issue-row-meta span:first-child { font-family: var(--font-mono); }
+.feed-event { position: relative; padding: 10px 8px 10px 16px; }
+.event-marker { position: absolute; top: 15px; left: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); }
+.feed-event.selected .event-marker, .feed-event.disagreement .event-marker { background: var(--accent); }
+.feed-event-copy { min-width: 0; }
+.feed-event-copy strong { line-height: 1.4; }
+.equipment .node-shape { width: 17px; height: 15px; border-radius: 3px; border-width: 1.5px; background: var(--paper-sunk); box-shadow: inset 0 -4px 0 var(--rule); }
+.equipment.active-equipment .node-shape { background: var(--danger); box-shadow: none; }
+.responder .node-shape { border-width: 2px; background: var(--paper-raised); }
+.building-controls { gap: 10px; padding: 7px; }
+.building-controls .control-group + .control-group { padding-left: 8px; border-left: 1px solid var(--rule); }
+.issue-card .issue-row-heading strong { color: var(--ink); font-weight: 600; }

@@ -139,6 +139,7 @@ test("crossing the desktop breakpoint restores stacked nodes and keeps their han
   await expect(page.locator(".dashboard > .context-panel")).toBeVisible();
   await expect(page.locator(".dashboard")).toHaveCSS("display", "block");
   await expect(page.getByRole("button", { name: "Reset layout", exact: true })).toBeHidden();
+  await page.locator("[data-workspace=floor]").click();
   await page.getByRole("button", { name: "Show manufacturing floor 3" }).click();
   await expect(page.locator(".floor-plane.active-floor .floor-tag")).toHaveText(/Floor 3/i);
   await page.setViewportSize({ width: 1280, height: 900 });

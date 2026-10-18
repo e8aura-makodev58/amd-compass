@@ -37,7 +37,8 @@ Two model roles, with four bounded jobs:
 
 4. **Staffing ranking** (`staffing-ranking.mjs`) — ranks only code-built lawful overtime
    option IDs with observed backlog class/symptom experience, duty and rest facts. Strict
-   ID/rank/prose validation and one repair share the original deadline and provider
+   ID/rank/prose validation requires digit-free qualitative rationales (only supplied option
+   IDs may contain digits). One repair shares the original deadline and provider
    controls. It cannot approve staffing, change legal endpoints or supply employee truth.
    Default approval belongs to Central command; an explicitly audited room policy can
    approve the top option after the simulated deadline. Eligibility and mutations never

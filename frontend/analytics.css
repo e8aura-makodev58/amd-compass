@@ -180,3 +180,17 @@ body.busy button { cursor: wait; }
 .pareto-table td:first-child { color: var(--ink-3); }
 .link-button { padding: 0; border: 0; background: none; box-shadow: none; color: var(--accent-ink); font: inherit; text-align: left; cursor: pointer; }
 .link-button:hover { text-decoration: underline; }
+
+/* Report sections keep the overview near the top and detailed records on demand. */
+.analytics-section-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 18px; }
+.analytics-section-nav a { padding: 8px 12px; border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink-2); text-decoration: none; font-size: .8rem; font-weight: 600; }
+.analytics-section-nav a:hover, .analytics-section-nav a:focus-visible { color: var(--accent-ink); border-color: var(--accent); background: var(--accent-wash); }
+.analytics-view :is(#analytics-overview, #analytics-reliability, #analytics-staffing, #analytics-experience) { scroll-margin-top: 16px; }
+.metric-explanation { display: block; margin-top: 6px; color: var(--ink-3); font: 400 .72rem/1.5 var(--font-sans); }
+.analytics-detail-panel > details > summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; cursor: pointer; list-style: none; }
+.analytics-detail-panel summary h3 { margin: 0; font-size: 1rem; }
+.analytics-detail-panel summary > span { color: var(--ink-3); font-size: .76rem; }
+.analytics-detail-panel summary::after { content: '+'; color: var(--accent-ink); font: 500 1.2rem var(--font-mono); }
+.analytics-detail-panel details[open] > summary::after { content: '−'; }
+.analytics-detail-panel details[open] > .evidence-scroll { margin-top: 16px; }
+.display-mode[data-display="pareto"] .analytics-section-nav { display: none; }

@@ -75,3 +75,8 @@ cool-grey backgrounds and white surfaces. Do not hard-code colours or fonts in a
 | `vendor/fonts/`, `scripts/vendor/fonts.mjs`, this spec | Gemini theme task. |
 | `layout.css`, `tiling.*`, `index.html`, Dockview vendor module | Codex tiling task; theme consumes their shared-token interfaces. |
 | Static MIME types, vendor runner, dependency pins | Main agent's integration scaffold. |
+
+## Operational refinement
+
+The subsequent layout and component refinements follow
+[Operational UI refinement](operational-ui-refinement.md), retaining these shared tokens.

@@ -147,3 +147,18 @@ terminal paths (approved, rejected, expired, auto-approved) with zero fetch/cred
 reads. A staffing reset test deliberately reuses both recommendation ID and timestamp;
 only the new UUID-tagged model response may update the replacement record. Phone staffing
 journeys expand the full evidence and verify that approval controls stay within the tile.
+
+Staffing ranking also tests the live path with only a stubbed global `fetch`, including
+a bounded repair for digit-bearing prose. Packet-supplied numbers are still forbidden
+in qualitative rationales; only supplied option IDs are exempt.
+
+## Operational UI refinement coverage
+
+`e2e/workspace-refinement.spec.mjs` checks that the short desktop Staffing tile exposes its
+primary approval without scrolling, a delayed decision cannot be submitted twice through
+changing polls, and failed submission plus failed immediate refresh restores an actionable
+control. Phone checks navigate directly to Decisions, use keyboard search from Floor to
+reveal the issue, and preserve the map node through the desktop breakpoint. Analytics
+checks Pareto placement, collapsed detail tables, expanded-state persistence, search focus
+and explicit insufficient-data denominators. Existing staffing, fix-audit and tiling
+journeys use the new phone/disclosure entry points and retain their canonical API assertions.

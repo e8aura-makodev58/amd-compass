@@ -9,7 +9,8 @@ and re-renders. Node serves these files directly (see [../backend/http-api.md](.
 | File | Responsibility |
 |------|----------------|
 | `index.html` | The DOM scaffold: the room-picker view (shown at `/`) and the app shell — tabs (Live Floor, Control Rooms, Analytics, Settings), the floor-map container, sidebar panels, simulation controls, search palette, audit trail, and demo controls. |
-| `app.js` | The whole SPA controller (~1,400 lines). Parses `/rooms/:id` at boot, polls state, and renders every panel. Handles issue/responder selection, staffing actions, the map (pan/zoom/rotate, floor switching, 2D vs. 2.5D), control-room search, analytics, the audit trail, and the settings forms. |
+| `app.js` | The SPA controller. Parses `/rooms/:id` at boot, polls state, and renders every panel. Handles issue/responder selection, staffing actions, the map (pan/zoom/rotate, floor switching, 2D vs. 2.5D), control-room search, analytics, the audit trail, and the settings forms. |
+| `workspace-nav.js` | Local phone workspace selection (Issues, Floor, Decisions, Events), pending-decision counts and selected-task reveal; reuses the existing DOM across the Dockview breakpoint. |
 | `render-lifecycle.js` | An idempotent HTML writer (`setHtml`) that preserves form state (select values, focus) across the 1.5s re-render so polling never clobbers an in-progress interaction. |
 | `map-label-layout.js` | Screen-space label layout for the floor map: lane-based collision avoidance for equipment/responder bubbles, measured against projected geometry each frame. |
 | `tokens.css` | Modern light tokens (cool-grey / white surfaces, indigo accent, radii and elevation), plus the local-font CSS import; see `docs/design/modern-light.md`. |
@@ -177,3 +178,20 @@ Settings → Demo saves the audited per-room policy with an independent revision
 Older four-tile layouts fail the existing exact-panel validator and reset to the new
 default, so Staffing is always reachable. The new tile uses the same local scroll and
 mobile stack rules; the wall screen hides the other panels but retains approval controls.
+
+
+## Operational visual refinement
+
+`docs/design/operational-ui-refinement.md` defines the user-authorized refinement of Modern
+light. Staffing leads with the person, deadline and primary approval; alternatives/reason,
+ranked evidence, coverage and recent history expand separately. Phone navigation defaults
+to Issues with direct Floor, Decisions and Events views and a pending-decision count.
+The same nodes, selection and controls survive the desktop breakpoint; wall screens bypass
+this phone presentation. Names lead issue rows, while IDs/status stay in compact metadata.
+
+Analytics links to Overview/Reliability/Staffing/Experience and places the retained Pareto
+node after the headline metrics. Response/experience tables expand on demand. Unavailable
+headline rates show an em dash with the unchanged explanation and denominator beneath.
+API settings separate shared credentials from side-by-side role cards, stacking on narrow
+screens. The shell shows the current room identity without extra directory requests and honours reduced motion. Simulation,
+approval, metric and API semantics are unchanged.

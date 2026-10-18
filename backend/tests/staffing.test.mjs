@@ -68,6 +68,29 @@ test('staffing validator rejects unknown, duplicate, missing, extra and invented
  let calls=0;const fetchImpl=async()=>({ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify(++calls===1?{}:valid)}}]})});
  assert.equal((await requestStaffingRanking(p,{mode:'live',apiKey:'hermetic',fetchImpl,timeoutMs:2000})).status,'ok');assert.equal(calls,2);
 });
+test('live staffing ranking defaults to global fetch and repairs numeric prose once', async (t) => {
+ const packet=buildStaffingPacket(seed(),'test'),valid=ranked(packet),requests=[];
+ t.mock.method(globalThis,'fetch',async (_url, options)=>{
+  const request=JSON.parse(options.body);requests.push(request);
+  const result=structuredClone(valid);
+  if(requests.length===1)result.rankedOptions[0].rationale='A sample of 1 supports coverage.';
+  return {ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify(result)}}]})};
+ });
+ const outcome=await requestStaffingRanking(packet,{mode:'live',apiKey:'hermetic-test',timeoutMs:2000});
+ assert.equal(outcome.status,'ok');assert.equal(requests.length,2);assert.equal(outcome.modelInfo.provider,'amd');
+ assert.match(requests[0].messages[0].content,/no digits at all/);
+ assert.match(requests[1].messages[1].content,/Rationale must use no digits/);
+});
+test('staffing prose rejects even packet-supplied numbers and only exempts exact supplied option IDs',()=>{
+ const packet=buildStaffingPacket(seed(),'test');packet.backlogCount=42;
+ for(const rationale of ['Coverage from 42 attempts.','Success is 0.5.','About 12 hours remain.','Rank 1 has stronger coverage.']){
+  const result=ranked(packet);result.rankedOptions[0].rationale=rationale;
+  assert.equal(validateStaffingRanking(packet,result).valid,false,rationale);
+ }
+ const result=ranked(packet);result.rankedOptions[0].rationale=`${packet.candidates[0].optionId} has stronger backlog coverage.`;
+ assert.equal(validateStaffingRanking(packet,result).valid,true);
+ result.rankedOptions[0].rationale+=' 42';assert.equal(validateStaffingRanking(packet,result).valid,false);
+});
 test('late staffing ranking cannot change a decided or reset recommendation; migration preserves legacy audit',async()=>{
  const s=seed(),r=review(s);let release;const wait=new Promise((resolve)=>release=resolve);const svc=createStaffingService(memory(s),{requestRanking:async()=>wait});
  const work=svc.rankNext();await new Promise((resolve)=>setImmediate(resolve));decideStaffing(s,r.id,{decision:'reject',expectedRevision:0});release({status:'ok',result:ranked(r.packet)});await work;assert.equal(r.status,'REJECTED');

@@ -126,6 +126,9 @@ forced-failure modes keep the inline path, so tests and generated history are un
 `staffing-service.mjs` creates a deterministic usable recommendation inside the workforce
 transaction. `staffing-ranking.mjs` requests the Compass ranking role, validates every
 supplied option ID exactly once and allows one bounded repair through `callChatCompletion`.
+Rationales contain no digits apart from supplied option IDs; numerical evidence stays in
+the application-owned tables. Live requests default to global `fetch` when no test
+transport is injected, including the repair request.
 The real-time agent lane initiates one tracked staffing request per room and yields during
 the provider wait. Clock, deadlines, resolutions and dispatch keep running; `agentWorkIdle`
 drains staffing and fix work too. Sequential generation awaits the same service inline.

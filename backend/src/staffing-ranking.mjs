@@ -7,7 +7,6 @@ export function validateStaffingRanking(packet, result) {
   const errors = [];
   if (!keysEqual(result, ['schemaVersion', 'rankedOptions']) || result.schemaVersion !== '1.0' || !Array.isArray(result.rankedOptions)) return { valid: false, errors: ['Invalid staffing ranking envelope'] };
   const ids = packet.candidates.map((c) => c.optionId), seen = new Set();
-  const allowedNumbers = new Set((JSON.stringify(packet).match(/\d+(?:\.\d+)?/g) ?? []));
   if (result.rankedOptions.length !== ids.length) return { valid: false, errors: ['Rank every supplied option exactly once'] };
   for (const [i, row] of result.rankedOptions.entries()) {
     if (!keysEqual(row, ['optionId', 'rank', 'rationale'])) { errors.push('Invalid ranked option fields'); continue; }
@@ -17,13 +16,13 @@ export function validateStaffingRanking(packet, result) {
     else {
       if ((row.rationale.match(/\b(?:EXTENSION|CALL_IN):[\w-]+\b/g) ?? []).some((id) => !ids.includes(id))) errors.push('Rationale invented an option');
       const prose = ids.reduce((s, id) => s.replaceAll(id, ''), row.rationale);
-      if ((prose.match(/\d+(?:\.\d+)?/g) ?? []).some((n) => !allowedNumbers.has(n))) errors.push('Rationale invented numeric evidence');
+      if (/\d/.test(prose)) errors.push('Rationale must use no digits apart from supplied option IDs');
     }
   }
   try { assertNoResponderSkill(result); } catch { errors.push('Private fields are forbidden'); }
   return { valid: !errors.length, errors };
 }
-const instruction = 'Rank every supplied staffing option ID exactly once, using only observed backlog coverage and legal duty/rest evidence. Return JSON with schemaVersion "1.0", rankedOptions of optionId, contiguous rank and short qualitative rationale. Do not invent numbers, HR facts or hidden skill. Write rationales qualitatively (more coverage of the backlog classes, rested, shorter extension); the UI renders the authoritative numbers. You cannot approve staffing or alter legality; Central command or explicit room policy decides.';
+const instruction = 'Rank every supplied staffing option ID exactly once, using only observed backlog coverage and legal duty/rest evidence. Return JSON with schemaVersion "1.0", rankedOptions of optionId, contiguous rank and short qualitative rationale. Write every rationale with no digits at all: no counts, rates, percentages, decimals, hours, minutes or sample sizes, not even in parentheses; the UI renders the authoritative numbers. Say stronger backlog coverage, larger sample, thin evidence or longer duty instead. Supplied option IDs are the only digit-bearing prose allowed; numeric rank fields remain required. Do not invent HR facts or hidden skill. You cannot approve staffing or alter legality; Central command or explicit room policy decides.';
 export async function requestStaffingRanking(packet, options = {}) {
   assertNoResponderSkill(packet);
   const mode = options.mode ?? 'fixture';
