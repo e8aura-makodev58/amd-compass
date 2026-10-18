@@ -38,6 +38,7 @@ baselines.
 | `COMPASS_PORT` (or `PORT`) | `3000` | HTTP listen port. |
 | `COMPASS_HOST` | `0.0.0.0` | HTTP listen host. |
 | `NODE_ENV` | — | `test` gates the test-only data-root override. |
+| `COMPASS_IDLE_PAUSE_MINUTES` | `10` | Pause a RUNNING room after this many real minutes without operator activity (room mutations or the browser heartbeat; GET polling does not count), so an unattended room stops placing model calls. `0` disables it, e.g. for an unattended wall display. Rejects negative or non-numeric values at startup. |
 | `COMPASS_HISTORY_RETENTION_DAYS` | `7` | Archive closed detail at daily simulated boundaries, plus on load. `0` disables new archiving; existing archives/facts remain readable. Open/pending work and exact outcome evidence remain live. |
 | `COMPASS_CONTROL_ROOMS_DATA_ROOT` | — | **Test-only** multi-room data dir; requires `NODE_ENV=test`. Not a production relocation setting. |
 | `COMPASS_LIVE_STATE_PATH` | `backend/data/live-simulation.json` | Test-only single-room state path override. |

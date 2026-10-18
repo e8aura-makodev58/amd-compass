@@ -42,7 +42,10 @@ Two explicit helpers, so every call site states its scope (see
 - `globalApi(path, options)` → `/api` + `path` (deployment-global: settings, logs).
 
 `currentControlRoomId` is parsed once from `location.pathname` at boot. Room switching is
-full-page navigation, not in-page teardown. Polling pauses while an action is in flight or
+full-page navigation, not in-page teardown. Real input on a visible page (pointer, key,
+wheel, touch, returning to the tab) sends `POST /activity` at most once a minute so the
+server's idle auto-pause knows someone is there; the state poll never does
+(`startActivityHeartbeat`). Polling pauses while an action is in flight or
 a pointer gesture is active, then resumes.
 
 ## Live Floor layout

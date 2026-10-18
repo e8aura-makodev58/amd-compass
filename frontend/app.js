@@ -849,7 +849,7 @@ function eventDetailNarrative(state, event, issue) {
     case "PRIMARY_CHANGED": return [`${responder ?? "A responder"} became primary for ${event.issueId}`].join("");
     case "RESOLUTION_REPLANNED": return [`Resolution timing was replanned for ${event.issueId}`, payload.reason ? statusLabel(payload.reason) : null].filter(Boolean).join(" · ");
     case "SIMULATION_STARTED": return "The persistent simulation started from its seeded operational state.";
-    case "SIMULATION_PAUSED": return "The simulation clock was paused; canonical floor state was preserved.";
+    case "SIMULATION_PAUSED": return payload.reason === "OPERATOR_INACTIVITY" ? `The simulation clock was paused automatically after ${formatMinutes(payload.idleMinutes)} without operator activity; canonical floor state was preserved.` : "The simulation clock was paused; canonical floor state was preserved.";
     case "SIMULATION_RESUMED": return "The simulation clock resumed from its persisted timestamp.";
     default: return [event.issueId, responder, equipment?.name].filter(Boolean).join(" · ") || "A recorded operational state transition occurred.";
   }
@@ -1531,7 +1531,25 @@ function bootDisplayScreen() {
   if (displayScreen === "analytics" || displayScreen === "pareto") switchView("analytics");
 }
 
+/**
+ * Tells the server someone is using this room, so it does not pause the clock
+ * for inactivity. Only real input on a visible page counts; the 1.5 s state
+ * poll deliberately does not, or an unattended tab would keep a room running.
+ */
+const ACTIVITY_HEARTBEAT_MS = 60_000;
+function startActivityHeartbeat() {
+  let lastSentAt = 0;
+  const send = () => {
+    if (document.hidden || Date.now() - lastSentAt < ACTIVITY_HEARTBEAT_MS) return;
+    lastSentAt = Date.now();
+    roomApi("/activity", { method: "POST" }).catch((error) => reportClientError("activity_heartbeat", error));
+  };
+  for (const type of ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"]) document.addEventListener(type, send, { passive: true, capture: true });
+  document.addEventListener("visibilitychange", send);
+}
+
 function bootControlRoom() {
+  startActivityHeartbeat();
   document.querySelector(".app-shell").hidden = false;
   document.querySelectorAll("[data-display-screen]").forEach((link) => { link.href = `/rooms/${encodeURIComponent(currentControlRoomId)}/display/${link.dataset.displayScreen}`; });
   paretoPanel = initParetoPanel(document.querySelector("#pareto-panel"), { roomApi, isVisible: () => currentView === "analytics" && !document.hidden });

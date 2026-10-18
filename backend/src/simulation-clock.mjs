@@ -46,11 +46,12 @@ export function createSimulationClock(store) {
         return state.simulationState;
       });
     },
-    async pause() {
+    /** `payload` records why an automatic pause happened (e.g. operator inactivity). */
+    async pause(payload = {}) {
       return store.mutate("simulation-pause", (state) => {
         if (state.simulationState.status === "RUNNING") {
           state.simulationState.status = "PAUSED";
-          appendEvent(state, "SIMULATION_PAUSED");
+          appendEvent(state, "SIMULATION_PAUSED", payload);
         }
         return state.simulationState;
       });

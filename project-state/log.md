@@ -300,3 +300,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] ops — ResponseCompass deployed as the `responsecompass` container
 - `compose.yaml` now deploys project `responsecompass` on host port 3200 with its own `responsecompass-data` volume (the old file pointed at `compass-data`, which belongs to the separate Compass deployment) and mounts the AMD key as a read-only Compose secret. The 3200 process's data was backed up, verified and copied into the empty volume; the container is healthy with both rooms READY and the credential configured.
 - Pages updated: operations/running-and-config.md; README Docker section.
+
+## [2026-10-18] feature — Idle auto-pause
+- A RUNNING room now pauses after `COMPASS_IDLE_PAUSE_MINUTES` (default 10, `0` disables) of real time without operator activity, so a visitor or judge who resumes a room and leaves stops spending AMD tokens. Activity is any non-GET room request plus a throttled browser heartbeat on real input; GET polling never counts. The pause records `SIMULATION_PAUSED` with `reason: OPERATOR_INACTIVITY` and logs `simulation_auto_paused`.
+- Pages updated: backend/control-rooms.md, backend/http-api.md, frontend/overview.md, operations/running-and-config.md.

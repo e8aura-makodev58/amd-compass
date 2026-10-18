@@ -29,6 +29,19 @@ This is the first step toward a multi-domain platform. The design was specified 
   exist, migration records a `CONFLICT` and touches neither — ambiguous provenance is
   surfaced loudly, not silently repaired.
 
+## Idle auto-pause
+
+The manager keeps each room's last operator activity in memory (`recordActivity`). Any
+non-GET room request counts, and so does `POST /api/control-rooms/:id/activity`, the
+browser's interaction heartbeat; read-only polling never does. On every scheduler cycle,
+before the tick, a READY room that is RUNNING and has had no activity for
+`COMPASS_IDLE_PAUSE_MINUTES` (default 10, `0` disables) is paused through the live runtime
+directly, so the live clock stops even while the room shows Offline. The pause appends
+`SIMULATION_PAUSED` with payload `{ reason: "OPERATOR_INACTIVITY", idleMinutes }` and logs
+`simulation_auto_paused`. Activity is not persisted: after a restart a room left RUNNING
+gets one full idle period from boot. Tests: `idle-auto-pause.test.mjs`,
+`e2e/idle-auto-pause.spec.mjs`.
+
 ## Routing consequences
 
 `server.mjs` resolves `/api/control-rooms/:id/...` through the manager: an unknown id

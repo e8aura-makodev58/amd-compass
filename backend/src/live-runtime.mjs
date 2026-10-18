@@ -306,7 +306,7 @@ export function createLiveRuntime({
       return withState({ status: "RESET" });
     },
     async start() { return withState(await clock.start()); },
-    async pause() { return withState(await clock.pause()); },
+    async pause(payload) { return withState(await clock.pause(payload)); },
     async resume() { return withState(await clock.resume()); },
     async setSpeed(speed) { return withState(await clock.setSpeed(speed)); },
     async forceNextEvent() {

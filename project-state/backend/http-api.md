@@ -39,6 +39,7 @@ returns `404`; a non-`READY` room returns `503` before any handler body runs.
 | GET | `/analytics/pareto` | Issue Pareto for one period: `level=DAY\|WEEK\|MONTH` (default MONTH), optional `period=<index>` (0 = current; default the most recent complete). Returns the period list, totals and two drill trees: issue class → observed symptom → applied fix, and floor → station, each with issue count, downtime minutes and failed attempts (`pareto-analytics.mjs`). Offline returns `available: false`. |
 | POST | `/mode` | Switch the room between `LIVE` and `OFFLINE`. |
 | POST | `/simulation/start`, `/pause`, `/resume` | Clock run-state. |
+| POST | `/activity` | Browser heartbeat: marks operator activity so the idle auto-pause does not fire (`202 {accepted:true}`). Every non-GET room request also counts; GET does not. See [control-rooms.md](control-rooms.md#idle-auto-pause). |
 | POST | `/simulation/speed` | Set 1× / 5× / 10× / 60×. The UI offers only 1× and 5× (recommended maximum for live AMD rankings). |
 | POST | `/simulation/reset` | Reset the clock. |
 | POST | `/simulation/force-event` | Immediately claim the next event through the validated scheduler path (respects the active-issue ceiling). With a live provider the planner and dispatch ranking run in the agent lane and the response returns at once; the issue appears on a later poll. Fixture and forced-failure modes stay inline. |

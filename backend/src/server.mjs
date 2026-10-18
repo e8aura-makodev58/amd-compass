@@ -327,6 +327,10 @@ export function createRequestHandler(manager, logger = null, settingsService = n
         if (room.health !== "READY") {
           return sendJson(response, 503, { error: `Control room "${roomId}" is unavailable`, code: "ROOM_UNAVAILABLE", reason: room.reason ?? null });
         }
+        // Any room mutation is operator activity; GET polling is not (see
+        // recordActivity in control-room-manager.mjs).
+        if (request.method !== "GET") manager.recordActivity?.(room.id);
+        if (request.method === "POST" && roomMatch[2] === "/activity") return sendJson(response, 202, { accepted: true });
         const handled = await handleRoomScopedRoute({ request, response, path: roomMatch[2] || "", runtime: room.applicationRuntime, logger, url });
         if (handled) return handled;
         // A known route prefix with no matching room-scoped branch: fall

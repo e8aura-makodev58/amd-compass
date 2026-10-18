@@ -16,7 +16,7 @@ import { createAuditStore } from "./audit-store.mjs";
 import { createControlRoomMetadataStore } from "./control-room-metadata-store.mjs";
 import { createApplicationRuntime, createLiveRuntime } from "./live-runtime.mjs";
 import { createDemoRuntime } from "./offline-runtime.mjs";
-import { createControlRoomLogger } from "./application-log-store.mjs";
+import { createControlRoomLogger, logEvent } from "./application-log-store.mjs";
 import { resolveCompassDataRoot } from "./data-root.mjs";
 import { bootstrapDemoSeed } from "./demo-seed-bootstrap.mjs";
 
@@ -46,6 +46,21 @@ async function pauseIfFreshlySeeded(liveStore) {
       draft.simulationState.status = "PAUSED";
     });
   }
+}
+
+const DEFAULT_IDLE_PAUSE_MINUTES = 10;
+
+/**
+ * How long a RUNNING room may go without operator activity before the
+ * scheduler pauses it, so an unattended room (a visitor who resumed it and
+ * left, a tab left open) stops placing model calls. `0` disables it, e.g. for
+ * a wall display that must keep running unattended.
+ */
+export function idlePauseMillisecondsFromEnv(value = process.env.COMPASS_IDLE_PAUSE_MINUTES) {
+  if (value === undefined || value === "") return DEFAULT_IDLE_PAUSE_MINUTES * 60_000;
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes < 0) throw new Error("COMPASS_IDLE_PAUSE_MINUTES must be a non-negative number of minutes");
+  return minutes * 60_000;
 }
 
 function assertNoReservedIdCollision(rooms) {
@@ -100,6 +115,8 @@ export async function createControlRoomManager({
   plannerOptions = { mode: process.env.COMPASS_EVENT_PLANNER_MODE ?? "live" },
   agentOptions = { mode: process.env.COMPASS_LIVE_COMPASS_MODE ?? "live" },
   migrateLegacyData = true,
+  idlePauseMilliseconds = idlePauseMillisecondsFromEnv(),
+  now = Date.now,
 } = {}) {
   // Must run before metadata/runtime stores are constructed. It only copies a
   // committed demo snapshot into an entirely new control-room root; an
@@ -143,6 +160,28 @@ export async function createControlRoomManager({
   }
 
   let processInterval = null;
+  // Real time of each room's last operator activity, in memory only: after a
+  // restart nobody has been seen yet, so a room left RUNNING gets one full
+  // idle period from boot before it pauses.
+  const lastActivityAt = new Map([...rooms.keys()].map((id) => [id, now()]));
+  const idleCheckRunning = new Set();
+
+  async function pauseIfIdle(room) {
+    if (idlePauseMilliseconds === 0 || idleCheckRunning.has(room.id)) return;
+    const idleMilliseconds = now() - lastActivityAt.get(room.id);
+    if (idleMilliseconds < idlePauseMilliseconds) return;
+    idleCheckRunning.add(room.id);
+    try {
+      const snapshot = await room.liveStore.snapshot();
+      if (snapshot.simulationState.status !== "RUNNING") return;
+      // Straight to the live runtime, not the mode-gated application surface:
+      // the live clock must stop whichever mode the room is showing.
+      await room.liveRuntime.pause({ reason: "OPERATOR_INACTIVITY", idleMinutes: Math.floor(idleMilliseconds / 60_000) });
+      logEvent(createControlRoomLogger(logger, room.id), "simulation_auto_paused", { reason: "OPERATOR_INACTIVITY", idleMs: idleMilliseconds });
+    } finally {
+      idleCheckRunning.delete(room.id);
+    }
+  }
 
   return {
     /** The sole boundary: every room-scoped route resolves through here. */
@@ -168,6 +207,21 @@ export async function createControlRoomManager({
      * and to inject simulated store failures without a real 1s interval or a
      * real network stub. Never call this outside a hermetic test.
      */
+    /**
+     * Marks operator activity in a room: any room-scoped mutation, plus the
+     * browser's interaction heartbeat. Read-only polling never counts, or an
+     * open tab would keep an unattended room running forever.
+     */
+    recordActivity(id) {
+      const normalizedId = normalizeRoomId(id);
+      if (lastActivityAt.has(normalizedId)) lastActivityAt.set(normalizedId, now());
+    },
+
+    /** Pauses every READY, RUNNING room idle past the limit. The scheduler calls it each cycle. */
+    async pauseIdleRooms() {
+      await Promise.all([...rooms.values()].filter((room) => room.health === "READY").map((room) => pauseIfIdle(room)));
+    },
+
     _internalRoomForTests(id) {
       return rooms.get(id) ?? null;
     },
@@ -230,7 +284,8 @@ export async function createControlRoomManager({
           // Each room's own runScheduledTick catches and logs its own
           // errors, so a rejection here is a defensive backstop, not the
           // primary error path.
-          room.liveRuntime.runScheduledTick().catch((error) => {
+          // The idle check runs first so a paused room places no tick work.
+          pauseIfIdle(room).then(() => room.liveRuntime.runScheduledTick()).catch((error) => {
             createControlRoomLogger(logger, room.id)?.log(JSON.stringify({ timestamp: new Date().toISOString(), event: "control_room_tick_error", error: error.message }));
           });
         }

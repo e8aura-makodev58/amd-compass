@@ -63,7 +63,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:3000`. The server binds `0.0.0.0` by default for LAN demos; use `COMPASS_HOST` and `COMPASS_PORT` to override it. Live state persists under ignored `backend/data/` by default; set `COMPASS_DATA_DIR` to relocate all persistent application state. Simulation time does not advance while the process is stopped.
+Open `http://127.0.0.1:3000`. The server binds `0.0.0.0` by default for LAN demos; use `COMPASS_HOST` and `COMPASS_PORT` to override it. Live state persists under ignored `backend/data/` by default; set `COMPASS_DATA_DIR` to relocate all persistent application state. Simulation time does not advance while the process is stopped. A running room pauses itself after 10 minutes with no one using it (`COMPASS_IDLE_PAUSE_MINUTES`; `0` disables), so an unattended tab does not keep spending provider tokens.
 
 The application reads an optional `.env` automatically:
 
