@@ -19,9 +19,9 @@ An AI dispatch agent for operations control rooms. Compass ranks who to send and
 
 ### Long Description (600–2000 characters, 100+ words)
 
-Revised 2026-10-18 for the command-center framing (user direction). The overtime sentence
-depends on codex round 9 (overtime recommendations with approval); do not submit it until
-that is merged and verified on 3200.
+Revised 2026-10-18 for the command-center framing (user direction). Every claim is built and
+verified: fix ranking (round 8), overtime recommendations with approval (round 9, merged; live
+AMD ranking staffing-7 captured and approved on a copy), wall screens and Issue Pareto.
 
 ```
 When equipment fails on a factory floor, the closest available technician is often not the best person to send, and the first fix tried is often a guess. ResponseCompass is an AI dispatch agent for operations control rooms. It runs dispatch on its own, and the control room supervises it from wall screens: floor map, issue queue, dispatch context, event feed, analytics and an issue Pareto, each on its own monitor.
@@ -47,22 +47,28 @@ Counts include paragraph breaks inside each code block, excluding the fences.
 
 ### Participation Mode
 
-Open: the user chooses Online or Onsite.
+Online (user, 2026-10-18).
 
-### Categories / Event Tracks
+### Categories
 
-Open: the form did not show the options. Pick after the user pastes them.
+- **Business** (primary): dispatch and staffing decisions for operations control rooms.
+- **Productivity**: select too if the form allows more than one category.
+
+### Event Tracks
+
+- **Evolus Business Agents on AMD**: an autonomous business agent running on AMD Token
+  Factory. Health and Wellbeing does not apply.
 
 ### Technologies Used
 
-- AMD Token Factory (OpenAI-compatible API)
-- MiMo-V2.6-Flash
-- Node.js 22
-- JavaScript (ES modules)
-- HTML/CSS
-- Dockview
-- Playwright
-- Docker
+Select only what the project actually uses:
+
+- **Token Factory**: every Compass ranking and the event planner.
+- **Claude Code** and **Anthropic Claude**: used to build it (main agent).
+- **Codex**: used to build it (worker agent).
+
+Do not select AMD Developer Cloud or AMD ROCm (not used: inference is the hosted Token
+Factory API). Antigravity: only if the user actually used it.
 
 ## Page 2 — Media
 
