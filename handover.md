@@ -476,15 +476,13 @@ queues behind that chain.
 
 ## codex
 
-- **Status:** READY FOR MERGE
+- **Status:** IN PROGRESS
 - **Updated:** 2026-10-18
-- **Task:** Round 9 follow-up — apply the transport and digit-free prose lessons added to the assignment. Master `ba1d50f` merged into this worktree, including the original Round 9 implementation (`485840f`, `9e82f9e`), Issue Pareto and the asynchronous live event trigger.
-- **Changes:** Retained master’s transport fix: `staffing-ranking.mjs` passes `fetchImpl: options.fetchImpl ?? fetch` for both initial live ranking and its one bounded repair. Rationales must contain no digits except supplied option IDs, even when the numeric token appears in the packet. The prompt explicitly keeps counts, rates, duty durations and sample sizes in the authoritative application tables. ID/rank fields, lawfulness, approval policy and provider controls are unchanged.
-- **Evidence:** New hermetic regression calls the live path without an injected transport, stubs only global fetch, observes the request and repairs a numeric rationale exactly once. Validator coverage rejects packet-supplied numbers, rates, duty hours and numeric ordinals; a supplied option ID remains valid and adding numeric prose fails. No live AMD calls or model-quality claim.
-- **Verification:** `npm test` **318/318 passed**. `COMPASS_E2E_PORT=3021 LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` **67/67 passed**, forced providers, no API spend. `git diff --check` clean; ports 3021/3121 free.
-- **Seed / installation:** The committed Round 9 month from `9e82f9e` is unchanged. Its canonical staffing examples are deterministic and its stored rationales already satisfy this contract. Reproduction, figures, compact sample audit IDs and installation guidance remain in `docs/demo-history.md`; backups and loading on 3200 stay with main/user.
-- **Docs / boundaries:** Updated maintained runtime, agent-boundary, testing pages and appended the project-state log. No backend/data, submission files, provider-controls, other worktrees or master working files touched; no push. The authorized 300s watcher was stopped immediately on observing master’s STOP/none control (`ba1d50f`); it remains off.
-- **Questions for main:** None. Review this focused follow-up after the original Round 9 merge.
+- **Task:** User-directed professional UI enhancements, explicitly authorized after the visual review. This is the active user task; the user is informing Claude. Master `d73d00e` merged before implementation. The round 10 store-performance assignment is not being started alongside this UI work.
+- **Scope:** Decision-first staffing, consistent operational components, direct mobile workspace navigation, Analytics overview/detail organization, balanced API settings, refined map/list presentation and room identity. Existing simulation, model boundaries, approval semantics and live data remain untouched.
+- **Verification:** In progress. Both required suites and desktop/phone/wall screenshot checks before READY.
+- **Watcher:** Remains stopped from the previous explicit STOP; not restarted as part of this UI task.
+- **Questions for main:** None. Review/merge will follow the completed UI handoff.
 
 ---
 
