@@ -23,7 +23,7 @@ export function validateStaffingRanking(packet, result) {
   try { assertNoResponderSkill(result); } catch { errors.push('Private fields are forbidden'); }
   return { valid: !errors.length, errors };
 }
-const instruction = 'Rank every supplied staffing option ID exactly once, using only observed backlog coverage and legal duty/rest evidence. Return JSON with schemaVersion "1.0", rankedOptions of optionId, contiguous rank and short qualitative rationale. Do not invent numbers, HR facts or hidden skill. You cannot approve staffing or alter legality; Central command or explicit room policy decides.';
+const instruction = 'Rank every supplied staffing option ID exactly once, using only observed backlog coverage and legal duty/rest evidence. Return JSON with schemaVersion "1.0", rankedOptions of optionId, contiguous rank and short qualitative rationale. Do not invent numbers, HR facts or hidden skill. Write rationales qualitatively (more coverage of the backlog classes, rested, shorter extension); the UI renders the authoritative numbers. You cannot approve staffing or alter legality; Central command or explicit room policy decides.';
 export async function requestStaffingRanking(packet, options = {}) {
   assertNoResponderSkill(packet);
   const mode = options.mode ?? 'fixture';
@@ -37,7 +37,7 @@ export async function requestStaffingRanking(packet, options = {}) {
       result = { schemaVersion: fixture.schemaVersion, rankedOptions: packet.candidates.map((row, i) => ({ optionId: row.optionId, rank: i + 1, rationale: fixture.rationale })) };
     } else if (mode === 'live') {
       const now = options.now ?? (() => performance.now()), deadline = now() + (options.timeoutMs ?? (Number.parseInt(process.env.COMPASS_AGENT_TIMEOUT_MS, 10) || 90_000));
-      const request = (feedback) => callChatCompletion({ ...options, ...modelInfo, apiKey: options.apiKey ?? readAmdApiKey(),
+      const request = (feedback) => callChatCompletion({ ...options, ...modelInfo, apiKey: options.apiKey ?? readAmdApiKey(), fetchImpl: options.fetchImpl ?? fetch,
         timeoutMs: Math.max(0, deadline - now()), systemInstruction: instruction,
         userContent: JSON.stringify(feedback ? { packet, validationErrors: feedback.slice(0,8) } : packet),
         jsonSchemaName: 'compass_staffing_ranking', jsonSchema: { type: 'object', required: ['schemaVersion', 'rankedOptions'] }, errorLabel: 'Compass staffing ranking' });

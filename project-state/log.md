@@ -269,3 +269,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
   verified stale policy boundaries, deadline replacement behavior, byte-repeated examples
   and request identity across a reset reusing the same recommendation ID/timestamp.
 - Pages updated: docs/demo-history.md; handover.md (codex).
+
+## [2026-10-18] fix — Live overtime rankings reach AMD
+- `requestStaffingRanking` had the same missing transport as the fix ranking (round 9 started before the round 8 lesson landed); it now defaults to the global `fetch`, with a regression test, and the prompt asks for qualitative rationales.
+- Pages updated: none.
