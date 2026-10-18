@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | STOP (no open task) |
+| codex | RUN (round 10 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | none | — |
+| codex | Keep the live store fast at month scale | 10 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -410,6 +410,47 @@ eligible responder by ID), and the result only appears in Settings → Demo.
 - **main agent (meanwhile):** wall-display screens, an Issue Pareto analytics panel (bar
   with cumulative line, and pie; category → symptom → applied fix; count / downtime /
   failed attempts), live AMD fix-ranking capture on 3200, then the deck/video/form revision.
+
+**Round 10 (2026-10-18) — codex: keep the live store fast at month scale.**
+Start with `git merge master`. Measured on 3200 with the round 8/9 month (27 MB live state,
+1× and 5×, live AMD): `POST /simulation/speed` 5.5 s, `POST /simulation/force-event`
+17–28 s even after it stopped waiting for model calls, `/state` ~0.9 s average and up to
+2.3 s. Cause: `live-store.mjs` `mutate` deep-clones the whole state (`structuredClone`
+for the draft, again for `result` and again for the returned `state`), runs the full
+`validateLiveState`, then `JSON.stringify` + fsync of the full 27 MB file, for every
+mutation, and the real-time loop mutates every second. Every read and operator action
+queues behind that chain.
+
+- **codex:** make mutation cost independent of history size, without weakening crash safety.
+  - **1. Measure first.** Add a reproducible benchmark script (not in `npm test`) that loads
+    the shipped month into a scratch root and reports p50/p95 for a scheduler tick, an
+    operator action (speed, force-event, override) and `/state`, `/analytics`,
+    `/analytics/pareto` while the loop runs at 5× with forced providers. Record before/after
+    numbers in `docs/demo-history.md`.
+  - **2. Targets on this host** (state ≥ 27 MB, 5×, loop running): tick mutation p95 ≤ 50 ms;
+    operator action p95 ≤ 500 ms; `/state` p95 ≤ 300 ms; analytics endpoints p95 ≤ 1 s.
+    Report honestly if a target is not met and why.
+  - **3. Likely changes (your design, justified in `docs/decisions.md`):** stop returning a
+    full `state` clone from `mutate` (audit callers); avoid cloning untouched history for the
+    draft (e.g. mutate a draft of the hot sections only, or apply-in-place with a rollback
+    journal); validate only what a mutation can change, with the full validation kept for
+    load, migration and tests; and persist without rewriting 27 MB per tick: for example an
+    append-only, fsynced journal of mutations replayed at load plus periodic compacted
+    snapshots, or write coalescing that never acknowledges an operator action before it is
+    durable. Crash-safety guarantees in `project-state/backend/` stay true: an acknowledged
+    mutation survives a crash; a torn write never corrupts the room. Keep `beforeCommit`,
+    history retention/archive semantics and archived/unarchived equality.
+  - **4. Tests.** Hermetic: crash/torn-write recovery for the new persistence (kill between
+    journal and snapshot, truncated journal tail), replay equality with the current format,
+    migration from existing `live-simulation.json` rooms (3200 must load its current file
+    unchanged), retention/archive equality, and a bounded-time regression test on a
+    synthetic large state. Both suites green.
+  - **5. Docs.** `project-state/backend/live-runtime.md` / `control-rooms.md` / operations
+    pages and `project-state/log.md`.
+  - **Do not touch:** `backend/data/`, port 3200, `docs/submission/`, `provider-controls.mjs`.
+    Installing on 3200 stays with the main agent.
+
+- **main agent (meanwhile):** live AMD capture on 3200, deck and video revision.
 
 ### Merge log
 
