@@ -15,7 +15,7 @@ reproducible from the persisted RNG streams. A model never computes any of them.
 
 ## What a model may do
 
-Two model roles, with three bounded jobs:
+Two model roles, with four bounded jobs:
 
 1. **Event planner** (`event-planner.mjs`) — propose **one** plausible next `ISSUE_RAISED`
    event for an eligible equipment item and an allowed issue class, as industry-neutral
@@ -34,6 +34,15 @@ Two model roles, with three bounded jobs:
    packet. One repair shares the ranking deadline. It cannot diagnose latent causes or
    set effectiveness. Deterministic fallback orders smoothed same-symptom success,
    evidence count and catalog order; the comparator is class-frequency, not hidden truth.
+
+4. **Staffing ranking** (`staffing-ranking.mjs`) — ranks only code-built lawful overtime
+   option IDs with observed backlog class/symptom experience, duty and rest facts. Strict
+   ID/rank/prose validation and one repair share the original deadline and provider
+   controls. It cannot approve staffing, change legal endpoints or supply employee truth.
+   Default approval belongs to Central command; an explicitly audited room policy can
+   approve the top option after the simulated deadline. Eligibility and mutations never
+   consult outcome history. This supersedes only the earlier overtime evidence/ranking
+   prohibition recorded on 2026-09-08 (see `docs/decisions.md`, 2026-10-18).
 
 ## Never trust the model
 

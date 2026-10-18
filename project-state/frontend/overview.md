@@ -47,7 +47,7 @@ a pointer gesture is active, then resumes.
 ## Live Floor layout
 
 At desktop widths (≥901px), `tiling.js` adopts the existing map section, issue-list
-section, event-feed section and dispatch/context aside into four Dockview tiles. It
+section, event-feed section, Staffing section and dispatch/context aside into five Dockview tiles. It
 resolves all nodes before moving any of them, and retains their IDs, ARIA attributes,
 listeners and `app.js` references. The default has the map at upper left, issues/events
 beneath it and context at right. Tiles fill the bounded frame; dividers resize both
@@ -57,7 +57,7 @@ Very short desktop windows scroll the page to keep the minimum-sized frame reach
 
 Layout persistence is per browser (`responsecompass.tiling.v1`), debounced and guarded
 against blocked/full storage. Stored JSON has a version and a 200,000-character cap;
-validation requires exactly the four known panels, one per group, with no detached or
+validation requires exactly the five known panels, one per group, with no detached or
 hidden regions. Persisted constraints/parameters are replaced with application-owned
 values. Invalid or infeasible geometry falls back to the default; **Reset layout**
 restores the default. An owned `ResizeObserver` ignores zero-sized hidden workspaces,
@@ -91,7 +91,7 @@ as a disabled "above recommended" option until the operator lowers it.
 
 A control room can put each panel on its own monitor. `/rooms/:id/display/:screen` shows
 one panel full screen (`DISPLAY_SCREENS` in `app.js`: `map`, `issues`, `events`,
-`dispatch`, `analytics`, `pareto`), with the room's simulated clock, run state and agent activity,
+`dispatch`, `analytics`, `pareto`, `staffing`), with the room's simulated clock, run state and agent activity,
 and none of the console controls (view tabs, mode, speed, pause, reset, search). It is
 the same page and state as the console, so panels stay interactive. Tiling is not
 started on a display screen. An unknown screen name falls back to the console. The
@@ -162,3 +162,18 @@ The planner's retained free-text response is labelled Incident note.
 Fix-rate percentages use one decimal place so small week-to-week decreases remain
 visible. Audit grid columns and evidence scroll areas are constrained to their context
 tile; mobile tests check overflow after opening the full applied-fix chronology too.
+
+## Staffing recommendations
+
+`staffing-view.js` renders the shared approval interface in the Live Floor **Staffing**
+tile, Settings → Demo → Staffing outlook and `/rooms/:id/display/staffing`. It shows
+code-built current backlog by priority/class, active staff/cap, handover, open ranked
+options with observed class/symptom evidence, source and baseline disagreement, simulated
+deadline countdown, top/alternative approval and optional-reason rejection. Recent decisions
+explicitly label **Auto-approved by policy**. Selection, rejection drafts, expanded evidence
+and focus survive polling. Stale decisions refresh current state and report the conflict.
+Settings → Demo saves the audited per-room policy with an independent revision.
+
+Older four-tile layouts fail the existing exact-panel validator and reset to the new
+default, so Staffing is always reachable. The new tile uses the same local scroll and
+mobile stack rules; the wall screen hides the other panels but retains approval controls.

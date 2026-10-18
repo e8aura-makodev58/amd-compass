@@ -264,3 +264,40 @@ export interface FixRecommendation {
     candidates: Array<{ fixId: string; title: string; steps: string; sameClass: FixEvidence; sameSymptom: FixEvidence; sameEquipment: FixEvidence }> };
   fallbackFixId: string; baselineFixId: string; disagreement: boolean;
 }
+
+export type StaffingObservedEvidence = Omit<CandidateEvidence, "responderId" | "displayName" | "distanceToIssue" | "travelTimeMinutes"> & { attempts: number; smoothedSuccess: number };
+
+/** Lawful option and observed evidence, with no latent simulation fields. */
+export interface StaffingOption {
+  optionId: string;
+  responderId: string;
+  displayName: string;
+  kind: "EXTENSION" | "CALL_IN";
+  dutyHours: number;
+  restHours: number | null;
+  legalEndsAt: string;
+  experience: Array<{
+    issueClass: string;
+    priorityBand: string;
+    symptom: string | null;
+    count: number;
+    classEvidence: StaffingObservedEvidence;
+    symptomEvidence: StaffingObservedEvidence;
+  }>;
+}
+export interface StaffingRecommendation {
+  id: string;
+  revision: number;
+  status: "PENDING" | "APPROVED_TOP" | "APPROVED_ALTERNATIVE" | "REJECTED" | "EXPIRED" | "AUTO_APPROVED" | "STALE" | "SUPERSEDED";
+  createdAt: string;
+  deadline: string;
+  source: "AMD_MODEL" | "DETERMINISTIC" | "FIXTURE";
+  rankingStatus: "WAITING" | "PENDING_MODEL" | "READY" | "FALLBACK";
+  packet: { candidates: StaffingOption[]; baselineOptionId: string; activeStaff: number; activeStaffCap: number };
+  rankedOptions: Array<{ optionId: string; rank: number; rationale: string }>;
+  baselineOptionId: string;
+  disagreement: boolean;
+  selectedOptionId?: string | null;
+  decidedAt?: string;
+  actor?: "Central command" | "Room policy" | "Application";
+}

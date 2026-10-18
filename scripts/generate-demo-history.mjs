@@ -76,6 +76,9 @@ async function generate(options) {
   const archiveRoot = `${out}.history`;
   if (`${from}.history` !== archiveRoot) await copyHistoryArchive(`${from}.history`, archiveRoot);
   state = migrateLiveState(state);
+  // Explicit history-generation policy: retain autonomous surge behavior with audit.
+  const { updateStaffingPolicy, decideStaffing } = await import('../backend/src/staffing-service.mjs');
+  updateStaffingPolicy(state, { staffingApproval: 'AUTO_APPROVE_TOP', expectedRevision: state.workforceContinuity.staffingPolicyRevision });
   await assertHistoryArchivePresent(archiveRoot, state);
   await writeHistoryArchive(archiveRoot, state, compactHistory(state, days, { force: true }));
   const started = Date.parse(state.simulationState.simulationTime);
@@ -109,6 +112,10 @@ async function generate(options) {
   await clock.resume();
   if (options.durableStorePath) state = await store.snapshot();
   let ticks = 0;
+  // Optional, disclosed synthetic central-command examples use canonical actions.
+  // Normal generation keeps AUTO_APPROVE_TOP throughout.
+  let staffingExamplePhase = options.staffingExamples === 'yes' ? 0 : 4;
+
   let nextProgress = started + 86_400_000;
   while (Date.parse(state.simulationState.simulationTime) < until) {
     const now = Date.parse(state.simulationState.simulationTime);
@@ -117,6 +124,7 @@ async function generate(options) {
     const due = [state.simulationState.nextEventAt,
       ...state.resolutionAttempts.filter((row) => row.status === "ACTIVE").flatMap((row) => [row.resolutionDueAt, row.reviewDueAt, row.assistance?.cooldownUntil]),
       ...(state.dispatchOffers ?? []).filter((row) => row.status === "PENDING").map((row) => row.responseDueAt),
+      ...state.workforceContinuity.staffingRecommendations.filter((r) => r.status === 'PENDING').map((r) => r.deadline),
       state.workforceContinuity.nextStaffingReviewAt, state.workforceContinuity.nextHandoverAt,
       ...state.workforceContinuity.temporaryRepairs.filter((row) => row.status === "SCHEDULED").map((row) => row.dueAt),
       ...state.responders.map((row) => row.extensionExpiryClaimedAt ? null : row.extensionEndsAt),
@@ -125,6 +133,26 @@ async function generate(options) {
     auditTime = new RealDate(next).toISOString();
     await runtime.advanceSimulation((next - now) / 60);
     if (options.durableStorePath) state = await store.snapshot();
+    if (staffingExamplePhase < 4) {
+      const rec = state.workforceContinuity.staffingRecommendations.find((r) => r.status === 'PENDING');
+      if (rec && staffingExamplePhase < 2) {
+        const example = await store.mutate('synthetic-central-command-example', (draft) => decideStaffing(draft, rec.id, {decision: staffingExamplePhase === 0 ? 'approve' : 'reject', optionId: rec.rankedOptions[0].optionId, expectedRevision: rec.revision, ...(staffingExamplePhase === 1 ? {reason:'Synthetic command-center example: retain current coverage.'} : {})}));
+        if (['APPROVED_TOP','APPROVED_ALTERNATIVE','REJECTED'].includes(example.result.status)) staffingExamplePhase++;
+        if (staffingExamplePhase === 2) await store.mutate('example-expiry-policy', (draft) => updateStaffingPolicy(draft, {staffingApproval:'OPERATOR',expectedRevision:draft.workforceContinuity.staffingPolicyRevision}));
+      } else if (staffingExamplePhase === 2 && state.workforceContinuity.staffingAudit.some((r) => r.outcome === 'EXPIRED')) {
+        await store.mutate('restore-history-auto-policy', (draft) => updateStaffingPolicy(draft, {staffingApproval:'AUTO_APPROVE_TOP',expectedRevision:draft.workforceContinuity.staffingPolicyRevision}));
+        staffingExamplePhase=3;
+      }
+      if (staffingExamplePhase === 3 && state.workforceContinuity.staffingAudit.some((r)=>r.outcome==='AUTO_APPROVED')) staffingExamplePhase=4;
+      if (options.durableStorePath) state = await store.snapshot();
+      // A disclosed synthetic backlog window uses the actual Force Event action,
+      // never inserted observations or forced resolution outcomes. Stop as soon
+      // as the approval, rejection, expiry and policy example have all occurred.
+      if (staffingExamplePhase < 4 && state.issues.filter((i)=>['PENDING','RECOMMENDATION_READY','OFFER_PENDING','ASSIGNED'].includes(i.status)).length < state.simulationConfig.maxActiveIssues) {
+        await runtime.forceNextEvent();
+        if (options.durableStorePath) state = await store.snapshot();
+      }
+    }
     ticks += 1;
     if (Date.parse(state.simulationState.simulationTime) >= nextProgress) {
       validateLiveState(state);
@@ -132,6 +160,7 @@ async function generate(options) {
       nextProgress += 86_400_000;
     }
   }
+  if (options.staffingExamples === 'yes' && staffingExamplePhase !== 4) throw new Error('Generation interval did not include the requested approval, rejection, expiry and policy examples');
   await clock.pause();
   if (options.durableStorePath) state = await store.snapshot();
   await writeHistoryArchive(archiveRoot, state, compactHistory(state, days, { force: true }));
@@ -158,8 +187,8 @@ if (!isMainThread && workerData?.demoHistory) {
     const options = {};
     for (let index = 2; index < process.argv.length; index += 2) {
       const name = process.argv[index];
-      if (!["--room", "--until", "--from", "--out", "--retention-days"].includes(name) || !process.argv[index + 1]) throw new Error("Usage: npm run generate:history -- --room plant-1 --until <ISO> [--from <seed.json>] [--out <file.json>] [--retention-days N]");
-      options[name === "--retention-days" ? "retentionDays" : name.slice(2)] = process.argv[index + 1];
+      if (!["--room", "--until", "--from", "--out", "--retention-days", "--staffing-examples"].includes(name) || !process.argv[index + 1]) throw new Error("Usage: npm run generate:history -- --room plant-1 --until <ISO> [--from <seed.json>] [--out <file.json>] [--retention-days N] [--staffing-examples yes]");
+      options[name === "--retention-days" ? "retentionDays" : name === "--staffing-examples" ? "staffingExamples" : name.slice(2)] = process.argv[index + 1];
     }
     console.log(JSON.stringify(await generateDemoHistory(options, (progress) => console.error(JSON.stringify(progress))), null, 2));
   } catch (error) { console.error(error.message); process.exitCode = 1; }

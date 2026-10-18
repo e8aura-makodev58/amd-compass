@@ -66,3 +66,19 @@ test("history generation rejects live data output paths and invalid horizons", a
   await assert.rejects(generateDemoHistory({ until: "invalid", out: join(directory, "invalid.json") }), /ISO timestamp/);
   await assert.rejects(generateDemoHistory({ until: "2026-12-01T08:00:00Z", out: join(repository, "backend/data/must-not-create/history.json") }), /Refusing to write/);
 });
+
+test('synthetic staffing examples use canonical actions, complete all four paths and repeat byte-for-byte', {timeout:60000}, async(t)=>{
+  const directory=await scratch(t), from=join(directory,'example-seed.json');
+  await writeFile(from,JSON.stringify(createLiveSeed()));
+  const options={from,until:'2026-09-01T12:00:00.000Z',staffingExamples:'yes'};
+  const first=join(directory,'examples-first.json'),second=join(directory,'examples-second.json');
+  for(const out of [first,second]){const report=await generateDemoHistory({...options,out});assert.equal(report.fetchCalls,0);assert.equal(report.credentialReads,0);}
+  assert.equal(await readFile(first,'utf8'),await readFile(second,'utf8'));
+  const state=JSON.parse(await readFile(first,'utf8')),decisions=state.workforceContinuity.staffingAudit.filter((r)=>r.action==='STAFFING_DECISION');
+  for(const kind of ['REJECTED','EXPIRED','AUTO_APPROVED'])assert.ok(decisions.some((r)=>r.outcome===kind),kind);
+  assert.ok(decisions.some((r)=>['APPROVED_TOP','APPROVED_ALTERNATIVE'].includes(r.outcome)));
+  assert.equal(state.workforceContinuity.staffingApproval,'AUTO_APPROVE_TOP');
+  assert.ok(state.issues.length>10); // real work accumulated behind the actionable cap
+  assert.ok(state.resolutionHistory.length>createLiveSeed().resolutionHistory.length);
+  assertNoResponderSkill(buildAnalytics(state));
+});

@@ -167,7 +167,7 @@ async function dispatch(triggers, handlers) {
     if (trigger.kind === "ASSISTANCE_REVIEW_DUE") await handlers.onAssistanceReviewDue(trigger);
     if (trigger.kind === "OFFER_RESPONSE_DUE") await handlers.onOfferDue(trigger);
     if (trigger.kind === "EVENT_DUE") await handlers.onEventDue(trigger);
-    if (["STAFFING_REVIEW_DUE", "SHIFT_HANDOVER_DUE", "STAFFING_RECHECK", "TEMPORARY_REPAIR_RECURRENCE_DUE", "EXTENSION_EXPIRY_DUE"].includes(trigger.kind)) await handlers.onWorkforceDue(trigger);
+    if (["STAFFING_DEADLINE_DUE", "STAFFING_REVIEW_DUE", "SHIFT_HANDOVER_DUE", "STAFFING_RECHECK", "TEMPORARY_REPAIR_RECURRENCE_DUE", "EXTENSION_EXPIRY_DUE"].includes(trigger.kind)) await handlers.onWorkforceDue(trigger);
   }
 }
 
@@ -208,6 +208,7 @@ export function createScheduler(store, {
           if (attempt.status === "ACTIVE" && attempt.resolutionDispatchToken) triggers.push({ kind: "RESOLUTION_DUE", token: attempt.resolutionDispatchToken, attemptId: attempt.id, issueId: attempt.issueId, generation: attempt.scheduleGeneration, forced: attempt.resolutionDispatchForced === true });
           if (attempt.status === "ACTIVE" && attempt.reviewDispatchToken) triggers.push({ kind: "ASSISTANCE_REVIEW_DUE", token: attempt.reviewDispatchToken, attemptId: attempt.id, issueId: attempt.issueId, generation: attempt.scheduleGeneration });
         }
+        for (const rec of state.workforceContinuity?.staffingRecommendations ?? []) if (rec.status === 'PENDING' && rec.deadlineDispatchToken) triggers.push({kind:'STAFFING_DEADLINE_DUE',token:rec.deadlineDispatchToken,recommendationId:rec.id});
         for (const offer of state.dispatchOffers ?? []) if (offer.status === "PENDING" && offer.responseDispatchToken) triggers.push({ kind: "OFFER_RESPONSE_DUE", token: offer.responseDispatchToken, offerId: offer.id, issueId: offer.issueId, responderId: offer.responderId });
         return { status: "RECONCILED", triggers };
       }).then(async (transaction) => { await dispatch(transaction.result.triggers, handlers); return transaction; });

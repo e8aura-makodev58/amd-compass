@@ -69,3 +69,20 @@ through `analyticHistory`, so archived and unarchived history give the same resu
 (tested); the private fault cause and `ResponderSkill` are never read. It is a
 description of recorded work, not a ranking of people or a causal claim about fixes.
 
+## Staffing decisions
+
+`workforce.recommendations` counts approved-top, approved-alternative, rejected, expired,
+auto-approved, stale and superseded recommendations from compact terminal `staffingAudit`
+facts. Each outcome uses all terminal decisions as denominator; baseline agreement uses
+terminal decisions with a supplied top and comparator, including deterministic fallback
+rankings (it is agreement, not evidence that AMD caused better outcomes). Unmet risk is an
+event count, not unique incidents. Every rate uses the shared fewer-than-three suppression.
+These canonical compact facts survive hot-detail pruning and issue archiving exactly.
+Observed staffing experience is contextual backlog evidence, never an employee leaderboard;
+no skill, hidden causes, HR fields or pay enter packets or analytics.
+
+Every hour/day/week/month period also contains `staffingRecommendations`, grouped by the
+terminal decision or risk timestamp with the existing UTC half-open period boundaries.
+The shared period selector drives a locally scrolling outcome-count/denominator table;
+period baseline rates use the same thin-sample suppression. Staffing-action totals now
+count applied approvals plus legacy extension/call-in actions, not pending review rows.

@@ -1,3 +1,4 @@
+import { staffingBacklog } from './staffing-service.mjs';
 import { deterministicFixRecommendation } from './fix-evidence.mjs';
 import { fixById, fixesFor } from './fix-catalog.mjs';
 import { assertNoFaultTruth, validateFaultTruth } from './fault-truth.mjs';
@@ -85,6 +86,20 @@ export function validateLiveState(state) {
   assert(state.simulationConfig?.baselineConfig?.version === BASELINE_CONFIG.version, "baseline configuration is missing or unsupported");
   assert(state.workforceContinuity?.version === "wc-2", "workforce continuity configuration is missing or unsupported");
   assert(Number.isInteger(state.workforceContinuity?.workforceProvisioningSeed), "workforce provisioning seed is invalid");
+  const staffing = state.workforceContinuity;
+  if (staffing.staffingApproval !== undefined) assert(['OPERATOR','AUTO_APPROVE_TOP'].includes(staffing.staffingApproval), 'invalid staffing approval policy');
+  if (staffing.staffingDeadlineMinutes !== undefined) assert(Number.isFinite(staffing.staffingDeadlineMinutes) && staffing.staffingDeadlineMinutes > 0 && staffing.staffingDeadlineMinutes <= 720, 'invalid staffing deadline');
+  const staffingRecords = staffing.staffingRecommendations ?? [];
+  assertUnique(staffingRecords, 'id', 'staffing recommendation');
+  assert(staffingRecords.filter((r)=>r.status==='PENDING').length <= 1, 'multiple open staffing recommendations');
+  for (const rec of staffingRecords) {
+    assert(['PENDING','APPROVED_TOP','APPROVED_ALTERNATIVE','REJECTED','EXPIRED','AUTO_APPROVED','STALE','SUPERSEDED'].includes(rec.status), 'invalid staffing status');
+    assert(Number.isInteger(rec.revision) && rec.revision >= 0, 'invalid staffing revision');
+    assert(Number.isFinite(Date.parse(rec.deadline)), 'invalid staffing deadline timestamp');
+    const ids = rec.packet.candidates.map((c)=>c.optionId);
+    assert(ids.length > 0 && new Set(ids).size === ids.length, 'invalid staffing candidates');
+    assert(rec.rankedOptions.length === ids.length && rec.rankedOptions.every((r,i)=>ids.includes(r.optionId) && r.rank===i+1) && new Set(rec.rankedOptions.map((r)=>r.optionId)).size===ids.length, 'invalid staffing ranking');
+  }
   for (const equipment of state.equipment) {
     assert(["NORMAL", "ISSUE_ACTIVE"].includes(equipment.status), `equipment ${equipment.id} status is invalid`);
     assert([1, 2, 3].includes(equipment.floor), `equipment ${equipment.id} floor is invalid`);
@@ -271,6 +286,9 @@ export function createPublicLiveSnapshot(state, { validated = false } = {}) {
   if (publicState.workforceContinuity) {
     delete publicState.workforceContinuity.workforceProvisioningSeed;
     delete publicState.workforceContinuity.rotationAnchor;
+    publicState.workforceContinuity.backlog = staffingBacklog(state);
+    const staffingRecords = publicState.workforceContinuity.staffingRecommendations ?? [];
+    publicState.workforceContinuity.staffingRecommendations = [...staffingRecords.filter((r) => r.status === 'PENDING'), ...staffingRecords.filter((r) => r.status !== 'PENDING').slice(-5)].map(({deadlineToken,deadlineDispatchToken,requestToken,...rec})=>rec);
     publicState.workforceContinuity.staffingAudit = publicState.workforceContinuity.staffingAudit.slice(-30);
     publicState.workforceContinuity.handovers = publicState.workforceContinuity.handovers.slice(-30);
     publicState.workforceContinuity.staffingRechecks = publicState.workforceContinuity.staffingRechecks.slice(-30);

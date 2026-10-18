@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "1.0",
+  "order": "SUPPLIED_DETERMINISTIC_ORDER",
+  "rationale": "Offline fixture retains the supplied deterministic order; observed backlog coverage and thin evidence remain visible."
+}

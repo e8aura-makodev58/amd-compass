@@ -13,13 +13,68 @@ on every mutation. Adapter-equivalence tests compare it with the durable store. 
 migrated and validated on input, at daily boundaries and on output. Worker-local Date
 calls use the target simulation time for repeatable audit timestamps.
 
+## Current month — round 9 staffing approval (2026-10-18)
+
+The current plant-1 seed includes ranked staffing recommendations, Central command
+approval/rejection, deadline expiry and explicit policy auto-approval. It resumes the same
+`962ac7f` base as round 8 and ends **6 October 2026, 08:00 UTC**, LIVE + PAUSED. Plant-2 and
+room metadata are unchanged. The round 8 measurements below are historical.
+
+Normal generation explicitly selects `AUTO_APPROVE_TOP`; ordinary new and migrated rooms
+default to `OPERATOR`. The committed run also selects `--staffing-examples yes`: for roughly
+one simulated hour at the start, a disclosed **synthetic command-center exercise** uses
+normal Force Event actions to sustain backlog within the ten-actionable-issue cap. It
+approves one lawful option and rejects the next through the shared decision function,
+briefly selects OPERATOR until an unanswered recommendation expires, restores auto policy,
+and stops forcing events once a lawful policy auto-approval occurs. No outcome is inserted,
+no completion is forced, and no model result is fabricated. The rest of the month uses
+normal scheduling. All issues, attempts, resolutions and audits come from the shared engine.
+Replacement recommendations retain the original deadline, preventing rechecks from
+postponing an answer indefinitely; no-action reviews leave pending work to expire naturally.
+
+| Current artifact | Result |
+|---|---:|
+| Issues / resolution observations | 3,532 / 4,730 |
+| Archived / hot issues | 2,808 / 724 |
+| Terminal staffing recommendations | 42 |
+| Approved top / alternative / rejected / expired / auto-approved | 1 / 0 / 1 / 1 / 1 |
+| Stale / superseded | 4 / 34 |
+| Unmet staffing risk events | 4 |
+| Ranked recommendation vs baseline agreement | 12 / 42 (28.6%) |
+| Restored live JSON / compressed live payload | 29,911,808 / 1,987,140 bytes |
+| Archive files / total bytes / largest file | 29 / 63,481,713 / 3,532,981 |
+| Engine cycles / generation seconds | 52,261 / 431.0 |
+
+All new staffing rankings in this run use **deterministic fallback**, not live AMD.
+Agreement includes terminal superseded/stale rankings and is not causal outcome evidence.
+The run made **zero fetch calls and zero credential reads**. Every committed seed file is
+below 20 MB. Compression restores the exact **29,911,808-byte** live state; it does
+not reduce the runtime JSON store or memory footprint. SHA-256:
+`3ac921d076306995fe0335c4e8d6a6d91ea167275fff0e78857923f3499e7091`.
+
+Sample compact audit facts (UTC):
+
+| Outcome | Recommendation | Decision time | Selected option |
+|---|---|---|---|
+| Approved by Central command | `staffing-1` | 2026-09-08T02:18:03.635Z | `CALL_IN:R-B-332` |
+| Rejected | `staffing-2` | 2026-09-08T02:18:06.050Z | `none` |
+| Expired | `staffing-19` | 2026-09-08T02:48:09.975Z | `none` |
+| Auto-approved by policy | `staffing-34` | 2026-09-08T03:18:28.479Z | `CALL_IN:R-B-345` |
+
+These early examples remain exact compact `workforceContinuity.staffingAudit` facts after
+the thirty-full-packet retention limit. `/state` returns the open recommendation and five
+recent decisions. To locate an older example in the committed seed, use the reader and
+filter `state.workforceContinuity.staffingAudit` by `recommendationId`; do not copy the
+manifest into a live state file. The archive companion tree remains required.
+
 ## Reproduce the committed seed
 
 ```sh
 mkdir -p .cache
 git show 962ac7f:backend/seed/demo-control-rooms/plant-1.json > .cache/week-plant-1.json
 npm run generate:history -- --room plant-1 --until 2026-10-06T08:00:00.000Z \
-  --from .cache/week-plant-1.json --out .cache/month-plant-1.json --retention-days 7
+  --from .cache/week-plant-1.json --out .cache/month-plant-1.json --retention-days 7 \
+  --staffing-examples yes
 ```
 
 `--room` selects plant-1 or plant-2; `--until` must be later than the input clock and
@@ -29,7 +84,7 @@ is seven simulated days; zero disables new archiving. A retained input needs its
 the JSON loses archived audit detail. A failed run does not replace the output JSON, but
 may leave idempotent archive additions for a retry.
 
-## Round 8 month with measurable fixes (2026-10-18)
+## Round 8 month with measurable fixes (2026-10-18; historical)
 
 The seed starts 1 September and ends **6 October 2026, 08:00 UTC**, LIVE + PAUSED at 60×.
 It includes hidden fault simulation, observable symptoms, applied catalog fixes and

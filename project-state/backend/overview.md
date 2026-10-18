@@ -79,3 +79,13 @@ one TypeScript type file; there is no build step.
 
 `demo-seed-reader.mjs` reads ordinary seed JSON or a checksum-verified compressed seed
 manifest. Bootstrap and generation use it; live persistence remains plain JSON.
+
+## Staffing approval modules
+
+- `staffing-service.mjs`: observed class/symptom evidence, deterministic fallback and legacy
+  baseline, pending review/approval/rejection/expiry/supersession, audited room policy and
+  request identity. Canonical mutations always revalidate `workforce-continuity.mjs` options.
+- `staffing-ranking.mjs`: Compass ranking-role transport, strict bounded option contract,
+  one deadline-bounded repair, API-free stored fixture and deterministic unavailability.
+- `backend/fixtures/staffing-ranking.json`: API-free qualitative fixture over the supplied
+  deterministic option order. No fixed responder assumptions or simulation truth.

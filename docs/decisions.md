@@ -910,3 +910,39 @@ Generated first-time fix rates by complete week were 67.1%, 74.9%, 76.5%, 75.6%:
 monotonic improvement or a causal model-versus-baseline result. No outcome was rewritten.
 New fix requests are gated on RUNNING; their read-only selector avoids full history clones.
 Existing running attempts retain legacy actions and are labelled separately in the UI.
+
+
+## 2026-10-18 — Bounded overtime ranking and central-command approval (round 9)
+
+- Supersedes the overtime-only portion of **2026-09-08 — Workforce Continuity boundary
+  decision** ("Models may not … select overtime") and its ban on responder-specific
+  observed evidence for overtime. Explicit round 9 product direction permits Compass to
+  rank code-built lawful options using observed class/symptom experience. Priority and
+  lawful eligibility remain deterministic; `workforce-continuity.mjs` still reads no
+  resolution history. Rules 3 and 4 remain binding without exception.
+- Code enumerates every lawful extension/call-in, enforces rest/duty/staff/surge caps,
+  computes evidence, fallback (extension, observed class coverage, ID) and original-rule
+  comparator, and performs all mutations. Compass only ranks supplied IDs through the
+  existing ranking role/provider controls. No hidden skill, fault causes, HR or pay fields.
+- Default room policy is OPERATOR. Central command approves top/alternative or rejects;
+  unanswered work expires after thirty simulated minutes, capped at handover. An explicit
+  audited AUTO_APPROVE_TOP policy may apply the top option at deadline. Every application
+  revalidates current legality; model completion cannot rewrite an existing decision.
+  Delayed reviews assess current facts rather than retroactively authorizing overtime.
+- Deadline claim/dispatch state survives restart. Recommendation revision conflicts and
+  private inference UUIDs guard concurrent actions and reset races. Ordinary arrivals and
+  releases now request coalesced rechecks; previously only recurrence/expiry requested them.
+- Full closed recommendation packets retain thirty records; compact outcome/comparison
+  facts remain canonical for exact lifetime analytics. Public state returns five recent
+  decisions plus open work. The month generator explicitly uses AUTO_APPROVE_TOP; its
+  optional, documented synthetic command-center examples use the same canonical actions
+  and briefly select OPERATOR to demonstrate expiry, then restore auto policy. They are
+  simulated operator examples, not live human or AMD outcome evidence.
+
+- Deadline starvation correction: a replacement recommendation inherits the earlier of
+  the open deadline and its own deadline. No-action reviews do not silently cancel an
+  unanswered recommendation; expiry still records a terminal fact, and unmet risk is
+  recorded only if the shortfall persists. This keeps a continuous staffing review from
+  postponing operator response indefinitely. The optional seed examples sustain a bounded
+  synthetic backlog via the real Force Event action until all four paths are observed;
+  all issues, attempts and outcomes still come from the normal guarded engines.

@@ -1,3 +1,4 @@
+import {createStaffingReview,decideStaffing} from '../src/staffing-service.mjs';
 import { initializeFaults } from '../src/fault-truth.mjs';
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -224,14 +225,18 @@ test("staffing and handover triggers are claimable once and honor rest before ca
   const triggers = claimWorkforceDueTriggers(state);
   assert.equal(triggers.filter((entry) => entry.kind === "STAFFING_REVIEW_DUE").length, 1);
   assert.equal(claimWorkforceDueTriggers(state).length, 0);
-  assert.equal(applyWorkforceTrigger(state, triggers[0]).status, "EXTENSION");
+  const pending = createStaffingReview(state, triggers[0]);
+  assert.equal(pending.status, 'PENDING');
+  assert.equal(state.responders.some((r)=>r.surgeKind), false);
+  const rec = state.workforceContinuity.staffingRecommendations[0];
+  assert.equal(decideStaffing(state, rec.id, {decision:'approve',optionId:rec.rankedOptions[0].optionId,expectedRevision:rec.revision}).status, 'APPROVED_TOP');
   const extended = state.responders.find((row) => row.surgeKind === "EXTENSION");
   assert.ok(extended?.extensionEndsAt);
   extended.availability = "UNAVAILABLE";
   extended.lastDutyEndedAt = state.simulationState.simulationTime;
   state.workforceContinuity.nextStaffingReviewAt = state.simulationState.simulationTime;
   const again = claimWorkforceDueTriggers(state).find((entry) => entry.kind === "STAFFING_REVIEW_DUE");
-  applyWorkforceTrigger(state, again);
+  createStaffingReview(state, again);
   assert.equal(extended.availability, "UNAVAILABLE");
 });
 

@@ -251,3 +251,21 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] fix — Trigger Next Event no longer blocks on live model calls
 - With a live provider, `forceNextEvent` now claims the event and queues the planner and dispatch ranking in the agent lane, so the request returns at once (it took about four minutes on AMD, past the UI's 45 s timeout). Fixture and forced-failure modes stay inline. Regression test in `wp10-live-runtime.test.mjs`.
 - Pages updated: backend/live-runtime.md, backend/http-api.md.
+
+## [2026-10-18] feature — ranked overtime with central-command approval
+- Added code-owned lawful staffing options, observed evidence and bounded Compass ranking;
+  operator approval/rejection, durable deadlines, explicit audited policy, compact analytics,
+  shared Staffing console/display/Settings UI and API-free regenerated month examples.
+- Pages updated: backend simulation, live-runtime, http-api, domain-model, overview;
+  frontend overview; concepts agent-boundary, analytics-and-ethics; operations testing.
+
+
+## [2026-10-18] feature — ship the approval-enabled retained month
+- Regenerated plant-1 from the same round 8 base through 6 October 08:00 UTC with a
+  disclosed synthetic Force Event exercise and canonical approval/rejection/expiry/policy
+  actions. Retained 3,532 issues, 4,730 observations and 42 compact staffing decisions;
+  packaged losslessly as 1,987,140 bytes, with all committed seed files below 20 MB.
+- Added phone evidence bounds, visible top-person rationale and frozen-evidence time;
+  verified stale policy boundaries, deadline replacement behavior, byte-repeated examples
+  and request identity across a reset reusing the same recommendation ID/timestamp.
+- Pages updated: docs/demo-history.md; handover.md (codex).

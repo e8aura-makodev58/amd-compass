@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const SCREENS = { map: "#floor", issues: "#issue-list", events: "#event-feed", dispatch: ".context-panel", analytics: "#analytics-content", pareto: "#pareto-panel" };
-const HIDDEN = { map: ["#issue-list", "#event-feed", ".context-panel"], issues: ["#floor", "#event-feed", ".context-panel"], events: ["#floor", "#issue-list", ".context-panel"], dispatch: ["#floor", "#issue-list", "#event-feed"], analytics: ["#floor", ".context-panel"], pareto: ["#floor", "#analytics-content"] };
+const SCREENS = { map: "#floor", issues: "#issue-list", events: "#event-feed", dispatch: ".context-panel", analytics: "#analytics-content", pareto: "#pareto-panel", staffing: "#staffing-tile" };
+const HIDDEN = { map: ["#issue-list", "#event-feed", ".context-panel"], issues: ["#floor", "#event-feed", ".context-panel"], events: ["#floor", "#issue-list", ".context-panel"], dispatch: ["#floor", "#issue-list", "#event-feed"], analytics: ["#floor", ".context-panel"], pareto: ["#floor", "#analytics-content"], staffing: ["#floor", ".context-panel", "#event-feed"] };
 
 for (const [screen, visible] of Object.entries(SCREENS)) {
   test(`wall display "${screen}" shows only its panel, the clock and no console controls`, async ({ page }) => {
@@ -22,7 +22,7 @@ test("the console's Screens menu links each panel to its own display page", asyn
   await page.goto("/rooms/plant-1");
   await page.locator(".screen-launcher > summary").click();
   const links = page.locator("[data-display-screen]");
-  await expect(links).toHaveCount(6);
+  await expect(links).toHaveCount(7);
   expect(await links.evaluateAll((rows) => rows.map((row) => row.getAttribute("href")))).toEqual(Object.keys(SCREENS).map((screen) => `/rooms/plant-1/display/${screen}`));
 });
 

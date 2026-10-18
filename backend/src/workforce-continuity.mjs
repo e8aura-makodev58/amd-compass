@@ -43,6 +43,11 @@ export function createWorkforceConfig(seed = 424242) {
     scenario: { selected: "NORMAL", revision: 0, lastAutoTransitionAt: null, activeScenario: null },
     deferredDemand: [],
     staffingAudit: [],
+    staffingApproval: "OPERATOR",
+    staffingPolicyRevision: 0,
+    staffingDeadlineMinutes: 30,
+    staffingSequence: 0,
+    staffingRecommendations: [],
     handovers: [],
     temporaryRepairs: [],
     staffingRechecks: [],
@@ -142,7 +147,9 @@ function findReplacement(state, isLawful) {
 export function reconcileWorkforceDuty(state, { reason = "WC2_MIGRATION" } = {}) {
   const now = state.simulationState.simulationTime;
   const normalCrew = crewForTime(now);
-  const isLawful = (responder) => responder?.crewId === normalCrew || (responder?.surgeKind === "CALL_IN" && responder.dutyStartedAt && hoursSince(now, responder.dutyStartedAt) < NORMAL_SHIFT_HOURS);
+  const isLawful = (responder) => responder?.crewId === normalCrew
+    || (responder?.surgeKind && responder.extensionEndsAt && Date.parse(now) < Date.parse(responder.extensionEndsAt))
+    || (responder?.surgeKind === 'CALL_IN' && !responder.extensionEndsAt && responder.dutyStartedAt && hoursSince(now, responder.dutyStartedAt) < NORMAL_SHIFT_HOURS);
   const activeAssignments = state.assignments.filter((entry) => entry.status === "ACTIVE");
   // Preserve at most two lawful carryovers as explicit extensions. Everything
   // else becomes a durable queued handover, never a silently removed issue.
@@ -231,7 +238,7 @@ export function reconcileWorkforceDuty(state, { reason = "WC2_MIGRATION" } = {})
     const assigned = state.assignments.some((entry) => entry.responderId === responder.id && entry.status === "ACTIVE");
     if (assigned) { responder.availability = "ASSIGNED"; responder.currentIssueId = state.assignments.find((entry) => entry.responderId === responder.id && entry.status === "ACTIVE").issueId; continue; }
     delete responder.currentIssueId; delete responder.currentOfferId;
-    const lawfulCallIn = responder.surgeKind === "CALL_IN" && responder.dutyStartedAt && hoursSince(now, responder.dutyStartedAt) < NORMAL_SHIFT_HOURS;
+    const lawfulCallIn = Boolean(responder.surgeKind && responder.extensionEndsAt && Date.parse(now) < Date.parse(responder.extensionEndsAt)) || (responder.surgeKind === "CALL_IN" && responder.dutyStartedAt && hoursSince(now, responder.dutyStartedAt) < NORMAL_SHIFT_HOURS);
     if (responder.crewId === normalCrew || lawfulCallIn) { responder.availability = "AVAILABLE"; responder.dutyStartedAt ??= now; responder.lastDutyEndedAt = null; if (!lawfulCallIn) { delete responder.surgeKind; delete responder.extensionEndsAt; } }
     else { responder.availability = "UNAVAILABLE"; responder.lastDutyEndedAt ??= now; responder.dutyStartedAt = null; delete responder.surgeKind; delete responder.extensionEndsAt; }
   }
@@ -295,7 +302,14 @@ export function claimWorkforceDueTriggers(state) {
     repair.status = "CLAIMED";
     triggers.push({ kind: "TEMPORARY_REPAIR_RECURRENCE_DUE", token: repair.token, repairId: repair.id, simulationTimestamp: state.simulationState.simulationTime });
   }
-  for (const responder of state.responders.filter((entry) => entry.surgeKind === "EXTENSION" && entry.extensionEndsAt && Date.parse(entry.extensionEndsAt) <= now && !entry.extensionExpiryClaimedAt)) {
+  for (const rec of config.staffingRecommendations ?? []) {
+    if (rec.status === "PENDING" && rec.deadlineToken && now >= Date.parse(rec.deadline)) {
+      rec.deadlineDispatchToken = rec.deadlineToken;
+      rec.deadlineToken = null;
+      triggers.push({ kind: "STAFFING_DEADLINE_DUE", token: rec.deadlineDispatchToken, recommendationId: rec.id, simulationTimestamp: state.simulationState.simulationTime });
+    }
+  }
+  for (const responder of state.responders.filter((entry) => entry.surgeKind && entry.extensionEndsAt && Date.parse(entry.extensionEndsAt) <= now && !entry.extensionExpiryClaimedAt)) {
     responder.extensionExpiryClaimedAt = state.simulationState.simulationTime;
     triggers.push({ kind: "EXTENSION_EXPIRY_DUE", token: `extension-expiry-${responder.id}-${Date.parse(responder.extensionEndsAt)}`, responderId: responder.id, simulationTimestamp: state.simulationState.simulationTime });
   }
@@ -305,6 +319,8 @@ export function claimWorkforceDueTriggers(state) {
 export function requestStaffingRecheck(state, reason) {
   const config = state.workforceContinuity;
   if (!config || !["ISSUE_RAISED", "ASSIGNMENT_RELEASED", "ISSUE_ESCALATED", "RESPONDER_AVAILABLE"].includes(reason)) return null;
+  const pending = config.staffingRechecks.find((entry) => entry.status === 'PENDING' && entry.reason === reason);
+  if (pending) return pending.token;
   const token = `staffing-recheck-${config.staffingRechecks.length + config.staffingAudit.length + 1}`;
   config.staffingRechecks.push({ token, reason, status: "PENDING", requestedAt: state.simulationState.simulationTime });
   return token;
@@ -313,34 +329,8 @@ export function requestStaffingRecheck(state, reason) {
 export function applyWorkforceTrigger(state, trigger) {
   const config = state.workforceContinuity;
   const now = trigger.effectiveAt ?? state.simulationState.simulationTime;
-  if (["STAFFING_REVIEW_DUE", "STAFFING_RECHECK"].includes(trigger.kind)) {
-    const demand = activeIssueCount(state);
-    const active = state.responders.filter((responder) => responder.availability !== "UNAVAILABLE");
-    let action = "NO_ACTION";
-    const surge = Math.max(0, active.length - 6);
-    if (demand > active.length && active.length < MAX_ACTIVE_STAFF && surge < 2) {
-      const extension = state.responders.filter((responder) => responder.availability === "AVAILABLE" && responder.crewId === crewForTime(now) && !responder.extensionEndsAt && responder.dutyStartedAt && Date.parse(now) - Date.parse(responder.dutyStartedAt) <= NORMAL_SHIFT_HOURS * 3_600_000).sort((a, b) => a.id.localeCompare(b.id))[0];
-      if (extension) {
-        extension.surgeKind = "EXTENSION";
-        // Review occurs two hours before handover: six hours from review is
-        // the legal 16-hour endpoint for a normal 08:00/20:00 duty block.
-        extension.extensionEndsAt = plusHours(now, Math.min(6, MAX_DUTY_HOURS - (Date.parse(now) - Date.parse(extension.dutyStartedAt)) / 3_600_000));
-        action = "EXTENSION";
-      }
-      if (action === "NO_ACTION") {
-      const candidate = state.responders.filter((responder) => responder.availability === "UNAVAILABLE" && (!responder.lastDutyEndedAt || Date.parse(now) - Date.parse(responder.lastDutyEndedAt) >= MIN_REST_HOURS * 3_600_000)).sort((a, b) => a.id.localeCompare(b.id))[0];
-      if (candidate) {
-        candidate.availability = "AVAILABLE";
-        candidate.dutyStartedAt = now;
-        candidate.lastDutyEndedAt = null;
-        candidate.surgeKind = "CALL_IN";
-        action = "CALL_IN";
-      } else action = "UNMET_STAFFING_RISK";
-      }
-    }
-    config.staffingAudit.push({ id: `staffing-${trigger.token}`, token: trigger.token, simulationTimestamp: now, action, actionableIssues: demand, activeStaff: active.length });
-    return { status: action, trigger };
-  }
+  // Reviews are handled by staffing-service: this module only builds lawful
+  // options and performs explicitly authorized mutations, never reads history.
   if (trigger.kind === "SHIFT_HANDOVER_DUE") {
     const outgoing = crewForTime(new Date(Date.parse(now) - 1).toISOString());
     const incoming = crewForTime(now);
@@ -372,7 +362,7 @@ export function applyWorkforceTrigger(state, trigger) {
   }
   if (trigger.kind === "EXTENSION_EXPIRY_DUE") {
     const responder = state.responders.find((entry) => entry.id === trigger.responderId);
-    if (!responder || responder.surgeKind !== "EXTENSION") return { status: "STALE", trigger };
+    if (!responder || !responder.surgeKind) return { status: "STALE", trigger };
     const activeAssignment = state.assignments.find((entry) => entry.responderId === responder.id && entry.status === "ACTIVE");
     // Never discard an active attempt to satisfy a duty transition. Persist a
     // durable handover obligation and make incoming capacity available; the
@@ -389,4 +379,40 @@ export function applyWorkforceTrigger(state, trigger) {
     return { status: "EXTENSION_ENDED", trigger };
   }
   return { status: "IGNORED", trigger };
+}
+
+/** Code-owned legality; explicit projection prevents private responder fields escaping. */
+export function lawfulStaffingOptions(state, now = state.simulationState.simulationTime) {
+  const active = state.responders.filter((r) => r.availability !== "UNAVAILABLE");
+  const surge = active.filter((r) => r.surgeKind).length;
+  if (activeIssueCount(state) <= active.length || active.length >= MAX_ACTIVE_STAFF || surge >= 2) return [];
+  const options = [];
+  for (const r of state.responders) {
+    const dutyHours = r.dutyStartedAt ? hoursSince(now, r.dutyStartedAt) : 0;
+    const restHours = r.lastDutyEndedAt ? hoursSince(now, r.lastDutyEndedAt) : null;
+    if (r.availability === "AVAILABLE" && r.crewId === crewForTime(now) && !r.surgeKind && !r.extensionEndsAt && r.dutyStartedAt && dutyHours >= 0 && dutyHours <= NORMAL_SHIFT_HOURS) {
+      options.push({ optionId: `EXTENSION:${r.id}`, responderId: r.id, displayName: r.name, kind: "EXTENSION", dutyHours, restHours,
+        legalEndsAt: plusHours(now, Math.min(6, MAX_DUTY_HOURS - dutyHours)) });
+    }
+    if (r.availability === "UNAVAILABLE" && (!r.lastDutyEndedAt || restHours >= MIN_REST_HOURS)) {
+      options.push({ optionId: `CALL_IN:${r.id}`, responderId: r.id, displayName: r.name, kind: "CALL_IN", dutyHours: 0, restHours,
+        legalEndsAt: plusHours(now, NORMAL_SHIFT_HOURS) });
+    }
+  }
+  return options.sort((a,b) => (a.kind === b.kind ? 0 : a.kind === "EXTENSION" ? -1 : 1) || a.responderId.localeCompare(b.responderId));
+}
+
+export function applyStaffingOption(state, option) {
+  const legal = lawfulStaffingOptions(state).find((row) => row.optionId === option.optionId);
+  if (!legal || Date.parse(option.legalEndsAt) <= Date.parse(state.simulationState.simulationTime) || Date.parse(option.legalEndsAt) > Date.parse(legal.legalEndsAt)) return false;
+  const responder = state.responders.find((r) => r.id === option.responderId);
+  responder.surgeKind = option.kind;
+  responder.extensionEndsAt = option.legalEndsAt;
+  delete responder.extensionExpiryClaimedAt;
+  if (option.kind === "CALL_IN") {
+    responder.availability = "AVAILABLE";
+    responder.dutyStartedAt = state.simulationState.simulationTime;
+    responder.lastDutyEndedAt = null;
+  }
+  return true;
 }
