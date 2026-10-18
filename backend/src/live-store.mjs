@@ -1,13 +1,14 @@
 import { initializeFaults, assertNoFaultTruth } from './fault-truth.mjs';
 /**
- * Single-process atomic persistence for v4 Live Simulation.
- * This is intentionally a small JSON-domain store rather than an event-sourced
- * system: OperationalEvent is audit-only and never rebuilds canonical state.
+ * Single-process journaled persistence for v4 Live Simulation.
+ * The journal contains storage patches, never domain events: OperationalEvent is audit-only and never rebuilds canonical state.
  */
-import { randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, writeFile, readdir, open } from "node:fs/promises";
+import { writeFile, readdir, stat } from "node:fs/promises";
 import { isDeepStrictEqual } from "node:util";
-import { dirname } from "node:path";
+import { dirname, resolve } from "node:path";
+import {createLiveDraft, cloneDraftValue, freezeLiveState} from "./live-draft.mjs";
+import {createLiveJournal, readLiveCheckpoint, writeLiveCheckpoint} from "./live-journal.mjs";
+const coordinators = new Map();
 import { compassDataPath } from "./data-root.mjs";
 import { createLiveSeed } from "../seed/live-simulation.mjs";
 import { createPublicLiveSnapshot, validateLiveState } from "./live-schema.mjs";
@@ -15,30 +16,6 @@ import { migrateLiveState } from "./live-migration.mjs";
 import { compactHistory, retentionDays, resetRetention, analyticHistory } from "./history-retention.mjs";
 import { writeHistoryArchive, archivedIssue, assertHistoryArchivePresent } from "./history-archive.mjs";
 import { createIssueAuditRecord, redactIssueAuditRecord } from "./live-schema.mjs";
-
-/**
- * The temp name must be unique per writer. A shared `${filePath}.tmp` is not
- * atomic across processes: a second writer overwrites the first one's temp file,
- * the first rename consumes it, and the second rename fails with ENOENT.
- */
-async function writeAtomically(filePath, state) {
-  await mkdir(dirname(filePath), { recursive: true });
-  const temporaryPath = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
-  const handle = await open(temporaryPath, "w");
-  try { await handle.writeFile(`${JSON.stringify(state)}\n`); await handle.sync(); } finally { await handle.close(); }
-  await rename(temporaryPath, filePath);
-  const directory = await open(dirname(filePath), "r");
-  try { await directory.sync(); } finally { await directory.close(); }
-}
-
-async function readState(filePath) {
-  try {
-    return JSON.parse(await readFile(filePath, "utf8"));
-  } catch (error) {
-    if (error.code === "ENOENT") return null;
-    throw error;
-  }
-}
 
 async function createPreV2Backup(filePath, state) {
   try {
@@ -56,13 +33,27 @@ function normalizeCurrentDraft(state) {
 
 export function createLiveStore({ filePath = process.env.COMPASS_LIVE_STATE_PATH ?? compassDataPath("live-simulation.json"), seedFactory = createLiveSeed,
   historyRetentionDays = retentionDays(), archiveRoot = `${dirname(filePath)}/history-archive`, beforeCommit = async () => {},
+  checkpointEvery = 512, checkpointBytes = 16 * 1024 * 1024, persistenceHook = async () => {},
+  onCheckpointError = error => process.emitWarning(`Live checkpoint deferred: ${error.message}`),
 } = {}) {
   let cachedState = null;
-  let operationQueue = Promise.resolve();
+  const key=resolve(filePath);
+  if(!coordinators.has(key))coordinators.set(key,{queue:Promise.resolve(),generation:0});
+  const coordinator=coordinators.get(key);
+  let cachedGeneration=-1;
+  const journal=createLiveJournal(filePath,{hook:persistenceHook});
+  function publish(state){cachedState=freezeLiveState(state);coordinator.generation++;cachedGeneration=coordinator.generation;}
+  async function checkpointIfDue(){
+    if(journal.records>=checkpointEvery||journal.bytes>=checkpointBytes){
+      try{await journal.checkpoint(cachedState);}catch(error){onCheckpointError(error);}
+    }
+  }
 
   async function ensureLoaded() {
-    if (cachedState) return cachedState;
-    const loaded = await readState(filePath);
+    if (cachedState && cachedGeneration===coordinator.generation) return cachedState;
+    cachedState=null;
+    const checkpoint = await readLiveCheckpoint(filePath);
+    const loaded = checkpoint ? await journal.recover(checkpoint) : null;
     if (loaded) {
       // Always pass persisted data through the idempotent migrator before
       // validation. This also repairs states written by an earlier 2.0 build
@@ -79,12 +70,15 @@ export function createLiveStore({ filePath = process.env.COMPASS_LIVE_STATE_PATH
       if (migrationChanged || !isDeepStrictEqual(retentionBefore, migrated.historyRetention)) {
         if (migrationChanged) await createPreV2Backup(filePath, loaded);
         await beforeCommit({ label: "load-retention", state: migrated });
-        await writeAtomically(filePath, migrated);
+        await journal.append(loaded,migrated,[{op:'set',path:[],value:migrated}]);
       }
-      cachedState = migrated;
+      publish(migrated);
     } else {
-      cachedState = validateLiveState(initializeFaults(seedFactory()));
-      await writeAtomically(filePath, cachedState);
+      const oldJournal=await stat(`${filePath}.journal`).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
+      if(oldJournal?.size)throw Error('Live journal has no base checkpoint');
+      const state=validateLiveState(initializeFaults(seedFactory()));
+      await writeLiveCheckpoint(filePath,state);
+      publish(state);
     }
     return cachedState;
   }
@@ -101,15 +95,20 @@ export function createLiveStore({ filePath = process.env.COMPASS_LIVE_STATE_PATH
    * could never recover on its own. That is a bricked server, not a blip.
    */
   function queue(operation) {
-    const next = operationQueue.catch(() => {}).then(operation);
-    operationQueue = next.catch(() => {});
+    const next = coordinator.queue.catch(() => {}).then(operation);
+    coordinator.queue = next.catch(() => {});
     return next;
   }
 
   return {
     project(projector) { return queue(async () => projector(await ensureLoaded())); },
+    /**
+     * The published state itself. It is deeply frozen and never changed after
+     * publication (each mutation builds a new copy-on-write version), so a
+     * snapshot needs no 30 MB clone; writing to it throws instead of corrupting.
+     */
     async snapshot() {
-      return queue(async () => structuredClone(await ensureLoaded()));
+      return queue(async () => ensureLoaded());
     },
     async publicSnapshot() {
       return queue(async () => createPublicLiveSnapshot(await ensureLoaded(), { validated: true }));
@@ -138,27 +137,39 @@ export function createLiveStore({ filePath = process.env.COMPASS_LIVE_STATE_PATH
     mutate(label, mutation) {
       return queue(async () => {
         const before = await ensureLoaded();
-        const draft = structuredClone(before);
-        const result = await mutation(draft);
-        validateLiveState(normalizeCurrentDraft(draft));
-        draft.revision = before.revision + 1;
-        const bundles = compactHistory(draft, historyRetentionDays);
-        if (bundles.length) validateLiveState(draft);
-        await writeHistoryArchive(archiveRoot, draft, bundles);
-        await beforeCommit({ label, state: draft });
-        await writeAtomically(filePath, draft);
-        cachedState = draft;
-        return { label, revision: draft.revision, result: structuredClone(result), state: structuredClone(draft) };
+        const transaction = createLiveDraft(before);
+        try {
+          const result = await mutation(transaction.draft);
+          normalizeCurrentDraft(transaction.draft);
+          transaction.draft.revision = before.revision + 1;
+          const bundles = compactHistory(transaction.draft, historyRetentionDays);
+          // Detach the caller's result while the draft is still open: it may hold draft rows.
+          const detachedResult=cloneDraftValue(result);
+          const {state:draft,patches} = transaction.finish();
+          validateLiveState(draft,{previous:before});
+          freezeLiveState(draft);
+          await writeHistoryArchive(archiveRoot, draft, bundles);
+          await beforeCommit({ label, state: draft });
+          await journal.append(before,draft,patches);
+          publish(draft);
+          await checkpointIfDue();
+          return { label, revision: draft.revision, result: detachedResult };
+        } catch(error) {
+          transaction.abort();cachedState=null;throw error;
+        }
       });
     },
+    checkpoint() { return queue(async()=>{await ensureLoaded();await journal.checkpoint(cachedState);}); },
     reset() {
       return queue(async () => {
         const state = validateLiveState(initializeFaults(seedFactory()));
         const previous = await ensureLoaded();
         const archiveFiles = await readdir(archiveRoot).catch((error) => { if (error.code === "ENOENT") return []; throw error; });
         if (previous.historyRetention?.epoch || archiveFiles.length) resetRetention(state, (previous.historyRetention?.epoch ?? 0) + 1);
-        await writeAtomically(filePath, state);
-        cachedState = state;
+        await beforeCommit({label:'reset',state});
+        await journal.append(previous,state,[{op:'set',path:[],value:state}]);
+        publish(state);
+        try{await journal.checkpoint(state);}catch(error){onCheckpointError(error);}
         return structuredClone(state);
       });
     },

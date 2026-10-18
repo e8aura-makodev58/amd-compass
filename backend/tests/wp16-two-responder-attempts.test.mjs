@@ -164,11 +164,11 @@ test("an assisted outcome contributes fractional evidence to the next Compass pa
   assert.ok(evidence.effectiveEvidenceWeight > 0);
   assert.ok(Number.isFinite(evidence.effectiveEvidenceWeight));
   assert.ok(["WEAK", "MODERATE", "STRONG"].includes(evidence.evidenceStrengthLabel));
-  const state = await store.snapshot();
+  const state = structuredClone(await store.snapshot());
   const completed = state.resolutionAttempts.find((row) => row.issueId === "ISS-104");
   completed.resolutionDueToken = "stale-token";
   assert.throws(() => validateLiveState(state), /retains resolutionDueToken/);
-  const malformed = await store.snapshot();
+  const malformed = structuredClone(await store.snapshot());
   malformed.resolutionHistory.at(-1).participants[0].contributionShare = Number.NaN;
   assert.throws(() => validateLiveState(malformed), /participant share is invalid/);
 });
@@ -318,7 +318,7 @@ test("standard issues request help only when observable progress is behind the i
 test("resolution due times round up, and a due event that lands short replans instead of stalling", async () => {
   const { store, service } = await fixture();
   await service.assign({ issueId: "ISS-104", responderId: "R-ENGR028" });
-  const state = await store.snapshot();
+  const state = structuredClone(await store.snapshot());
   const attempt = state.resolutionAttempts.find((row) => row.issueId === "ISS-104");
   const segment = attempt.segments.at(-1);
   const exactMs = Date.parse(segment.startedAt) + ((attempt.workTotal - attempt.completedWork) / segment.teamRate) * 60_000;

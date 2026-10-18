@@ -125,8 +125,9 @@ test("each room's live store writes to its own distinct file", async () => {
   const { readdir, readFile } = await import("node:fs/promises");
   const plant1File = join(dataRoot, "control-rooms", "plant-1", "live-simulation.json");
   const plant2File = join(dataRoot, "control-rooms", "plant-2", "live-simulation.json");
-  const plant1State = JSON.parse(await readFile(plant1File, "utf8"));
-  const plant2State = JSON.parse(await readFile(plant2File, "utf8"));
+  const { readDurableLiveState } = await import("../src/live-journal.mjs");
+  const plant1State = await readDurableLiveState(plant1File);
+  const plant2State = await readDurableLiveState(plant2File);
   assert.equal(plant1State.simulationState.status, "RUNNING");
   assert.equal(plant2State.simulationState.status, "PAUSED");
 

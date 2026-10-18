@@ -162,7 +162,8 @@ async function generate(options) {
   }
   if (options.staffingExamples === 'yes' && staffingExamplePhase !== 4) throw new Error('Generation interval did not include the requested approval, rejection, expiry and policy examples');
   await clock.pause();
-  if (options.durableStorePath) state = await store.snapshot();
+  // Store snapshots are frozen; final compaction needs a private copy.
+  if (options.durableStorePath) state = structuredClone(await store.snapshot());
   await writeHistoryArchive(archiveRoot, state, compactHistory(state, days, { force: true }));
   validateLiveState(state);
   const { responderSkills, ...nonSkillState } = state;

@@ -33,9 +33,22 @@ outcome. See [../concepts/agent-boundary.md](../concepts/agent-boundary.md).
 
 ## Persistence & concurrency
 
-- `live-store.mjs` writes the retained live state atomically (synced temp file, rename,
-  synced directory) on every mutation, bumping `revision`. There is exactly one writer
-  per room per process. At daily simulated boundaries and on load, closed detail older
+- `live-store.mjs` journals each mutation instead of rewriting the room file. A mutation
+  runs on a copy-on-write draft (`live-draft.mjs`) that copies only the branches it
+  touches; the store validates only rows that changed, appends the changed paths as one
+  checksummed frame to `live-simulation.json.journal` (`live-journal.mjs`), fsyncs it,
+  and only then publishes the new deeply frozen state and acknowledges the caller,
+  bumping `revision`. Every 512 frames or 16 MB it writes a checkpoint (synced temp file,
+  rename, synced directory, carrying the journal sequence) and clears the journal. Load
+  reads the checkpoint and replays complete frames after its sequence; a torn final frame
+  is trimmed, a corrupt complete frame fails closed, and a pre-journal room file loads as a
+  sequence-0 checkpoint. `readDurableLiveState` returns the durable state for tools and
+  tests. **Back up and copy a room as a whole directory** (checkpoint, journal and archive
+  together), never the checkpoint file alone. There is exactly one writer per room per
+  process.
+- `store.snapshot()` returns the published state itself, which is frozen: callers read it
+  freely and a write throws. Code that needs a scratch copy (for example the history
+  generator's final compaction, or test fixtures) takes `structuredClone` explicitly. At daily simulated boundaries and on load, closed detail older
   than `COMPASS_HISTORY_RETENTION_DAYS` (default seven) moves to per-room daily archives.
   Archive files are synced **before** the live commit, and insert-only by issue ID;
   retrying after a crash neither drops nor duplicates records. Reset starts a new archive

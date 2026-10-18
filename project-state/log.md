@@ -288,3 +288,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
   task rows/map chrome, Analytics overview/detail composition and balanced provider settings.
   Existing simulation, lawfulness, approval, metric and Offline boundaries are preserved.
 - Pages updated: frontend/overview.md, operations/testing.md; design/operational-ui-refinement.md.
+
+## [2026-10-18] perf — Journaled live store, frozen snapshots (round 10)
+- Copy-on-write drafts, changed-row validation, an fsynced checksummed journal with periodic checkpoints, and frozen published state returned by `snapshot()` without cloning. Month-seed benchmark: `/state` p95 1.16 s → 0.18 s, speed change 1.50 s → 0.27 s, tick mutation 0.43 s → 0.18 s (50 ms target not met). Crash/torn-write/corruption/legacy-load/replay tests in `live-journal.test.mjs`. Finished by the main agent after Codex ran out of tokens.
+- Pages updated: backend/live-runtime.md, backend/control-rooms.md, architecture.md; docs/decisions.md.
