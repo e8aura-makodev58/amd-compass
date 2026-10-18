@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 9 task open) |
+| codex | STOP (no open task) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | Compass overtime recommendations with command-center approval | 9 |
+| codex | none | — |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -413,6 +413,8 @@ eligible responder by ID), and the result only appears in Settings → Demo.
 
 ### Merge log
 
+- 2026-10-18 — **codex** `9e82f9e` → merge `a37849a`: overtime recommendations with command-center approval, Staffing tile and display screen, staffing analytics, regenerated month (round 9). Conflicts with the main agent's Pareto screen resolved by keeping both. Main agent fixed the staffing ranking's missing transport on master. `npm test` 316/316, E2E 67/67. Handoff archived.
+- 2026-10-18 — **main agent** on master: wall-display screens, Issue Pareto panel, live fix-ranking transport and prose fix, non-blocking Trigger Next Event.
 - 2026-10-18 — **codex** `f3b3cbc` → merge `0373037`: hidden fault causes, fix catalog and ranked fix recommendations, fix-enabled month seed (round 8). Clean merge. `npm test` 291/291, E2E 53/53. Handoff archived.
 - 2026-10-17 — **codex** `0a1062c` → merge `5cf085a`: factual review of the submission drafts (round 7). Clean merge. Docs only; codex ran `npm test` 276/276, E2E 49/49. Handoff archived.
 - 2026-10-17 — **codex** `8ef8ee2` → merge `5db2ad4`: seven-day history retention with per-room archive, bounded `/state`, compact analytic facts; month-long plant-1 seed and archive (round 6). Clean merge. `npm test` 276/276, E2E 49/49. Handoff archived.
@@ -433,20 +435,9 @@ eligible responder by ID), and the result only appears in Settings → Demo.
 
 ## codex
 
-- **Status:** READY FOR MERGE
+- **Status:** IDLE
 - **Updated:** 2026-10-18
-- **Task:** Round 9 — Compass overtime recommendations with command-center approval. Master `50054ea` merged. Implementation commit `485840f`; final month/phone-polish commit contains this handoff.
-- **Lawfulness / boundary:** `workforce-continuity.mjs` lists every lawful extension and rested call-in and revalidates approved options against duty/rest, staff cap, surge count and current shortfall. It reads no resolution history. `staffing-service.mjs` separately projects observed class/symptom attempts, smoothed success and medians; no hidden skill, fault causes, pay or HR fields. Fallback is extension → observed backlog class coverage → ID; comparator preserves the old first-eligible-ID rule.
-- **Ranking:** Compass ranking-role settings and unchanged provider controls; supplied option IDs only, exact permutation/ranks, bounded rationale/numbers and one deadline-bounded repair. A tracked live-lane request yields during provider waits; UUID identity protects reset/supersession/decision races. API-free fixture adapter is tested. The existing fixed Offline scenario has no staffing shortfall and remains API-free; overtime mutation controls are Live-only, as are the existing workforce scenario settings.
-- **Lifecycle:** Default room policy OPERATOR; approve top/alternative, reject, stale, expired, superseded and policy-auto outcomes are audited, with operator actions attributed to Central command. Thirty-minute deadlines are capped at handover and **preserved across replacement recommendations** so rechecks cannot postpone the answer. No-action reviews leave pending work to expire; approval always rechecks current facts. A late operator request never invokes policy approval. Durable claimed deadline tokens redispatch on restart and apply once. Existing staffing audit is preserved; legacy reviews are not reopened.
-- **UI / API:** Staffing Dockview tile and `/rooms/:id/display/staffing`, same records/actions in Settings → Demo, audited policy editor and event-feed labels. Top person/rationale and evidence timestamp are visible; alternatives use personnel names. Phone evidence scrolls locally and retains control bounds, drafts and expanded state. Legacy four-panel layouts reset to the five-panel default. Room POST `/staffing/:id/approve` / `/reject` require recommendation `expectedRevision`; room PATCH `/demo/staffing-policy` uses the separate policy revision. Unknown/invalid/stale/revision cases have explicit responses; client input cannot request the internal auto-approval bypass.
-- **Analytics / retention:** Lifetime and hour/day/week/month staffing outcomes, baseline agreement and unmet-risk events have explicit denominators and thin-sample suppression. Counts use compact canonical terminal audit facts; only thirty full closed packets are retained, with five recent decisions plus open work public. Archived/unarchived analytics and observed packets are equal. Staffing-action totals count applied approvals and legacy extension/call-in actions, not pending reviews. Agreement includes deterministic/superseded/stale rankings and is not causal outcome evidence.
-- **Regenerated seed:** Same `962ac7f` base as round 8, through 2026-10-06 08:00 UTC: **3,532 issues / 4,730 observations; 724 hot / 2,808 archived; 42 terminal staffing recommendations**. Outcomes: approved top **1**, alternative **0**, rejected **1**, expired **1**, auto-approved **1**, stale **4**, superseded **34**. Unmet-risk events **4**; ranked-vs-baseline agreement **12/42**. All new rankings are deterministic fallback: no live AMD result is claimed.
-- **Synthetic examples:** `--staffing-examples yes` sustains backlog for roughly one initial simulated hour using the real Force Event path, performs canonical approval/rejection, briefly selects OPERATOR for expiry, restores AUTO_APPROVE_TOP and stops forcing once policy approval occurs. No observations or outcomes are inserted, no resolution is forced. The exercise repeats byte-for-byte. Sample compact audit IDs: **approved `staffing-1`** (Sep 8 02:18:03.635Z, CALL_IN:R-B-332), **rejected `staffing-2`** (02:18:06.050Z), **expired `staffing-19`** (02:48:09.975Z), **auto-approved `staffing-34`** (03:18:28.479Z, CALL_IN:R-B-345). These early facts remain in `workforceContinuity.staffingAudit` after full-packet pruning; use the seed reader to find them. Full reproduction and interpretation: `docs/demo-history.md`.
-- **Packaging:** `plant-1.json` remains a manifest; `plant-1.state.json.gz` is **1,987,140 bytes**, restoring exactly **29,911,808 bytes**, SHA-256 `3ac921d076306995fe0335c4e8d6a6d91ea167275fff0e78857923f3499e7091`. Companion archive: **29 files / 63,481,713 bytes**, largest **3,532,981**. All 33 committed seed files are below 20 MB; compression does not reduce runtime JSON/memory. Generation: **52,261 cycles / 431.0 s**, **zero fetch calls / zero credential reads**. Install through `readDemoSeedBytes` and retain the archive companion, never copy the manifest as live JSON. This generated month ends with explicit AUTO_APPROVE_TOP; new/migrated rooms default OPERATOR, and Settings can restore operator approval after installation.
-- **Verification:** `npm test` **309/309 passed**; `COMPASS_E2E_PORT=3021 LD_LIBRARY_PATH=/home/makodev58/rendertest/libs/usr/lib/x86_64-linux-gnu npm run test:e2e` **64/64 passed**, forced providers and no API spend. Includes real API approval/rejection, policy editing, 375px/1280px expanded evidence, 1920×1080 display, reset reusing ID/timestamp, durable deadline replay, inheritance/expiry, privacy, retention equality and deterministic examples. `git diff --check` clean; ports 3021/3121 free.
-- **Boundaries / docs:** Updated maintained backend/domain/runtime/API, frontend, analytics/boundary and testing pages, append-only decision/log records and history reproduction. No `backend/data/`, port 3200, provider-controls, submission files, other worktrees or master working files touched. No push. The authorized 300s Claude watcher remains running and obeys master STOP/none.
-- **Questions for main:** None. Ready for review and merge; installation/backups on 3200 remain with the main agent/user.
+- **Task:** None. Round 9 merged; see `docs/handover-history.md`.
 
 ---
 
