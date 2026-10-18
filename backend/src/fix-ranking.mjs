@@ -23,7 +23,7 @@ export function validateFixRanking(packet, result) {
   try { assertNoResponderSkill(result); } catch { errors.push('Private fields are forbidden'); }
   return { valid: !errors.length, errors };
 }
-const instruction = 'Rank only the supplied fix IDs from the observed evidence. Return JSON with schemaVersion "1.0" and rankedFixes, each with fixId, contiguous rank and a short qualitative rationale. Include every supplied fix exactly once. Prefer same-symptom success supported by evidence, discuss uncertainty for thin samples. Do not diagnose a hidden cause, invent procedures, numbers, effectiveness or confidence. Titles, steps, counts and outcomes are application facts; they are not model estimates.';
+const instruction = 'Rank only the supplied fix IDs from the observed evidence. Return JSON with schemaVersion "1.0" and rankedFixes, each with fixId, contiguous rank and a short qualitative rationale. Include every supplied fix exactly once. Prefer same-symptom success supported by evidence, discuss uncertainty for thin samples. Do not diagnose a hidden cause, invent procedures, numbers, effectiveness or confidence. Titles, steps, counts and outcomes are application facts; they are not model estimates. Write every rationale with no digits at all: no counts, rates, percentages, decimals, minutes or sample sizes, not even in parentheses; the UI renders the authoritative numbers. Say stronger same-symptom evidence, larger sample, thin sample, lower success or weaker on this station instead. Numeric rank fields and the supplied fixId strings are still required.';
 export async function requestFixRanking(packet, options = {}) {
   assertNoResponderSkill(packet);
   const mode = options.mode ?? 'fixture';
@@ -38,7 +38,7 @@ export async function requestFixRanking(packet, options = {}) {
       result = { schemaVersion: '1.0', rankedFixes: order.map((fixId, i) => ({ fixId, rank: i + 1, rationale: 'Stored Offline troubleshooting order; observed evidence remains visible for comparison.' })) };
     } else if (mode === 'live') {
       const now = options.now ?? (() => performance.now()), deadline = now() + (options.timeoutMs ?? (Number.parseInt(process.env.COMPASS_AGENT_TIMEOUT_MS, 10) || 90_000));
-      const request = (feedback) => callChatCompletion({ ...options, ...modelInfo, apiKey: options.apiKey ?? readAmdApiKey(),
+      const request = (feedback) => callChatCompletion({ ...options, ...modelInfo, apiKey: options.apiKey ?? readAmdApiKey(), fetchImpl: options.fetchImpl ?? fetch,
         timeoutMs: Math.max(0, deadline - now()), systemInstruction: instruction,
         userContent: JSON.stringify(feedback ? { packet, validationErrors: feedback.slice(0,8) } : packet),
         jsonSchemaName: 'compass_fix_ranking', jsonSchema: { type: 'object', required: ['schemaVersion', 'rankedFixes'] }, errorLabel: 'Compass fix ranking' });
