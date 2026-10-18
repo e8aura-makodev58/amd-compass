@@ -145,3 +145,90 @@
 .display-mode[data-display="staffing"] .floor-section, .display-mode[data-display="staffing"] .context-panel { display: none !important; }
 .display-mode[data-display="staffing"] #staffing-tile { flex: 1; padding: 24px; font-size: 1.05rem; }
 @media (max-width: 900px) { .staffing-tile { border-top: 1px solid var(--rule); } }
+
+/* Compact decisions keep the recommended action ahead of expandable evidence. */
+.staffing-tile { padding: 14px; font-size: .8rem; line-height: 1.45; }
+.staffing-open { gap: 8px; }
+.staffing-decision-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.staffing-decision-heading h3 { margin: 0; font-size: .8rem; font-weight: 600; color: var(--ink-2); }
+.staffing-pick { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 5px 10px; }
+.staffing-pick > strong { font-size: 1rem; letter-spacing: -.015em; }
+.staffing-countdown { color: var(--warn-ink); font: 500 .72rem var(--font-mono); }
+.staffing-rationale { color: var(--ink-2); font-size: .76rem; }
+.staffing-primary-actions { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0; background: var(--paper-raised); }
+.staffing-primary-actions button { padding: 8px 12px; font-size: .78rem; }
+.staffing-policy-note { color: var(--ink-3); font-size: .7rem; }
+.staffing-tile details, #demo-staffing-outlook details { border-top: 1px solid var(--rule); }
+.staffing-tile summary, #demo-staffing-outlook summary { padding: 10px 0; font-size: .76rem; color: var(--ink-2); cursor: pointer; font-weight: 600; }
+.staffing-tile details p { font-size: .76rem; }
+.staffing-form { display: grid; gap: 10px; padding-bottom: 12px; }
+.staffing-coverage { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 0; color: var(--ink-2); font-size: .74rem; }
+.staffing-coverage strong { color: var(--ink); font-family: var(--font-mono); }
+.staffing-feedback:empty { display: none; }
+#demo-staffing-outlook { font-size: .84rem; }
+.simulation-bar { flex-wrap: wrap; }
+
+/* The phone workspace exposes the selected task without traversing the floor map. */
+@media (max-width: 900px) {
+  body:not(.display-mode) .topbar .tagline, body:not(.display-mode) .topbar > div > .eyebrow { display: none; }
+  body:not(.display-mode) .topbar { gap: 8px; padding-bottom: 12px; }
+  body:not(.display-mode) .topbar h1 { font-size: 1.12rem; }
+  body:not(.display-mode) .topbar .tab-bar { flex-wrap: nowrap; gap: 0; justify-content: space-between; }
+  body:not(.display-mode) .topbar .tab-button { font-size: .75rem; padding: 8px 6px; }
+  body:not(.display-mode) .topbar .agent-activity-indicator { width: auto; margin-left: auto; padding: 6px; }
+  body:not(.display-mode) #agent-activity-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  body:not(.display-mode) .mode-controls button { font-size: .75rem; padding: 7px 9px; }
+  body:not(.display-mode) .simulation-bar { display: flex; gap: 10px 12px; align-items: center; padding: 12px; margin-bottom: 10px; }
+  body:not(.display-mode) .simulation-bar > div { display: grid; gap: 3px; }
+  body:not(.display-mode) .simulation-bar .room-identity { flex: 1 0 100%; }
+  body:not(.display-mode) .simulation-bar .room-identity strong { max-width: 100%; }
+  body:not(.display-mode) .simulation-bar strong { font-size: .76rem; }
+  body:not(.display-mode) .simulation-bar .eyebrow { font-size: .68rem; margin: 0; }
+  body:not(.display-mode) .workspace-nav { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 5px; margin: 12px 0; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-sunk); }
+  .workspace-nav button { display: flex; gap: 4px; align-items: center; justify-content: center; min-width: 0; min-height: 44px; padding: 5px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ink-2); box-shadow: none; font-size: .76rem; }
+  .workspace-nav button[aria-pressed="true"] { background: var(--paper-raised); color: var(--accent-ink); box-shadow: var(--shadow-sm); }
+  .workspace-nav span { min-width: 16px; padding: 1px 4px; border-radius: var(--radius-pill); color: var(--accent-ink); background: var(--accent-wash); font: 600 .66rem var(--font-mono); }
+  body:not(.display-mode) .dashboard { display: block; }
+  body:not(.display-mode) .floor-section { padding: 12px; }
+  body:not(.display-mode) .context-panel { border-top: 1px solid var(--rule); }
+  body:not(.display-mode) .context-panel, body:not(.display-mode) .staffing-tile { scroll-margin-top: 64px; }
+  body:not(.display-mode):not([data-workspace-view="floor"]) .floor-section > .section-heading,
+  body:not(.display-mode):not([data-workspace-view="floor"]) #floor,
+  body:not(.display-mode):not([data-workspace-view="issues"]) .context-panel,
+  body:not(.display-mode):not([data-workspace-view="staffing"]) #staffing-tile,
+  body:not(.display-mode):not([data-workspace-view="issues"]) .lower-grid > section:has(#issue-list),
+  body:not(.display-mode):not([data-workspace-view="events"]) .lower-grid > section:has(#event-feed),
+  body:not(.display-mode)[data-workspace-view="staffing"] .floor-section { display: none; }
+  body:not(.display-mode)[data-workspace-view="floor"] .lower-grid { display: none; }
+  body:not(.display-mode) .lower-grid { display: block; margin-top: 0; }
+  body:not(.display-mode) .issue-list { max-height: 260px; overflow-y: auto; }
+  body:not(.display-mode) .event-feed { max-height: none; }
+  body:not(.display-mode) .building-controls { max-width: calc(100% - 16px); flex-wrap: wrap; }
+  .staffing-primary-actions button { min-height: 44px; }
+  #analytics-view { padding: 14px 0; }
+}
+.display-mode .workspace-nav { display: none !important; }
+.staffing-primary-actions [data-staffing-action="approve"] { color: var(--on-accent); border-color: var(--accent); background: var(--accent); }
+.staffing-primary-actions [data-staffing-action="approve"]:hover:not(:disabled) { border-color: var(--accent-ink); background: var(--accent-ink); }
+.staffing-primary-actions button:disabled { color: var(--ink-3); border-color: var(--rule); background: var(--paper-sunk); }
+@media (min-width: 901px) and (max-width: 1359px) {
+  .simulation-bar { gap: 9px; }
+  .simulation-bar .room-identity { display: grid; flex: 0 0 90px; gap: 2px; }
+  .simulation-bar .room-identity .eyebrow { font-size: .64rem; white-space: nowrap; }
+  .simulation-bar .room-identity strong { max-width: 90px; font-size: .78rem; }
+  .simulation-bar > div:not(.room-identity) .eyebrow { font-size: .64rem; }
+}
+@media (max-width: 900px) { body:not(.display-mode) .dashboard { min-height: 0; } }
+
+/* Wall screens retain the same decisions at a reading distance, rather than tile density. */
+@media (min-width: 901px) {
+  .display-mode[data-display="staffing"] #staffing-tile { padding: 28px; font-size: 1rem; }
+  .display-mode[data-display="staffing"] #staffing-tile > :is(.staffing-open, details, .staffing-coverage, .empty-state) { max-width: 1280px; }
+  .display-mode[data-display="staffing"] .staffing-open { gap: 16px; }
+  .display-mode[data-display="staffing"] .staffing-decision-heading h3 { font-size: 1.1rem; }
+  .display-mode[data-display="staffing"] .staffing-pick > strong { font-size: 1.8rem; }
+  .display-mode[data-display="staffing"] :is(.staffing-rationale, .staffing-countdown, .staffing-coverage, .staffing-open table) { font-size: 1rem; }
+  .display-mode[data-display="staffing"] :is(.staffing-policy-note, .staffing-tile summary, .staffing-tile details p) { font-size: .94rem; }
+  .display-mode[data-display="staffing"] .staffing-primary-actions button { min-height: 48px; padding: 12px 18px; font-size: 1rem; }
+  .display-mode[data-display="staffing"] .status-badge { font-size: .85rem; }
+}

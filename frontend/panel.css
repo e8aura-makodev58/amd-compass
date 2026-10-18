@@ -39,3 +39,13 @@
 .audit-heading { flex-wrap: wrap; }
 .audit-heading button { max-width: 100%; white-space: normal; }
 .audit-section .evidence-scroll { min-width: 0; max-width: 100%; }
+
+/* A calmer detail hierarchy: facts and actions precede supporting evidence. */
+.context-panel > h2 { font-size: 1rem; font-weight: 600; color: var(--ink-2); }
+.issue-summary > h3 { margin: 12px 0 6px; font-size: 1.25rem; letter-spacing: -.025em; }
+.issue-summary > p { font-size: .84rem; line-height: 1.5; }
+.issue-summary dl { margin: 14px 0; }
+.issue-summary dl > div { padding: 9px 0; }
+.fix-panel { padding-top: 14px; }
+.context-panel details > summary { padding: 8px 0; font-size: .78rem; cursor: pointer; }
+.context-panel .recommendation-card { border-radius: var(--radius-sm); box-shadow: none; }

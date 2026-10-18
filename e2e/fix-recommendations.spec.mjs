@@ -23,6 +23,7 @@ for (const width of [375,1280]) test(`fix recommendations, evidence and applied 
  expect(audit.resolutionHistory.some(r=>r.fixApplied?.id?.startsWith('FIX-B-'))).toBe(true);
  expect(JSON.stringify(audit)).not.toMatch(/faultTruth|hidden-cause-|trueSuccessProbability|successMultiplier/);
  await page.reload();
+ if(width<=900) await page.locator('[data-workspace=events]').click();
  await page.locator('[data-feed-issue-id="ISS-104"]').first().click();
  await expect(page.locator('#recommendation-panel')).toContainText('Applied fixes by attempt');
  await expect(page.locator('#recommendation-panel')).toContainText(/FIX-B-/);
