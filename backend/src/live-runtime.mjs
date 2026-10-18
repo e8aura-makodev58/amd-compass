@@ -43,6 +43,8 @@ export function createLiveRuntime({
   let dispatchQueued = false;
 
   function inLoop() { return loopContext.getStore() === true; }
+  // With a live provider, the planner and each ranking take tens of seconds.
+  const liveProviderCalls = [plannerOptions?.mode, agentOptions?.mode].includes("live");
 
   function startAgentLane() {
     if (agentLane) return;
@@ -281,7 +283,14 @@ export function createLiveRuntime({
     async pause() { return withState(await clock.pause()); },
     async resume() { return withState(await clock.resume()); },
     async setSpeed(speed) { return withState(await clock.setSpeed(speed)); },
-    async forceNextEvent() { return withState(await scheduler.forceNextEvent()); },
+    async forceNextEvent() {
+      // "Trigger Next Event" claims the event at once. With a live provider the
+      // planner and the dispatch ranking then run in the agent lane, so the
+      // operator's request returns in milliseconds instead of minutes; the new
+      // issue appears on the next poll. Offline-style modes stay inline.
+      if (liveProviderCalls) return withState(await loopContext.run(true, () => scheduler.forceNextEvent()));
+      return withState(await scheduler.forceNextEvent());
+    },
     async forceResolve(issueId) { const result = await scheduler.forceResolve(issueId); await drainDeferredAgentWork(); return withState(result); },
     async updateWorkforceScenario({ scenario, expectedRevision }) {
       const result = await store.mutate("workforce-scenario-update", (state) => {

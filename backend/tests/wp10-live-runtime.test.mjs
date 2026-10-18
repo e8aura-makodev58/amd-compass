@@ -139,7 +139,11 @@ test("runtime snapshots expose an event planner while it is working in the backg
   assert.match(whileRunning.agentActivity.eventPlanner.detail, /Generating and validating/);
 
   releaseProvider({ ok: false, status: 503, text: async () => "test provider unavailable" });
-  const completed = await pendingEvent;
+  // With a live provider the request returns once the event is claimed; the planner
+  // finishes in the agent lane.
+  await pendingEvent;
+  await runtime.agentWorkIdle();
+  const completed = await runtime.snapshot();
   assert.equal(completed.agentActivity.eventPlanner.status, "COMPLETED");
   assert.match(completed.agentActivity.eventPlanner.detail, /deterministic fallback/);
 });
@@ -260,4 +264,22 @@ test("staffing endpoints return structured conflicts in Live and Offline", async
   const transfer = await invoke(handler, "POST", roomUrl("/assignments/transfer"), {});
   assert.equal(transfer.status, 409);
   assert.equal(transfer.json.code, "OFFLINE_TRANSFER_UNAVAILABLE");
+});
+
+test("with a live provider, Trigger Next Event returns before the planner answers and the event still lands", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "compass-force-event-"));
+  const store = createLiveStore({ filePath: join(directory, "live.json") });
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  let plannerCalls = 0;
+  // A planner that is slow and then unavailable: the deterministic fallback creates the event.
+  const fetchImpl = async () => { plannerCalls += 1; await gate; throw new TypeError("network unavailable"); };
+  const runtime = createLiveRuntime({ store, plannerOptions: { mode: "live", apiKey: "hermetic-test", fetchImpl, timeoutMs: 5_000 }, agentOptions: { mode: "force-failure" } });
+  const before = (await store.snapshot()).issues.length;
+  const forced = await Promise.race([runtime.forceNextEvent().then(() => "returned"), new Promise((resolve) => setTimeout(() => resolve("blocked"), 1_000))]);
+  assert.equal(forced, "returned");
+  assert.equal(plannerCalls, 1);
+  release();
+  await runtime.agentWorkIdle();
+  assert.equal((await store.snapshot()).issues.length, before + 1);
 });

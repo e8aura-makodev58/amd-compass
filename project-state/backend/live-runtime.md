@@ -113,3 +113,11 @@ engines with `backend/fixtures/fix-rankings.json`, always API-free.
 
 Paused rooms do not start new fix inference. The fix-work selector uses the queued
 read-only projection rather than cloning all history just to inspect pending work.
+
+**Trigger Next Event with a live provider.** `forceNextEvent` claims the trigger in its
+own transaction, then, when either role's mode is `live`, dispatches the planner and the
+dispatch ranking through the agent lane (`loopContext.run(true, …)`) and returns. Inline,
+the request waited for the planner, the responder ranking and the provider limiter, about
+four minutes in one live check, far past the UI's 45 s request timeout. Fixture and
+forced-failure modes keep the inline path, so tests and generated history are unchanged.
+

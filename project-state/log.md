@@ -247,3 +247,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 - `requestFixRanking` passed no transport, so the provider controls threw ("Invalid value used as weak map key") before any request, and every live fix ranking fell back deterministically as `provider-error`. It now defaults to the global `fetch` like the responder and planner calls (regression test `fix-ranking-transport.test.mjs`). Hermetic tests had always injected a fake fetch.
 - Hardened the fix-ranking prompt to qualitative, digit-free rationales (MiMo quoted rates such as "0.692 over 261 attempts", which the validator correctly rejects); two live probes on AMD then validated first time.
 - Pages updated: none (behaviour now matches backend/model-providers.md).
+
+## [2026-10-18] fix — Trigger Next Event no longer blocks on live model calls
+- With a live provider, `forceNextEvent` now claims the event and queues the planner and dispatch ranking in the agent lane, so the request returns at once (it took about four minutes on AMD, past the UI's 45 s timeout). Fixture and forced-failure modes stay inline. Regression test in `wp10-live-runtime.test.mjs`.
+- Pages updated: backend/live-runtime.md, backend/http-api.md.

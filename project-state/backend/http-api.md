@@ -41,7 +41,7 @@ returns `404`; a non-`READY` room returns `503` before any handler body runs.
 | POST | `/simulation/start`, `/pause`, `/resume` | Clock run-state. |
 | POST | `/simulation/speed` | Set 1× / 5× / 10× / 60×. The UI offers only 1× and 5× (recommended maximum for live AMD rankings). |
 | POST | `/simulation/reset` | Reset the clock. |
-| POST | `/simulation/force-event` | Immediately run the validated scheduler path (respects the active-issue ceiling). |
+| POST | `/simulation/force-event` | Immediately claim the next event through the validated scheduler path (respects the active-issue ceiling). With a live provider the planner and dispatch ranking run in the agent lane and the response returns at once; the issue appears on a later poll. Fixture and forced-failure modes stay inline. |
 | PATCH | `/demo/scenario` | Update the workforce-continuity scenario. |
 | GET | `/issues/:issueId/audit` | Full redacted audit trail for a hot or archived issue (Compass analysis, offers, overrides, resolution). |
 | POST | `/issues/:issueId/force-resolve` | Consume the selected issue's one-shot resolution token now. |
