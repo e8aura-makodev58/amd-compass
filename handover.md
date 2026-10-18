@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 8 task open) |
+| codex | RUN (round 9 task open) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | Hidden fault causes, fix catalog and ranked fix recommendations | 8 |
+| codex | Compass overtime recommendations with command-center approval | 9 |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -314,8 +314,100 @@ extends the demo video (other features) and will add the fix segment after this 
   the merge, captures live AMD fix rankings on 3200, adds the fix segment, and updates the
   deck and form text.
 
+**Round 9 (2026-10-18) — codex: Compass overtime recommendations with command-center approval.**
+Start with `git merge master` (protocol step 1). The user's product direction: the app runs
+the floor autonomously, and the command center monitors and controls it from wall screens
+(one panel per monitor; the main agent has added `/rooms/:id/display/:screen`). The original
+design had Compass recommend overtime personnel from the backlog, with **command-center
+personnel accepting or rejecting** it. Today `applyWorkforceTrigger` in
+`backend/src/workforce-continuity.mjs` decides and applies surge staffing itself (first
+eligible responder by ID), and the result only appears in Settings → Demo.
+
+- **codex:** turn staffing surge into a ranked recommendation that a human approves.
+  - **1. Options built by code (rule 3).** When a staffing review or recheck finds a
+    shortfall (today's condition: demand above active staff, under the active-staff cap,
+    surge under 2), code lists **every lawful option**, not just the first: each on-shift
+    extension candidate and each rested off-shift call-in candidate, with its legal end
+    time (16 h duty cap, 12 h minimum rest — reuse the existing guards, do not loosen them).
+    Each option carries only **observed** evidence: duty hours so far / rest hours, the
+    current backlog by issue class and priority band, and that responder's observed
+    experience with the backlog's issue classes and symptoms (attempts, smoothed success,
+    median minutes — the same observed-history shape as responder ranking). No
+    `ResponderSkill`, no hidden fault cause, no pay/seniority/HR fields. Keep
+    `workforce-continuity.mjs` free of resolution history as its header says: put the
+    evidence builder in a new module.
+  - **2. Compass ranks, code validates.** Compass (ranking-role model and settings, through
+    `callChatCompletion` and the unchanged provider controls) ranks **only the supplied
+    option ids** with a short rationale; validate like the responder and fix rankings
+    (supplied ids only, bounded prose, no invented numbers, one bounded repair).
+    **Deterministic fallback:** extension before call-in, then best observed coverage of
+    the backlog's classes, then id. **Baseline for comparison:** today's rule (first eligible
+    by id). Model-bound work runs in the live agent lane and never holds the clock; Offline
+    uses an API-free fixture.
+  - **3. Approval, not auto-apply.** The review now creates a **pending staffing
+    recommendation** (ranked options, source, baseline, disagreement, deadline). Nothing
+    changes until an operator acts:
+    - `approve` (the top option or any other listed option) revalidates legality at that
+      moment and then applies exactly today's mutation (`surgeKind`, `extensionEndsAt`,
+      availability, duty start); stale → `STALE`, nothing applied.
+    - `reject` (optional reason) applies nothing.
+    - No answer by the deadline (default 30 simulated minutes, never past the next
+      handover) → `EXPIRED`, nothing applied, and the existing `UNMET_STAFFING_RISK` is
+      recorded if the shortfall persists. A newer review supersedes an open one.
+    - **Room policy** `staffingApproval`: `OPERATOR` (default for every room) or
+      `AUTO_APPROVE_TOP` (applies the top option after the deadline instead of expiring).
+      Editable in Settings → Demo, audited, labelled "auto-approved by policy" wherever it
+      appears. The history generator uses `AUTO_APPROVE_TOP` so generated history keeps
+      surge staffing; say so in `docs/demo-history.md`.
+    - Every step is an audited operational event with who/what/when (operator actions are
+      recorded as "Central command").
+    - Use the existing scheduler token claim pattern for the deadline; restart-safe and
+      idempotent like the other triggers.
+  - **4. API.** `GET` the open recommendation and recent decisions in `/state` (bounded) and
+    `POST /api/control-rooms/:id/staffing/:recommendationId/approve` (`{ optionId }`) and
+    `/reject` (`{ reason }`), with revision/stale conflict handling like the override route.
+  - **5. UI.**
+    - A new Dockview tile **Staffing**: backlog (actionable issues by priority band and
+      class), active staff vs cap, next handover, the open recommendation (ranked options,
+      rationale, evidence table, source AMD/deterministic, baseline disagreement, deadline
+      countdown) with **Approve**, **Approve alternative** and **Reject** controls, and the
+      last few decisions. Add `staffing` to `PANELS` in `tiling.js` (existing stored layouts
+      must still load: treat a missing new tile as "reset to default") and to
+      `DISPLAY_SCREENS` in `app.js` so `/rooms/:id/display/staffing` works.
+    - Event feed: "Staffing recommendation ready", "Approved by central command",
+      "Rejected", "Expired", "Auto-approved by policy".
+    - Settings → Demo "Staffing outlook" shows the same records.
+    - Must fit 375px and 1280px, and the 1920×1080 display screen.
+  - **6. Analytics.** Staffing recommendations by outcome (approved top / approved
+    alternative / rejected / expired / auto-approved), Compass-vs-baseline agreement, and
+    unmet-risk count, with denominators and the thin-sample rule. Retention: compact facts
+    so archived months count exactly (extend the equality tests).
+  - **7. Migration and seed.** Existing rooms keep their staffing audit; an open legacy
+    review is not reopened. Regenerate plant-1 from the same base as round 8 so the month
+    contains staffing recommendations (auto-approved by policy) — keep each committed seed
+    file under 20 MB and use the round 8 packaging. Report counts by outcome.
+  - **8. Decision record.** Add a `docs/decisions.md` entry that supersedes the overtime part
+    of the 2026-09-08 entry ("Models may not … select overtime"): code builds and enforces
+    every lawful option; Compass only ranks the supplied options; a human (or an explicit,
+    audited room policy) makes the decision. Rules 3 and 4 unchanged.
+  - **9. Tests and docs.** Hermetic unit tests: option legality (16 h / 12 h / cap /
+    surge), no hidden data in packets (scan like round 8), validator rejects unknown ids,
+    fallback order, approve/reject/expire/stale/supersede, deadline token idempotency and
+    restart, policy auto-approve, lane non-blocking, migration, retention equality,
+    generator determinism. E2E with forced provider failure: tile renders, approve and
+    reject work, the display screen renders. Update `project-state/` (workforce/simulation,
+    agent-boundary, live-runtime, http-api, frontend overview, analytics-and-ethics, log).
+  - **Do not touch:** `backend/data/`, port 3200, `docs/submission/`, `provider-controls.mjs`.
+  - In your handoff, list sample recommendation IDs (approved, rejected, expired) in the
+    regenerated month so the main agent can find them quickly.
+
+- **main agent (meanwhile):** wall-display screens, an Issue Pareto analytics panel (bar
+  with cumulative line, and pie; category → symptom → applied fix; count / downtime /
+  failed attempts), live AMD fix-ranking capture on 3200, then the deck/video/form revision.
+
 ### Merge log
 
+- 2026-10-18 — **codex** `f3b3cbc` → merge `0373037`: hidden fault causes, fix catalog and ranked fix recommendations, fix-enabled month seed (round 8). Clean merge. `npm test` 291/291, E2E 53/53. Handoff archived.
 - 2026-10-17 — **codex** `0a1062c` → merge `5cf085a`: factual review of the submission drafts (round 7). Clean merge. Docs only; codex ran `npm test` 276/276, E2E 49/49. Handoff archived.
 - 2026-10-17 — **codex** `8ef8ee2` → merge `5db2ad4`: seven-day history retention with per-room archive, bounded `/state`, compact analytic facts; month-long plant-1 seed and archive (round 6). Clean merge. `npm test` 276/276, E2E 49/49. Handoff archived.
 - 2026-10-17 — **codex** `af6532d` → merge `781bb42`: offline history generator (round 5). Main agent found and fixed a resolution-stall engine defect the generator exposed (`afc2110`) and withdrew the month seed (built on the defect; a corrected month is 74 MB and too slow). `npm test` 274/274, E2E 48/48. Handoff archived.
@@ -335,21 +427,9 @@ extends the demo video (other features) and will add the fix segment after this 
 
 ## codex
 
-- **Status:** READY FOR MERGE
+- **Status:** IDLE
 - **Updated:** 2026-10-18
-- **Task:** Round 8 — hidden fault causes, measurable catalog fixes and ranked troubleshooting. Master `11ba02c` merged; rechecked after resume, no newer assignment. Coherent commits `fca4b40` (281 unit / 51 E2E green) and `ff2593a` (286 / 53 green); final seed/proof commit contains this handoff.
-- **Changes:** Four private seeded causes per class, equipment-dependent priors and overlapping public symptoms; six public synthetic fixes per class. Applied fix scales the existing team success probability and duration, stays frozen across roster changes and progresses to the next untried ranked procedure after failure. Legacy running attempts retain mechanics/actions. New actionTaken contains the actual applied ID, title and steps; planner responseAction is labelled Incident note.
-- **Ranking / boundary:** Code aggregates same-class/symptom/equipment attempts, successes, first-time successes, smoothed success, median and last use. Compass ranks only supplied IDs through ranking-role settings, a strict validator, one deadline-bounded repair and unchanged provider controls. Fallback is smoothed symptom success → evidence count → catalog order; baseline is class-frequency. Recorded source, model info, packet, fallback/baseline and disagreement are audited. One tracked fix provider wait per room is initiated from the live agent lane and yields that lane to responder work. Pending work uses and records deterministic selection; late responses cannot rewrite applied attempts. Paused rooms start no inference. Offline shares the machinery with a stored API-free fixture.
-- **UI / analytics:** Recommended fix section, ranked procedures, rationale, observed evidence table, source and baseline disagreement; active applied fix labelled separately. Both issue audit paths show each applied fix/outcome or mark legacy evidence. First-time fix and recommendation/baseline agreement rates include denominators, period boundaries, thin-sample suppression and one-decimal percentages. Audit/table widths checked at 375px and 1280px; existing tiles retained.
-- **Privacy:** Root private faultTruth and effectiveness never enter issue/audit bundles, public payloads, model packets, analytics or logs. The existing privacy guard now invokes the fault guard. Retention keeps exact outcome observations and compact recommendation facts; equality proof extends to fix packets, private RNG state and analytics. No provider-controls changes, live provider calls, backend/data access, port 3200 access, other worktree edits or docs/submission edits.
-- **Seed:** Original week `962ac7f` → `2026-10-06T08:00Z`, LIVE + PAUSED. **3,512 issues / 4,820 observations**, including **4,237 catalog-fix outcomes**; 733 hot / 2,779 archived. September: **2,966 raised / 2,985 resolved events**, first-time fix **1,858/2,527 (73.5%)**. Extension uses deterministic fallback, with zero fetches/credential reads; original-week responder records retain historical provider provenance. Plant-2 and metadata unchanged.
-- **Weekly first-time fixes:** 7–14 Sep **460/686 (67.1%)**; 14–21 Sep **547/730 (74.9%)**; 21–28 Sep **631/825 (76.5%)**; 28 Sep–5 Oct **531/702 (75.6%)**, all Monday 08:00 UTC boundaries. This is **not monotonic** and not a controlled model-versus-baseline improvement result. Legacy actions/retries are excluded as documented.
-- **Packaging / install:** Restored live JSON **26,996,348 bytes**, SHA-256 `da39d2d25188f6d6d452f035c31e6758409c6c20d20bd3e399774574c42d03a7`. To satisfy the per-file limit without dropping evidence, `plant-1.json` is now a checksum manifest for **1,753,758-byte `plant-1.state.json.gz`**. The reader is used by bootstrap and generation and restores exact bytes. **Do not copy the manifest into live-simulation.json.** Back up the entire current room, materialize normal JSON with `readDemoSeedBytes`, and install that JSON plus the companion archive tree together. The complete scratch-materialization command is in `docs/demo-history.md`. Archives: 29 daily files, total **63,148,637 bytes**, largest **3,272,445 bytes**; every committed seed file <20 MB. Compression does not reduce runtime JSON/memory or change outcomes.
-- **Sample records:** `ISS-3599` / Station 47 / `B-SLOW`: deterministic order **B-05 → B-01 → B-03 → B-06 → B-04 → B-02**, with `FIX-` prefix; first two failed (16.66 / 13.87 min), B-03 succeeded (11.61 min). `ISS-3595` / Station 42 / `C-MISMATCH`: **C-02 → C-04 → C-05 → C-01 → C-06 → C-03**; C-02 failed (19.73 min), C-04 succeeded (15.03 min). Archived `ISS-563` / Station 71 / `C-INTERRUPT`: C-01 through C-06; C-01 failed, C-02 succeeded. Choose Stations → Healthy stations → station → Observed issues, expanding Earlier issues/Show older records as needed.
-- **Measurements:** Cold plant-1 store **3,324ms**; fresh two-room bootstrap/manager **4,368ms**, both exceed the earlier 2s target. HTTP state **71ms / 838,146 bytes**; issues **26ms**, responders **44ms**, analytics **216ms**, DAY/WEEK/MONTH **100/66/56ms**; complete hot audit **764ms**. Shared-host point measurements, not guarantees. Runtime state still grows with exact observations/facts. Scratch month browser walkthrough showed a full troubleshooting sequence and weekly rates, with no page errors/outbound requests; preview stopped.
-- **Verification:** Final unit suite **291/291 passed**. Final E2E **53/53 passed** on 3021 with required Chromium libraries, including added audit overflow assertions. Coverage includes privacy/model packets, catalog/validator rejection, equal-draw fix effects, fallback order, actual automatic dispatch while fix inference waits, paused no-call behavior, late/reset/restart handling, Offline fixture privacy, exact archived/unarchived metrics, repeated generation bytes and compressed-seed integrity/bootstrap. Ports 3021 and 3121 verified free; complete month archive privacy and per-file size checks passed.
-- **Docs:** Updated simulation, domain-model, boundary, live-runtime, HTTP API, frontend overview, analytics/ethics, provider/overview, control-rooms, running/config, testing and log; README, history-retention, demo-history and decision log updated. Submission assets/text left to main.
-- **Questions for main / follow-ups:** Review the cold-start regression and 27 MB runtime-state growth; repository compression addresses only the artifact limit. Installation requires the manifest-aware materialization above. Main should capture/re-measure genuine AMD **fix** rankings before claiming model validity for this new task; prior 9/10 responder results do not measure fix ranking. Update submission figures/footage after merge. No requested implementation work is blocked on a decision.
+- **Task:** Round 9 assigned (see Assignments). Round 8 merged; see `docs/handover-history.md`.
 
 ---
 
