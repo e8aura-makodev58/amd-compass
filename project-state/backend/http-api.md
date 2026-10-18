@@ -123,3 +123,5 @@ stale/rejected/expired work. Offline rejects these Live-only mutations with a mo
 `/analytics` includes `workforce.recommendations` outcomes, baseline agreement and unmet-risk
 counts. Each `/analytics/period` row includes the same `staffingRecommendations` metrics for
 its UTC decision/risk interval; compact canonical audit facts make archived months exact.
+
+**Static caching.** Pages, scripts and styles are served with `Cache-Control: no-cache`, so a deploy is never hidden behind a browser or Cloudflare copy; files under `/vendor/` get `public, max-age=604800, immutable`.

@@ -312,3 +312,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] security — Provider settings read-only through the tunnel
 - Requests carrying `Cf-Connecting-IP` (every Cloudflare Tunnel request) get `editable: false` from `GET /api/settings`, and all other `/api/settings*` routes return `403 SETTINGS_READ_ONLY`; the API settings tab shows a note and disables every control. Host/LAN access on 3200 is unchanged. `COMPASS_PUBLIC_SETTINGS=editable` lifts it. Tests: `public-settings.test.mjs`, a tunnel case in `e2e/provider-settings.spec.mjs`.
 - Pages updated: backend/http-api.md, frontend/overview.md, operations/running-and-config.md; README.
+
+## [2026-10-18] fix — Static files revalidate instead of caching for 4 hours
+- With no Cache-Control from the origin, Cloudflare gave `app.js` and the page a 4-hour browser TTL, so visitors kept the pre-deploy UI (the read-only settings page still showed enabled controls). Pages, scripts and styles now send `no-cache`; `/vendor/` (fonts, libraries) sends a 7-day immutable cache. Tests: `static-cache.test.mjs`.
+- Pages updated: backend/http-api.md.

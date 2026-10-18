@@ -73,7 +73,11 @@ async function serveStatic(pathname, response) {
   if (!filePath.startsWith(`${frontendRoot}/`)) return sendJson(response, 404, { error: "Not found" });
   try {
     const contents = await readFile(filePath);
-    response.writeHead(200, { "content-type": mimeTypes[extname(filePath)] ?? "application/octet-stream" });
+    // The app's pages and scripts change with every deploy and have no fingerprinted names,
+    // so a browser or Cloudflare must revalidate them rather than serve a stale copy
+    // (Cloudflare otherwise applies a 4-hour browser TTL). Fonts and vendored files never change.
+    const cacheControl = filePath.includes(`${frontendRoot}/vendor/`) ? "public, max-age=604800, immutable" : "no-cache";
+    response.writeHead(200, { "content-type": mimeTypes[extname(filePath)] ?? "application/octet-stream", "cache-control": cacheControl });
     response.end(contents);
   } catch {
     sendJson(response, 404, { error: "Not found" });
