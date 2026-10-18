@@ -273,3 +273,9 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] fix — Live overtime rankings reach AMD
 - `requestStaffingRanking` had the same missing transport as the fix ranking (round 9 started before the round 8 lesson landed); it now defaults to the global `fetch`, with a regression test, and the prompt asks for qualitative rationales.
 - Pages updated: none.
+
+## [2026-10-18] fix — staffing ranking transport and qualitative prose
+- Applied the round 8 transport lesson to staffing ranking: live calls and their bounded
+  repair default to global fetch. Rationales reject all digits except supplied option IDs,
+  even when a number appears in the packet; authoritative numbers stay in the UI tables.
+- Pages updated: backend/live-runtime.md, concepts/agent-boundary.md, operations/testing.md.

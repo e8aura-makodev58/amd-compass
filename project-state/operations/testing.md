@@ -147,3 +147,7 @@ terminal paths (approved, rejected, expired, auto-approved) with zero fetch/cred
 reads. A staffing reset test deliberately reuses both recommendation ID and timestamp;
 only the new UUID-tagged model response may update the replacement record. Phone staffing
 journeys expand the full evidence and verify that approval controls stay within the tile.
+
+Staffing ranking also tests the live path with only a stubbed global `fetch`, including
+a bounded repair for digit-bearing prose. Packet-supplied numbers are still forbidden
+in qualitative rationales; only supplied option IDs are exempt.
