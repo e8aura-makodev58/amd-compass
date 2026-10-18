@@ -127,7 +127,8 @@
 /* Staffing shares the console and display approval UI. */
 .staffing-tile { min-width: 0; min-height: 0; overflow: auto; padding: 16px; background: var(--paper-raised); overflow-wrap: anywhere; }
 .staffing-tile h3 { margin-top: 0; }
-.staffing-open { display: grid; gap: 10px; }
+.staffing-open { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.staffing-open details, .staffing-open li { min-width: 0; }
 .staffing-open p { margin: 0; }
 .staffing-open label { display: grid; gap: 5px; min-width: 0; }
 .staffing-open select, .staffing-open input, #staffing-policy { max-width: 100%; min-width: 0; }

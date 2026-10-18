@@ -140,3 +140,10 @@ staffing packets and analytics between archived/unarchived deterministic runs.
 rejects through the actual room API, saves policy in Settings, preserves rejection drafts,
 and checks 375px, 1280px and the 1920×1080 staffing display. Existing tiling/layout tests
 require five tiles and explicitly reset legacy four-panel stored layouts.
+
+
+The synthetic staffing generator exercise also repeats byte-for-byte and proves all four
+terminal paths (approved, rejected, expired, auto-approved) with zero fetch/credential
+reads. A staffing reset test deliberately reuses both recommendation ID and timestamp;
+only the new UUID-tagged model response may update the replacement record. Phone staffing
+journeys expand the full evidence and verify that approval controls stay within the tile.

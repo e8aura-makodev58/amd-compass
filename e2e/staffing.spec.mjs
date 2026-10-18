@@ -12,6 +12,11 @@ async function createShortfall(request){
 for(const width of [375,1280])test(`Staffing approval and rejection use real API with provider failure at ${width}px`,async({page,request})=>{
  await createShortfall(request);await page.setViewportSize({width,height:900});await page.goto('/rooms/plant-1');
  const tile=page.locator('#staffing-tile');await expect(tile.getByRole('heading',{name:/Staffing recommendation ready/})).toBeVisible();
+ await tile.getByText(/Ranked options and evidence/).click();
+ await expect(tile.locator('table').first()).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const tileBounds=await tile.boundingBox();
+ for(const control of await tile.locator('.staffing-open button, .staffing-open select, .staffing-open input').all()) expect((await control.boundingBox()).width).toBeLessThanOrEqual(tileBounds.width);
  await tile.getByRole('button',{name:'Approve top option'}).click();await expect(tile.getByText('Approved by central command',{exact:true}).first()).toBeVisible();
  const state=await (await request.get(`${room}/state`)).json();expect(state.workforceContinuity.staffingRecommendations.some((r)=>r.status==='APPROVED_TOP')).toBe(true);
  await createShortfall(request);await page.reload();await expect(tile.getByRole('button',{name:'Reject',exact:true})).toBeVisible();

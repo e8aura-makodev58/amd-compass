@@ -134,3 +134,18 @@ test('replacement reviews preserve the original deadline and no-action rechecks 
  s.simulationState.simulationTime=newer.deadline;const trigger=claimWorkforceDueTriggers(s).find((t)=>t.kind==='STAFFING_DEADLINE_DUE');assert.equal(finishStaffingDeadline(s,trigger).status,'EXPIRED');
  assert.ok(!s.workforceContinuity.staffingAudit.some((r)=>r.id===`risk-${newer.id}`));
 });
+test('reset reusing a recommendation ID and timestamp cannot accept an old model response',async()=>{
+ const s=seed();review(s);const store=memory(s);let releaseOld,releaseNew;
+ const oldWait=new Promise((r)=>releaseOld=r),newWait=new Promise((r)=>releaseNew=r);
+ const oldService=createStaffingService(store,{requestRanking:async()=>oldWait});
+ const oldWork=oldService.rankNext();await new Promise((r)=>setImmediate(r));
+ const old=s.workforceContinuity.staffingRecommendations[0],oldToken=old.requestToken;
+ s.workforceContinuity=createLiveSeed().workforceContinuity;
+ const replacement=review(s);assert.equal(replacement.id,old.id);assert.equal(replacement.createdAt,old.createdAt);
+ const newService=createStaffingService(store,{agentOptions:{mode:'fixture'},requestRanking:async()=>newWait});
+ const newWork=newService.rankNext();await new Promise((r)=>setImmediate(r));const currentToken=replacement.requestToken;assert.notEqual(currentToken,oldToken);
+ releaseOld({status:'ok',result:ranked(old.packet)});await oldWork;
+ assert.equal(replacement.requestToken,currentToken);assert.equal(replacement.rankingStatus,'PENDING_MODEL');
+ releaseNew({status:'ok',result:ranked(replacement.packet)});await newWork;
+ assert.equal(replacement.rankingStatus,'READY');assert.equal(replacement.source,'FIXTURE');
+});
