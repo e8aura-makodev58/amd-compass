@@ -344,6 +344,12 @@ eligible responder by ID), and the result only appears in Settings → Demo.
     the backlog's classes, then id. **Baseline for comparison:** today's rule (first eligible
     by id). Model-bound work runs in the live agent lane and never holds the clock; Offline
     uses an API-free fixture.
+    **Lessons from round 8 (fixed on master):** the live fix ranking passed no transport, so
+    `callChatCompletion` threw inside the provider controls and every live call fell back as
+    `provider-error` (hermetic tests always injected `fetchImpl`). Pass
+    `fetchImpl: options.fetchImpl ?? fetch` and add a test that calls the live path with only
+    a stubbed global `fetch`. MiMo also quotes numbers in prose unless told not to: use the
+    digit-free rationale rule from `fix-ranking.mjs` / `agent.mjs`.
   - **3. Approval, not auto-apply.** The review now creates a **pending staffing
     recommendation** (ranked options, source, baseline, disagreement, deadline). Nothing
     changes until an operator acts:
