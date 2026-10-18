@@ -43,7 +43,9 @@ await page.goto(`${base}/rooms/plant-1/display/staffing`);
 await page.getByRole("button", { name: "Approve top option" }).waitFor();
 await page.waitForTimeout(800);
 const tile = await page.locator("#staffing-tile").boundingBox();
-const reject = await page.getByRole("button", { name: "Reject" }).boundingBox();
-await page.screenshot({ path: out("staffing.png"), clip: { x: tile.x, y: tile.y, width: tile.width, height: reject.y + reject.height - tile.y + 20 } });
+// Show the decision card with its ranked evidence opened beneath it.
+await page.locator('#staffing-tile [data-staffing-detail="evidence"]').evaluate((node) => { node.open = true; });
+await page.waitForTimeout(500);
+await page.screenshot({ path: out("staffing.png"), clip: { x: tile.x, y: tile.y, width: tile.width, height: Math.min(tile.height, 760) } });
 console.log("staffing.png");
 await browser.close();

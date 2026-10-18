@@ -123,7 +123,7 @@ await page.getByRole("button", { name: "Maximise Staffing" }).click();
 await page.getByRole("button", { name: "Approve top option" }).waitFor();
 await caption("When the backlog outgrows the shift, code lists only the legal overtime options. Compass ranks them; nothing changes until central command decides.");
 await wait(7);
-await page.locator("#staffing-tile details").first().evaluate((node) => { node.open = true; node.scrollIntoView({ behavior: "smooth", block: "start" }); });
+await page.locator('#staffing-tile [data-staffing-detail="evidence"]').evaluate((node) => { node.open = true; node.scrollIntoView({ behavior: "smooth", block: "start" }); });
 await wait(1.2);
 await caption("Each option shows duty and rest hours and observed coverage of the backlog. Unanswered recommendations expire; they are never applied by default.");
 await wait(6);
@@ -131,8 +131,8 @@ await page.getByRole("button", { name: "Approve top option" }).evaluate((node) =
 await wait(1);
 await page.getByRole("button", { name: "Approve top option" }).click();
 // Show the recorded decision, not the in-flight button state.
-await page.locator("#staffing-tile .staffing-decisions").getByText(/approved/i).first().waitFor({ timeout: 30_000 });
-await page.locator("#staffing-tile").getByText("Recent decisions").first().evaluate((node) => node.scrollIntoView({ behavior: "smooth", block: "start" }));
+await page.locator("#staffing-tile .staffing-decisions").getByText(/approved/i).first().waitFor({ state: "attached", timeout: 30_000 });
+await page.locator('#staffing-tile [data-staffing-detail="recent"]').evaluate((node) => { node.open = true; node.scrollIntoView({ behavior: "smooth", block: "start" }); });
 await wait(1.2);
 await caption("Central command approves the extension. The decision, and who made it, goes into the audit trail.");
 await wait(6);

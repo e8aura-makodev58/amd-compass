@@ -8,6 +8,8 @@ All outputs land in `docs/submission/`. Run from the repository root.
 | `build-deck.py` | `ResponseCompass-deck.pptx` and `ResponseCompass-deck.pdf` from one slide spec. |
 | `render-pdf.mjs <pdf> <outDir>` | PNG per PDF page, for visual checks. |
 | `record-video.mjs <baseUrl> <issueId> <stationId>` | `ResponseCompass-demo.webm` (1920×1080, burned-in captions). `FRAMES=<dir>` also saves a still per caption for checking. |
+| `wall-screens.mjs <baseUrl>` | `assets/screen-*.png`: each wall-display screen at 1600×900, read-only. |
+| `record-shots.mjs <baseUrl> <issueId> <stationId>` | `assets/compass-record.png`, `fix-record.png`, `staffing.png` (needs a pending staffing recommendation), read-only. |
 
 `build-deck.py` needs python-pptx, lxml, Pillow and reportlab. This host has no pip, so the
 wheels were unpacked into the git-ignored `.cache/pylib`:

@@ -235,20 +235,20 @@ SLIDES = [
               "AMD-only benchmark or a controlled comparison of model and baseline outcomes. Weekly rates use Monday "
               "08:00 UTC boundaries; they rose then dipped, and we report them as measured."),
 
-    dict(items=[*title("Built on AMD Token Factory"), *bullets(0.6, 1.6, 7.4, 5.2, [
+    dict(items=[*title("Built on AMD Token Factory"), *bullets(0.6, 1.5, 12.1, 3.6, [
         "OpenAI-compatible API, JSON output; our validators are the contract.",
         "Default model **MiMo-V2.6-Flash** ranks responders, fixes and overtime; the event planner can use another model.",
         "Local budget: 10 requests/min, 2 concurrent; bounded 429 retries; circuit breaker.",
         "Recorded MiMo check: **9/10** valid responder rankings, **10/10** valid event plans.",
         "Model calls run in a background lane and never hold the simulation clock.",
-    ], size=17), *image("settings-models.png", 8.55, 1.5, h=5.4)],
+    ], size=17), *image("settings-models.png", 1.6, 5.05, w=8.6)],
         notes="We measured several Token Factory models on the same scenario and chose the default per role from "
               "the data. These are small-sample validity results, not outcome accuracy or uptime guarantees. Retries: "
               "at most two, only on HTTP 429. Five consecutive service failures open the breaker; one probe after 60 s."),
 
     dict(items=[*title("Engineering quality"), *bullets(0.6, 1.6, 12.1, 5.2, [
         "Live and Offline are one app; Offline makes no API calls and is fully reproducible.",
-        "**317** hermetic unit and integration tests and **67** Chromium end-to-end tests.",
+        "**319** hermetic unit and integration tests and **71** Chromium end-to-end tests.",
         "Deterministic seeded simulation; restart-safe scheduler; atomic, crash-safe persistence.",
         "Runs on Node.js 22 or Docker; no external services besides the model API.",
     ], size=21)], notes="Everything that matters is tested without spending API credits; the browser tests force "
