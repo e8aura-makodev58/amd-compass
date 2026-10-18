@@ -38,7 +38,7 @@
         </section>
         <section id="control-room-search" class="control-room-search" aria-label="Control Room navigation">
           <button id="open-control-search" type="button" aria-haspopup="dialog" aria-controls="control-search-palette">Find in Control Room <kbd>/</kbd><span aria-hidden="true"> · </span><kbd>⌘K</kbd></button>
-          <details class="screen-launcher"><summary>Screens</summary><div class="screen-launcher-menu" role="group" aria-label="Open a panel on its own screen"><p>Open one panel per monitor</p><a data-display-screen="map" target="_blank" rel="noopener">Floor map</a><a data-display-screen="issues" target="_blank" rel="noopener">Issues</a><a data-display-screen="events" target="_blank" rel="noopener">Event feed</a><a data-display-screen="dispatch" target="_blank" rel="noopener">Dispatch</a><a data-display-screen="analytics" target="_blank" rel="noopener">Analytics</a></div></details>
+          <details class="screen-launcher"><summary>Screens</summary><div class="screen-launcher-menu" role="group" aria-label="Open a panel on its own screen"><p>Open one panel per monitor</p><a data-display-screen="map" target="_blank" rel="noopener">Floor map</a><a data-display-screen="issues" target="_blank" rel="noopener">Issues</a><a data-display-screen="events" target="_blank" rel="noopener">Event feed</a><a data-display-screen="dispatch" target="_blank" rel="noopener">Dispatch</a><a data-display-screen="analytics" target="_blank" rel="noopener">Analytics</a><a data-display-screen="pareto" target="_blank" rel="noopener">Issue Pareto</a></div></details>
           <div id="control-search-palette" class="search-palette" role="dialog" aria-modal="true" aria-labelledby="control-search-title" hidden>
             <div class="search-palette-header"><div><p class="eyebrow">Control Room navigation</p><h2 id="control-search-title">Find an issue, equipment, or responder</h2></div><button id="close-control-search" type="button" class="secondary-button" aria-label="Close control room search">Close</button></div>
             <label class="search-input-label" for="control-search-input">Search current operational state</label>
@@ -85,7 +85,7 @@
         <div id="demo-continuity" class="demo-continuity-grid" aria-live="polite"></div>
       </section>
       </section>
-      <section id="analytics-view" class="analytics-view" hidden><div class="section-heading"><div><p class="eyebrow">Same persistent state</p><h2>Operational analytics</h2></div></div><div id="analytics-content"><p class="workflow-prompt">Analytics are loading…</p></div></section>
+      <section id="analytics-view" class="analytics-view" hidden><div class="section-heading"><div><p class="eyebrow">Same persistent state</p><h2>Operational analytics</h2></div></div><div id="analytics-content"><p class="workflow-prompt">Analytics are loading…</p></div><section id="pareto-panel" class="analytics-panel pareto-panel" aria-labelledby="pareto-heading"></section></section>
     </main>
     <script type="module" src="/app.js"></script>
   </body>

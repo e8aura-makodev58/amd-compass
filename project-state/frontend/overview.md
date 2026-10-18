@@ -91,13 +91,27 @@ as a disabled "above recommended" option until the operator lowers it.
 
 A control room can put each panel on its own monitor. `/rooms/:id/display/:screen` shows
 one panel full screen (`DISPLAY_SCREENS` in `app.js`: `map`, `issues`, `events`,
-`dispatch`, `analytics`), with the room's simulated clock, run state and agent activity,
+`dispatch`, `analytics`, `pareto`), with the room's simulated clock, run state and agent activity,
 and none of the console controls (view tabs, mode, speed, pause, reset, search). It is
 the same page and state as the console, so panels stay interactive. Tiling is not
 started on a display screen. An unknown screen name falls back to the console. The
 console's **Screens** menu (next to Find in Control Room) opens each screen in a new
 window. Layout rules are in `layout.css` under `.display-mode`; `e2e/display-screens.spec.mjs`
 covers each screen at 1920×1080.
+
+## Issue Pareto
+
+`frontend/pareto.js` renders the **Issue Pareto** panel (`#pareto-panel`, below the
+Analytics content and the whole of the `pareto` display screen). Controls: Day / Week /
+Month, the period (defaults to the most recent complete one), group by Issue type or
+Location, and the measure (Issues, Downtime, Failed attempts). It draws an SVG Pareto bar
+chart (sorted bars, cumulative-share line, dashed 80% line; at most 12 bars, the tail
+folded into "Other") and a donut of the same breakdown (top 6 and "Other"), a sentence
+such as "2 of 3 issue classes account for 80% of issues", and a table with share and
+cumulative share. Clicking (or Enter on) a bar, slice or table row drills down; the
+breadcrumb goes back up. The panel loads on its own every 15 s while Analytics is visible
+and re-renders only when the data changed, so it does not flicker with the 1.5 s poll.
+Chart colours are the `--chart-*` tokens.
 
 ## Tabs
 

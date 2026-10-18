@@ -123,3 +123,6 @@
   body.display-mode { overflow: hidden; }
   .display-mode #analytics-view { min-height: 0; overflow-y: auto; }
 }
+.display-mode[data-display="pareto"] #analytics-content, .display-mode[data-display="pareto"] #analytics-view > .section-heading { display: none; }
+.display-mode[data-display="pareto"] .pareto-panel { margin-top: 0; }
+.display-mode[data-display="pareto"] .pareto-insight { font-size: 1.1rem; }

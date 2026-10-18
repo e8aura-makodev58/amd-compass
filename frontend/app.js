@@ -1,4 +1,5 @@
 import { initTiling } from "./tiling.js";
+import { initParetoPanel } from "./pareto.js";
 import { setHtml } from "./render-lifecycle.js";
 import { layoutProjectedLabels } from "./map-label-layout.js";
 
@@ -27,7 +28,7 @@ const currentControlRoomId = (() => {
  * control room can put each panel on its own monitor. Read once at boot like the room;
  * `null` is the operator console. An unknown screen name falls back to the console.
  */
-const DISPLAY_SCREENS = { map: "Floor map", issues: "Issues", events: "Event feed", dispatch: "Dispatch", analytics: "Analytics" };
+const DISPLAY_SCREENS = { map: "Floor map", issues: "Issues", events: "Event feed", dispatch: "Dispatch", analytics: "Analytics", pareto: "Issue Pareto" };
 const displayScreen = (() => {
   const match = window.location.pathname.match(/^\/rooms\/[^/]+\/display\/([a-z]+)\/?$/);
   return match && Object.hasOwn(DISPLAY_SCREENS, match[1]) ? match[1] : null;
@@ -48,6 +49,7 @@ let selectedIssueId = null;
 let selectedStationId = null;
 let selectedResponderId = null;
 let sidebarTab = "personnel";
+let paretoPanel = null;
 let currentView = "control";
 let currentSettingsTab = "api";
 let actionInFlight = false;
@@ -1121,7 +1123,7 @@ function switchSettingsTab(tab) {
   if (api) loadSettings();
   else { renderAgentActivity(currentState); renderDemoContinuity(currentState); }
 }
-function switchView(view) { if (view !== "control" && searchOpen) closeSearchPalette(); currentView = view; elements["control-room-view"].hidden = view !== "control"; elements["rooms-view"].hidden = view !== "rooms"; elements["analytics-view"].hidden = view !== "analytics"; elements["settings-view"].hidden = view !== "settings"; elements["control-room-tab"].classList.toggle("active", view === "control"); elements["rooms-tab"].classList.toggle("active", view === "rooms"); elements["analytics-tab"].classList.toggle("active", view === "analytics"); elements["settings-tab"].classList.toggle("active", view === "settings"); if (view === "rooms") loadControlRooms(); if (view === "analytics") loadAnalytics(); if (view === "settings") switchSettingsTab(currentSettingsTab); }
+function switchView(view) { if (view !== "control" && searchOpen) closeSearchPalette(); currentView = view; elements["control-room-view"].hidden = view !== "control"; elements["rooms-view"].hidden = view !== "rooms"; elements["analytics-view"].hidden = view !== "analytics"; elements["settings-view"].hidden = view !== "settings"; elements["control-room-tab"].classList.toggle("active", view === "control"); elements["rooms-tab"].classList.toggle("active", view === "rooms"); elements["analytics-tab"].classList.toggle("active", view === "analytics"); elements["settings-tab"].classList.toggle("active", view === "settings"); if (view === "rooms") loadControlRooms(); if (view === "analytics") { loadAnalytics(); paretoPanel?.show(); } else paretoPanel?.hide(); if (view === "settings") switchSettingsTab(currentSettingsTab); }
 async function loadControlRooms() { try { renderControlRooms((await globalApi("/control-rooms")).rooms); } catch (error) { setHtml(elements["rooms-content"], `<p class="load-error">${escapeHtml(error.message)}</p>`); } }
 function renderControlRooms(rooms) { const current = rooms.find((room) => room.id === currentControlRoomId); setHtml(elements["rooms-content"], `<p class="workflow-prompt">Simulation state is shared by everyone viewing each Control Room. Names affect directory display only.</p><div class="room-management-list">${rooms.map((room) => `<article class="room-management-card"><strong>${escapeHtml(room.displayName ?? room.label)}${room.id === currentControlRoomId ? " · Current" : ""}</strong><span>${escapeHtml(room.label)} · ${escapeHtml(room.health)}${room.mode ? ` · ${escapeHtml(statusLabel(room.mode))} · ${escapeHtml(statusLabel(room.simulationStatus))}` : ""}</span>${room.id === currentControlRoomId ? `<form data-room-rename data-revision="${room.revision}"><label>Display name <input name="displayName" value="${escapeHtml(room.displayName ?? room.label)}" maxlength="80" required></label><button type="submit">Rename current room</button><p class="room-rename-feedback" aria-live="polite"></p></form>` : `<button type="button" data-open-room="${escapeHtml(room.id)}">Open</button>`}</article>`).join("")}</div>`); document.querySelectorAll("[data-open-room]").forEach((button) => { button.onclick = () => { window.location.href = `/rooms/${encodeURIComponent(button.dataset.openRoom)}`; }; }); const form = document.querySelector("[data-room-rename]"); if (form && current) form.onsubmit = async (event) => { event.preventDefault(); const input = form.elements.displayName; const feedback = form.querySelector(".room-rename-feedback"); try { const result = await globalApi(`/control-rooms/${encodeURIComponent(current.id)}/display-name`, { method: "PATCH", body: JSON.stringify({ displayName: input.value, expectedRevision: Number(form.dataset.revision) }) }); await loadControlRooms(); const refreshedFeedback = elements["rooms-content"].querySelector(".room-rename-feedback"); if (refreshedFeedback) refreshedFeedback.textContent = `Renamed to ${result.displayName}.`; } catch (error) { const latest = error.payload?.code === "ROOM_METADATA_CONFLICT" ? error.payload.current : null; feedback.textContent = latest ? `Another user saved “${latest.displayName}”. Your text is unchanged.` : error.message; if (latest) { form.dataset.revision = String(latest.revision); const useCurrent = document.createElement("button"); useCurrent.type = "button"; useCurrent.className = "secondary-button"; useCurrent.textContent = "Use current name"; useCurrent.onclick = () => { input.value = latest.displayName; input.focus(); }; feedback.append(" ", useCurrent); } } }; }
 async function loadAnalytics() { try { const analytics = await roomApi("/analytics"); if (!analyticsPeriodDetail || analyticsPeriodDetail.level !== analyticsPeriodLevel) analyticsPeriodDetail = analyticsPeriodLevel === "DAY" ? analytics.periodAnalytics : await roomApi(`/analytics/period?level=${encodeURIComponent(analyticsPeriodLevel)}`); renderAnalytics(analytics); } catch { elements["analytics-content"].innerHTML = `<p class="workflow-prompt">Analytics backend is not available yet.</p>`; } }
@@ -1495,12 +1497,13 @@ function bootDisplayScreen() {
   label.className = "display-screen-label";
   label.textContent = `${DISPLAY_SCREENS[displayScreen]} · ${currentControlRoomId}`;
   document.querySelector(".topbar > div:first-child").append(label);
-  if (displayScreen === "analytics") switchView("analytics");
+  if (displayScreen === "analytics" || displayScreen === "pareto") switchView("analytics");
 }
 
 function bootControlRoom() {
   document.querySelector(".app-shell").hidden = false;
   document.querySelectorAll("[data-display-screen]").forEach((link) => { link.href = `/rooms/${encodeURIComponent(currentControlRoomId)}/display/${link.dataset.displayScreen}`; });
+  paretoPanel = initParetoPanel(document.querySelector("#pareto-panel"), { roomApi, isVisible: () => currentView === "analytics" && !document.hidden });
   if (displayScreen) bootDisplayScreen();
   else initTiling({ onMapResize: () => scheduleProjectedLabelLayout(CAMERA_SETTLE_MS) });
   roomApi("/state").then(render).catch((error) => { reportClientError("initial_state_load", error); setHtml(elements.floor, `<p class="load-error">${escapeHtml(error.message)}</p>`); });

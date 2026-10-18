@@ -130,13 +130,13 @@ function compassAnalytics(state) {
 
 const ROLLING_WINDOW_MINUTES = 24 * 60;
 const BIN_MINUTES = 15;
-const MAX_PERIODS_BY_LEVEL = { HOUR: 12, DAY: 7, WEEK: 4, MONTH: 3 };
+export const MAX_PERIODS_BY_LEVEL = { HOUR: 12, DAY: 7, WEEK: 4, MONTH: 3 };
 
 // Analytics periods are UTC operational periods, deliberately independent of
 // the browser's locale. Hours use UTC clock boundaries; days start at 08:00,
 // weeks on Monday 08:00, and months on the first day at 08:00. Every interval
 // is [start,end).
-function periodBounds(timestamp, level) {
+export function periodBounds(timestamp, level) {
   const date = new Date(timestamp);
   const ms = date.getTime();
   if (level === "HOUR") {
@@ -158,7 +158,7 @@ function periodBounds(timestamp, level) {
   return { start, end: next.getTime() };
 }
 
-function priorPeriod(bounds, level) {
+export function priorPeriod(bounds, level) {
   if (level === "MONTH") return periodBounds(new Date(bounds.start - 1).toISOString(), level);
   const span = level === "WEEK" ? 7 * 86400000 : level === "DAY" ? 86400000 : 60 * 60 * 1000;
   return { start: bounds.start - span, end: bounds.start };
@@ -179,7 +179,7 @@ function unionDowntime(state, start, end, snapshotMs) {
   return total;
 }
 
-function observedHistoryStart(state, snapshotMs) {
+export function observedHistoryStart(state, snapshotMs) {
   const timestamps = state.operationalEvents.map((event) => Date.parse(event.simulationTimestamp)).filter(Number.isFinite);
   return timestamps.length ? Math.min(...timestamps) : snapshotMs;
 }

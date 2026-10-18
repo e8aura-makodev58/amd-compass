@@ -238,3 +238,12 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] feature — Wall-display screens, one panel per monitor
 - Added `/rooms/:id/display/:screen` (map, issues, events, dispatch, analytics) and a console Screens menu, so a control room can show each panel on its own monitor while the app runs autonomously. Same page and state; console controls hidden; tiling not started.
 - Pages updated: frontend/overview.md, backend/http-api.md.
+
+## [2026-10-18] feature — Issue Pareto panel and display screen
+- Added `GET /analytics/pareto` (issue class → observed symptom → applied fix, or floor → station; issues, downtime, failed attempts; per period) and an Analytics panel with a Pareto bar chart, donut, drill-down and table; also the `pareto` wall-display screen. Public records only; archived/unarchived equality tested.
+- Pages updated: backend/http-api.md, concepts/analytics-and-ethics.md, frontend/overview.md.
+
+## [2026-10-18] fix — Live fix rankings never reached AMD
+- `requestFixRanking` passed no transport, so the provider controls threw ("Invalid value used as weak map key") before any request, and every live fix ranking fell back deterministically as `provider-error`. It now defaults to the global `fetch` like the responder and planner calls (regression test `fix-ranking-transport.test.mjs`). Hermetic tests had always injected a fake fetch.
+- Hardened the fix-ranking prompt to qualitative, digit-free rationales (MiMo quoted rates such as "0.692 over 261 attempts", which the validator correctly rejects); two live probes on AMD then validated first time.
+- Pages updated: none (behaviour now matches backend/model-providers.md).

@@ -54,3 +54,18 @@ a late recommendation can differ from the fix already applied. Rates retain deno
 and the fewer-than-three suppression rule. Period membership uses observed completion
 or recommendation timestamps and the existing UTC boundaries. Canonical observations and
 compact issue recommendation facts preserve exact archived/unarchived equality.
+
+## Issue Pareto
+
+`buildParetoAnalytics` (`backend/src/pareto-analytics.mjs`) ranks where the issues,
+downtime and failed attempts in one period come from: issue class (shown with a readable
+name, e.g. "Material transfer (Class B)") → public observed symptom → applied catalog fix,
+or floor → station. Issues count by `raisedAt` in the period; downtime is each issue's
+downtime inside the period, **summed per issue** (overlapping issues on one station each
+count, unlike the union used for period downtime); failed attempts and the applied-fix
+level count completed attempts by `resolvedAt`. Issues and attempts from before symptoms
+existed fall into "Symptom not recorded (earlier records)". It reads only public records
+through `analyticHistory`, so archived and unarchived history give the same result
+(tested); the private fault cause and `ResponderSkill` are never read. It is a
+description of recorded work, not a ranking of people or a causal claim about fixes.
+

@@ -101,6 +101,9 @@ async function handleRoomScopedRoute({ request, response, path, runtime, logger,
   if (request.method === "GET" && path === "/analytics/period") {
     return sendJson(response, 200, await runtime.analyticsPeriod({ level: url.searchParams.get("level") ?? "DAY" }));
   }
+  if (request.method === "GET" && path === "/analytics/pareto") {
+    return sendJson(response, 200, await runtime.analyticsPareto({ level: url.searchParams.get("level") ?? "MONTH", period: url.searchParams.get("period") }));
+  }
   if (request.method === "POST" && path === "/mode") {
     const payload = await readJsonBody(request);
     return sendJson(response, 200, await runtime.setMode(payload.mode));

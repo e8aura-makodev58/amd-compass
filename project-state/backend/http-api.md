@@ -36,6 +36,7 @@ returns `404`; a non-`READY` room returns `503` before any handler body runs.
 | GET | `/equipment/:equipmentId/issues` | LIVE station history with the same pagination. |
 | GET | `/responders`, `/events` | Individual resource lists; events are the recent public feed. |
 | GET | `/analytics` | Fixed-snapshot analytics. |
+| GET | `/analytics/pareto` | Issue Pareto for one period: `level=DAY\|WEEK\|MONTH` (default MONTH), optional `period=<index>` (0 = current; default the most recent complete). Returns the period list, totals and two drill trees: issue class → observed symptom → applied fix, and floor → station, each with issue count, downtime minutes and failed attempts (`pareto-analytics.mjs`). Offline returns `available: false`. |
 | POST | `/mode` | Switch the room between `LIVE` and `OFFLINE`. |
 | POST | `/simulation/start`, `/pause`, `/resume` | Clock run-state. |
 | POST | `/simulation/speed` | Set 1× / 5× / 10× / 60×. The UI offers only 1× and 5× (recommended maximum for live AMD rankings). |
