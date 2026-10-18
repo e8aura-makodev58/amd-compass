@@ -1,3 +1,4 @@
+import {cloneDraftValue} from './live-draft.mjs';
 import { createStaffingService, createStaffingReview, finishStaffingDeadline, decideStaffing, updateStaffingPolicy } from './staffing-service.mjs';
 import { createFixRecommendationService } from './fix-recommendation-service.mjs';
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -318,12 +319,12 @@ export function createLiveRuntime({
       const result = await store.mutate("workforce-scenario-update", (state) => {
         const config = state.workforceContinuity;
         if (!config || !["NORMAL", "ELEVATED_DEMAND", "PERSONNEL_SHORTAGE", "RECURRING_TEMPORARY_REPAIRS", "AUTO"].includes(scenario)) return { status: "INVALID_SCENARIO" };
-        if (!Number.isInteger(expectedRevision) || expectedRevision !== config.scenario.revision) return { status: "CONFLICT", reason: "WORKFORCE_SCENARIO_CONFLICT", current: structuredClone(config.scenario) };
+        if (!Number.isInteger(expectedRevision) || expectedRevision !== config.scenario.revision) return { status: "CONFLICT", reason: "WORKFORCE_SCENARIO_CONFLICT", current: cloneDraftValue(config.scenario) };
         config.scenario.selected = scenario;
         config.scenario.activeScenario = null;
         config.scenario.lastAutoTransitionAt = null;
         config.scenario.revision += 1;
-        return { status: "UPDATED", scenario: structuredClone(config.scenario) };
+        return { status: "UPDATED", scenario: cloneDraftValue(config.scenario) };
       });
       return withState(result);
     },

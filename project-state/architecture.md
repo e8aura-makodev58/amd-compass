@@ -69,7 +69,8 @@ flowchart TD
   `READY` room concurrently. There is exactly one timer for the whole deployment.
 - **State persists** to JSON under the git-ignored `backend/data/` tree (one subtree per
   room). Simulation time does not advance while the process is stopped.
-- **No framework, no database.** Node's built-in `http` server, atomic JSON file writes,
+- **No framework, no database.** Node's built-in `http` server, a per-room JSON checkpoint plus
+  fsynced change journal,
   and a vanilla-JS frontend. Node 22+ is required.
 
 ## Runtime dependencies

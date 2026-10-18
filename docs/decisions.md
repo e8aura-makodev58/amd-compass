@@ -946,3 +946,27 @@ Existing running attempts retain legacy actions and are labelled separately in t
   postponing operator response indefinitely. The optional seed examples sustain a bounded
   synthetic backlog via the real Force Event action until all four paths are observed;
   all issues, attempts and outcomes still come from the normal guarded engines.
+
+## 2026-10-18 — Journal mutations instead of rewriting the room file (round 10)
+
+- Context: with the month seed (30 MB state) every mutation deep-cloned the state, fully
+  validated it and rewrote and fsynced the whole file; the clock mutates every second, so
+  operator actions queued for seconds (speed change 5.5 s, Trigger Next Event 17–28 s on
+  3200), and every `store.snapshot()` cloned 30 MB again.
+- Decision: copy-on-write drafts that record changed paths; validation of changed rows
+  only (full validation stays for load, migration and tests); an fsynced, checksummed
+  append-only journal of those paths with periodic checkpoints; published state deeply
+  frozen and returned by `snapshot()` without cloning.
+- Crash safety is unchanged in substance: a mutation is acknowledged only after its frame
+  is fsynced; a torn tail is trimmed; a corrupt complete frame fails closed; a crash
+  between checkpoint and journal truncation replays nothing twice (sequence numbers).
+- Measured on this host (scripts/benchmark-live-store.mjs, month seed, 5×, forced
+  providers, 8 samples): `/state` p95 1.16 s → 0.18 s; speed change 1.50 s → 0.27 s;
+  `/analytics` 1.57 s → 0.61 s; Pareto 1.25 s → 0.34 s; scheduler-tick mutation p95
+  0.43 s → 0.18 s (target 50 ms not met); forced-mode Trigger Next Event 3.6 s → 0.98 s
+  (it runs the planner and dispatch inline in forced mode; with a live provider the
+  request returns after the 31 ms claim). Remaining tick cost is draft proxy reads,
+  validation and the public projection.
+- Operations: back up or copy a room as a whole directory; the checkpoint alone is not
+  the current state.
+

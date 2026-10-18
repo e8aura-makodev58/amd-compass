@@ -30,16 +30,33 @@ function assertUnique(entries, key, label) {
   assert(new Set(ids).size === ids.length, `${label} ${key} values must be unique`);
 }
 
-export function validateLiveState(state) {
+export function validateLiveState(state, { previous = null } = {}) {
+  // Full load/migration validation uses no previous state. Published rows are immutable;
+  // only their changed replacements need repeated deep checks during a transaction.
+  const issuesById = new Map((state?.issues ?? []).map(r=>[r.id,r]));
+  const respondersById = new Map((state?.responders ?? []).map(r=>[r.id,r]));
+  const attemptsById = new Map((state?.resolutionAttempts ?? []).map(r=>[r.id,r]));
+  const group=(rows,key)=>{const map=new Map();for(const row of rows){const id=row[key];if(!map.has(id))map.set(id,[]);map.get(id).push(row);}return map;};
+  const activeAssignments=(state?.assignments ?? []).filter(r=>r.status==='ACTIVE');
+  const activeByIssue=group(activeAssignments,'issueId'), activeByResponder=group(activeAssignments,'responderId'), activeByAttempt=group(activeAssignments,'attemptId');
+  const pendingOffers=(state?.dispatchOffers ?? []).filter(r=>r.status==='PENDING');
+  const pendingByIssue=group(pendingOffers,'issueId'),pendingByResponder=group(pendingOffers,'responderId');
+  const attemptsByIssue=group((state?.resolutionAttempts ?? []).filter(r=>r.status==='ACTIVE'),'issueId');
+  const list=(map,id)=>map.get(id)??[];
+  const historyByParticipant=new Map();
+  for(const row of state?.resolutionHistory??[])for(const id of new Set([row.responderId,...(row.participants??[]).map(p=>p.responderId)])){
+    const key=JSON.stringify([row.attemptId,id]);if(!historyByParticipant.has(key))historyByParticipant.set(key,row);
+  }
+  const changed=(key)=>{if(!previous)return state[key]??[];if(state[key]===previous[key])return [];const old=new Set(previous[key]??[]);return (state[key]??[]).filter(row=>!old.has(row));};
   assert(state && typeof state === "object", "state must be an object");
   validateFaultTruth(state);
-  for (const issue of state.issues ?? []) if (issue.fixRecommendation) {
+  for (const issue of changed('issues')) if (issue.fixRecommendation) {
     const rows = issue.fixRecommendation.rankedFixes;
     assert(Array.isArray(rows) && rows.length === fixesFor(issue.issueClass).length && new Set(rows.map((r) => r.fixId)).size === rows.length && rows.every((r, i) => fixById(issue.issueClass, r.fixId) && r.rank === i + 1), 'Invalid stored fix ranking');
     assertNoResponderSkill(issue.fixRecommendation);
   }
   for (const attempt of state.resolutionAttempts ?? []) if (attempt.fixApplied) {
-    const issue = state.issues.find((i) => i.id === attempt.issueId);
+    const issue = issuesById.get(attempt.issueId);
     const fix = fixById(issue?.issueClass, attempt.fixApplied.id);
     assert(fix && fix.title === attempt.fixApplied.title && fix.steps === attempt.fixApplied.steps, 'Invalid applied fix');
   }
@@ -52,7 +69,7 @@ export function validateLiveState(state) {
     assert(Object.values(history.archives).every((day) => /^\d{4}-\d{2}-\d{2}$/.test(day)), "history archive address is invalid");
     assert(Object.values(history.highWater).every((value) => Number.isInteger(value) && value >= 0), "history ID floor is invalid");
     assert(Object.values(history.removed).every((value) => Number.isInteger(value) && value >= 0), "history token count is invalid");
-    assertNoResponderSkill(history.facts);
+    if (!previous || history.facts !== previous.historyRetention?.facts) assertNoResponderSkill(history.facts);
   }
   for (const key of ["equipment", "responders", "responderSkills", "issues", "assignments", "resolutionAttempts", "resolutionHistory", "recommendations", "operationalEvents"]) {
     assert(Array.isArray(state[key]), `${key} must be an array`);
@@ -120,8 +137,8 @@ export function validateLiveState(state) {
     assert(Array.isArray(state.dispatchOffers), "dispatchOffers must be an array when present");
     assertUnique(state.dispatchOffers, "id", "dispatch offers");
     for (const offer of state.dispatchOffers) {
-      assert(state.issues.some((issue) => issue.id === offer.issueId), `offer has unknown issue ${offer.issueId}`);
-      assert(state.responders.some((responder) => responder.id === offer.responderId), `offer has unknown responder ${offer.responderId}`);
+      assert(issuesById.has(offer.issueId), `offer has unknown issue ${offer.issueId}`);
+      assert(respondersById.has(offer.responderId), `offer has unknown responder ${offer.responderId}`);
       assert(["PENDING", "ACCEPTED", "REJECTED", "CANCELLED"].includes(offer.status), `offer ${offer.id} status is invalid`);
       if (offer.status === "PENDING") {
         const responseScheduled = typeof offer.responseDueAt === "string"
@@ -130,30 +147,30 @@ export function validateLiveState(state) {
           && offer.responseDispatchToken === null;
         const responseDispatched = offer.responseDueToken === null && /^offer-response-[1-9]\d*$/.test(offer.responseDispatchToken);
         assert(responseScheduled || responseDispatched, `offer ${offer.id} response schedule is invalid`);
-        const issue = state.issues.find((row) => row.id === offer.issueId);
-        const responder = state.responders.find((row) => row.id === offer.responderId);
+        const issue = issuesById.get(offer.issueId);
+        const responder = respondersById.get(offer.responderId);
         assert(issue.pendingOfferId === offer.id && issue.offeredResponderId === offer.responderId, `offer ${offer.id} disagrees with issue cache`);
         assert(responder.availability === "OFFERED" && responder.currentOfferId === offer.id, `offer ${offer.id} disagrees with responder cache`);
-        assert(!state.assignments.some((row) => row.responderId === offer.responderId && row.status === "ACTIVE"), `offer ${offer.id} targets an assigned responder`);
+        assert(list(activeByResponder,offer.responderId).length === 0, `offer ${offer.id} targets an assigned responder`);
       }
     }
     const pending = state.dispatchOffers.filter((offer) => offer.status === "PENDING");
-    for (const issue of state.issues) assert(pending.filter((offer) => offer.issueId === issue.id).length <= 1, `issue ${issue.id} has conflicting pending offers`);
-    for (const responder of state.responders) assert(pending.filter((offer) => offer.responderId === responder.id).length <= 1, `responder ${responder.id} has conflicting pending offers`);
+    for (const issue of state.issues) assert(list(pendingByIssue,issue.id).length <= 1, `issue ${issue.id} has conflicting pending offers`);
+    for (const responder of state.responders) assert(list(pendingByResponder,responder.id).length <= 1, `responder ${responder.id} has conflicting pending offers`);
   }
   for (const assignment of state.assignments) {
-    assert(state.issues.some((issue) => issue.id === assignment.issueId), `assignment has unknown issue ${assignment.issueId}`);
-    assert(state.responders.some((responder) => responder.id === assignment.responderId), `assignment has unknown responder ${assignment.responderId}`);
+    assert(issuesById.has(assignment.issueId), `assignment has unknown issue ${assignment.issueId}`);
+    assert(respondersById.has(assignment.responderId), `assignment has unknown responder ${assignment.responderId}`);
     assert(["PRIMARY", "SUPPORT"].includes(assignment.role), `assignment ${assignment.id} role is invalid`);
     assert(["ACTIVE", "RELEASED", "COMPLETED"].includes(assignment.status), `assignment ${assignment.id} status is invalid`);
     assert(Array.isArray(assignment.roleHistory) && assignment.roleHistory.length >= 1, `assignment ${assignment.id} role history is invalid`);
     if (assignment.status === "ACTIVE") {
-      const attempt = state.resolutionAttempts.find((row) => row.id === assignment.attemptId);
+      const attempt = attemptsById.get(assignment.attemptId);
       assert(attempt, `assignment ${assignment.id} has unknown attempt`);
       assert(attempt.issueId === assignment.issueId && attempt.status === "ACTIVE", `assignment ${assignment.id} is linked to the wrong attempt`);
     } else {
-      const attempt = state.resolutionAttempts.find((row) => row.id === assignment.attemptId);
-      const history = state.resolutionHistory.find((row) => row.attemptId === assignment.attemptId && (row.participants?.some((participant) => participant.responderId === assignment.responderId) || row.responderId === assignment.responderId));
+      const attempt = attemptsById.get(assignment.attemptId);
+      const history = historyByParticipant.get(JSON.stringify([assignment.attemptId,assignment.responderId]));
       const terminalAttempt = attempt && attempt.issueId === assignment.issueId && attempt.status !== "ACTIVE";
       const activeAttempt = attempt && attempt.issueId === assignment.issueId && attempt.status === "ACTIVE";
       const matchingHistory = history && history.issueId === assignment.issueId;
@@ -161,7 +178,8 @@ export function validateLiveState(state) {
       if (assignment.status === "RELEASED") assert(activeAttempt || (matchingHistory && (!attempt || terminalAttempt)), `released assignment ${assignment.id} has no matching active attempt or terminal history`);
     }
   }
-  for (const record of state.resolutionHistory) {
+  const sameResponders = previous && previous.responders.length === state.responders.length && previous.responders.every((r,i)=>r.id===state.responders[i].id);
+  for (const record of sameResponders ? changed('resolutionHistory') : state.resolutionHistory) {
     if (!record.participants) continue;
     // A completed attempt retains everyone who contributed over its lifetime.
     // The two-person limit applies only to its simultaneous ACTIVE roster;
@@ -169,7 +187,7 @@ export function validateLiveState(state) {
     assert(Array.isArray(record.participants) && record.participants.length >= 1, `history ${record.id} participants are invalid`);
     assert(new Set(record.participants.map((row) => row.responderId)).size === record.participants.length, `history ${record.id} participant responders must be unique`);
     for (const participant of record.participants) {
-      assert(state.responders.some((row) => row.id === participant.responderId), `history ${record.id} has unknown participant ${participant.responderId}`);
+      assert(respondersById.has(participant.responderId), `history ${record.id} has unknown participant ${participant.responderId}`);
       assert(Number.isFinite(participant.contributionShare) && participant.contributionShare >= 0 && participant.contributionShare <= 1, `history ${record.id} participant share is invalid`);
       assert(Number.isFinite(participant.participationMinutes) && participant.participationMinutes >= 0, `history ${record.id} participant duration is invalid`);
       assert(Array.isArray(participant.roleIntervals) && participant.roleIntervals.length >= 1, `history ${record.id} participant role intervals are invalid`);
@@ -183,9 +201,9 @@ export function validateLiveState(state) {
     assert(Math.abs(shareTotal - 1) < 1e-6, `history ${record.id} contribution shares must sum to one`);
   }
   assertUnique(state.resolutionAttempts, "id", "resolution attempts");
-  for (const issue of state.issues) assert(state.resolutionAttempts.filter((attempt) => attempt.issueId === issue.id && attempt.status === "ACTIVE").length <= 1, `issue ${issue.id} has multiple active attempts`);
+  for (const issue of state.issues) assert(list(attemptsByIssue,issue.id).length <= 1, `issue ${issue.id} has multiple active attempts`);
   for (const attempt of state.resolutionAttempts) {
-    assert(state.issues.some((issue) => issue.id === attempt.issueId), `attempt ${attempt.id} has unknown issue`);
+    assert(issuesById.has(attempt.issueId), `attempt ${attempt.id} has unknown issue`);
     assert(["ACTIVE", "SUCCEEDED", "FAILED"].includes(attempt.status), `attempt ${attempt.id} status is invalid`);
     assert(attempt.modelVersion === "team-resolution-v1", `attempt ${attempt.id} model is unsupported`);
     assert(Number.isFinite(attempt.durationFactor) && attempt.durationFactor >= 0.7 && attempt.durationFactor <= 1.3, `attempt ${attempt.id} duration factor is invalid`);
@@ -196,7 +214,7 @@ export function validateLiveState(state) {
     assert(Number.isInteger(attempt.scheduleGeneration) && attempt.scheduleGeneration >= 1, `attempt ${attempt.id} schedule generation is invalid`);
     assert(Array.isArray(attempt.segments), `attempt ${attempt.id} segments are invalid`);
     assert(["NONE", "REQUESTED", "WAITING", "STAFFED", "EXHAUSTED"].includes(attempt.assistance?.status), `attempt ${attempt.id} assistance status is invalid`);
-    const active = state.assignments.filter((row) => row.attemptId === attempt.id && row.status === "ACTIVE");
+    const active = list(activeByAttempt,attempt.id);
     assert(active.length <= 2, `attempt ${attempt.id} exceeds two active responders`);
     if (attempt.status === "ACTIVE") {
       assert(active.length >= 1, `active attempt ${attempt.id} has no roster`);
@@ -210,8 +228,8 @@ export function validateLiveState(state) {
     }
   }
   for (const responder of state.responders) {
-    const active = state.assignments.filter((row) => row.responderId === responder.id && row.status === "ACTIVE");
-    const pendingOffers = (state.dispatchOffers ?? []).filter((offer) => offer.responderId === responder.id && offer.status === "PENDING");
+    const active = list(activeByResponder,responder.id);
+    const pendingOffers = list(pendingByResponder,responder.id);
     assert(active.length <= 1, `responder ${responder.id} has conflicting assignments`);
     if (active.length === 1) assert(responder.availability === "ASSIGNED" && responder.currentIssueId === active[0].issueId, `responder ${responder.id} cache disagrees with active assignment`);
     if (active.length === 0) assert(!responder.currentIssueId, `responder ${responder.id} retains a stale issue cache`);
@@ -220,9 +238,9 @@ export function validateLiveState(state) {
     if (responder.availability !== "OFFERED") assert(pendingOffers.length === 0 && !responder.currentOfferId, `responder ${responder.id} retains a stale offer cache`);
   }
   for (const issue of state.issues) {
-    const active = state.assignments.filter((row) => row.issueId === issue.id && row.status === "ACTIVE");
-    const activeAttempts = state.resolutionAttempts.filter((attempt) => attempt.issueId === issue.id && attempt.status === "ACTIVE");
-    const pendingOffers = (state.dispatchOffers ?? []).filter((offer) => offer.issueId === issue.id && offer.status === "PENDING");
+    const active = list(activeByIssue,issue.id);
+    const activeAttempts = list(attemptsByIssue,issue.id);
+    const pendingOffers = list(pendingByIssue,issue.id);
     assert(active.length <= 2, `issue ${issue.id} exceeds two active responders`);
     if (active.length) {
       assert(active.filter((row) => row.role === "PRIMARY").length === 1, `issue ${issue.id} must have exactly one primary`);
@@ -236,7 +254,7 @@ export function validateLiveState(state) {
     if (!issue.pendingOfferId) assert(pendingOffers.length === 0, `issue ${issue.id} is missing its offer cache`);
   }
   for (const skill of state.responderSkills) {
-    assert(state.responders.some((responder) => responder.id === skill.responderId), `skill has unknown responder ${skill.responderId}`);
+    assert(respondersById.has(skill.responderId), `skill has unknown responder ${skill.responderId}`);
     assert(ISSUE_CLASSES.includes(skill.issueClass), "skill has invalid issue class");
     assert(Number.isFinite(skill.trueMedianMinutes) && skill.trueMedianMinutes > 0, "skill median must be positive");
     assert(Number.isFinite(skill.trueSuccessProbability) && skill.trueSuccessProbability >= 0 && skill.trueSuccessProbability <= 1, "skill success probability is invalid");

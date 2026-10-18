@@ -21,7 +21,7 @@ This is the first step toward a multi-domain platform. The design was specified 
   before the next). N independent timers would violate the codebase's single-timer
   concurrency discipline. See [simulation.md](simulation.md) and [live-runtime.md](live-runtime.md).
 - **One writer per room.** Each room has its own `live-store.mjs` writing its own state
-  files atomically. Rooms never share operational state.
+  files through its own checkpoint and journal (see live-runtime.md). Rooms never share operational state.
 - **Health is separate from clock state.** A room is `READY` or `FAILED` (manager health)
   independently of `RUNNING` or `PAUSED` (its clock). A corrupt state file or a migration
   conflict fails just that one room; every other room boots and serves normally.

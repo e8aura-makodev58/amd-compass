@@ -1,3 +1,4 @@
+import { readDurableLiveState } from "../src/live-journal.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtemp, readFile } from "node:fs/promises";
@@ -62,7 +63,7 @@ test("live store persists serialized atomic mutations and exact reset", async ()
     store.mutate("second", (state) => { state.simulationState.status = "RUNNING"; return "second"; }),
   ]);
   assert.deepEqual([first.revision, second.revision], [1, 2]);
-  const persisted = JSON.parse(await readFile(filePath, "utf8"));
+  const persisted = await readDurableLiveState(filePath);
   assert.equal(persisted.revision, 2);
   assert.equal(persisted.simulationState.speedMultiplier, 5);
   assert.equal(persisted.simulationState.status, "RUNNING");

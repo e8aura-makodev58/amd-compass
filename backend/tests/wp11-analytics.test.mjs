@@ -10,7 +10,8 @@ import { createLiveStore } from "../src/live-store.mjs";
 async function createFixture() {
   const directory = await mkdtemp(join(tmpdir(), "compass-analytics-"));
   const store = createLiveStore({ filePath: join(directory, "live.json") });
-  return { store, state: await store.snapshot() };
+  // Snapshots are frozen; these tests edit a private copy as their fixture.
+  return { store, state: structuredClone(await store.snapshot()) };
 }
 
 test("analytics use one fixed simulation timestamp and separate open downtime", async () => {
