@@ -8,6 +8,18 @@ The governing boundary is:
 
 > Code establishes the evidence. Compass ranks the match. Responders accept asynchronously. Central command may override.
 
+## Live demo
+
+**<https://compass.makodev58.com>**: pick a control room (e8-aura-p1 has a month of
+simulated history). Rooms start paused: press **Resume** to run the simulation live on AMD
+Token Factory, or **Trigger Next Event** for one issue at a time. A running room pauses
+itself after 10 minutes with nobody using it, so an unattended tab does not spend tokens.
+**Offline Demo** replays a fixed scenario with no API calls.
+
+Submission media: [demo video](docs/submission/ResponseCompass-demo.webm),
+[slide deck (PDF)](docs/submission/ResponseCompass-deck.pdf), and the
+[slide-by-slide notes](docs/submission/pitch-deck.md).
+
 This is a net-new, synthetic project. It contains no LOCI source, proprietary facility context, real personnel data, or production credentials.
 
 ## What is implemented
@@ -27,7 +39,7 @@ This is a net-new, synthetic project. It contains no LOCI source, proprietary fa
 - clickable, on-demand issue audit trails with complete Compass analysis, offer history, control-center overrides, and resolution actions;
 - fixed-snapshot P0 analytics with denominators and thin-sample safeguards;
 - API-free deterministic Offline Demo using the same offer/accept and override interaction;
-- 230 automated tests, a 100-opportunity deterministic soak, and 32 Chromium E2E tests.
+- 334 hermetic unit and integration tests (including a 100-opportunity deterministic soak) and 72 Chromium E2E tests.
 
 ## Architecture
 
