@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readdir, readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createApplicationLogger, createApplicationLogStore, createControlRoomLogger, logEvent } from "./application-log-store.mjs";
@@ -67,12 +68,39 @@ const SETTINGS_READ_ONLY = { error: "Provider settings are read-only on the publ
 // page serves a room's wall-display screens (/rooms/:id/display/:screen).
 const ROOM_PAGE_PATTERN = /^\/rooms\/[^/]+(?:\/display\/[a-z]+)?\/?$/;
 
+/**
+ * A hash of the app's own frontend files, appended as ?v= to every reference to them in
+ * index.html and in module imports. Each deploy therefore asks for URLs no browser or
+ * Cloudflare cache has seen, whatever the zone's cache settings, while unchanged files keep
+ * their URL. Computed once per process: the image's files cannot change while it runs.
+ */
+let assetVersion = null;
+function frontendAssetVersion() {
+  assetVersion ??= (async () => {
+    const hash = createHash("sha256");
+    const names = (await readdir(frontendRoot)).filter((name) => /\.(html|css|js)$/.test(name)).sort();
+    for (const name of names) hash.update(name).update(await readFile(join(frontendRoot, name)));
+    return hash.digest("hex").slice(0, 12);
+  })();
+  return assetVersion;
+}
+
+async function versionReferences(filePath, contents) {
+  const extension = extname(filePath);
+  if (filePath.includes(`${frontendRoot}/vendor/`) || (extension !== ".html" && extension !== ".js")) return contents;
+  const version = await frontendAssetVersion();
+  const text = contents.toString("utf8");
+  return extension === ".html"
+    ? text.replace(/(href|src)="\/(?!vendor\/)([\w.-]+\.(?:css|js))"/g, `$1="/$2?v=${version}"`)
+    : text.replace(/(from\s+["'])(\.\/[\w.-]+\.js)(["'])/g, `$1$2?v=${version}$3`);
+}
+
 async function serveStatic(pathname, response) {
   const requestedPath = pathname === "/" || ROOM_PAGE_PATTERN.test(pathname) ? "/index.html" : pathname;
   const filePath = normalize(join(frontendRoot, requestedPath));
   if (!filePath.startsWith(`${frontendRoot}/`)) return sendJson(response, 404, { error: "Not found" });
   try {
-    const contents = await readFile(filePath);
+    const contents = await versionReferences(filePath, await readFile(filePath));
     // The app's pages and scripts change with every deploy and have no fingerprinted names,
     // so a browser or Cloudflare must revalidate them rather than serve a stale copy
     // (Cloudflare otherwise applies a 4-hour browser TTL). Fonts and vendored files never change.

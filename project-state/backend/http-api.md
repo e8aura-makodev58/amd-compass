@@ -124,4 +124,4 @@ stale/rejected/expired work. Offline rejects these Live-only mutations with a mo
 counts. Each `/analytics/period` row includes the same `staffingRecommendations` metrics for
 its UTC decision/risk interval; compact canonical audit facts make archived months exact.
 
-**Static caching.** Pages, scripts and styles are served with `Cache-Control: no-cache`, so a deploy is never hidden behind a browser or Cloudflare copy; files under `/vendor/` get `public, max-age=604800, immutable`.
+**Static caching.** Pages, scripts and styles are served with `Cache-Control: no-cache`, so a deploy is never hidden behind a browser or Cloudflare copy; files under `/vendor/` get `public, max-age=604800, immutable`. Because a CDN may still override that header, `index.html` references and relative module imports also carry `?v=<content hash of frontend/*.html|css|js>`, so each deploy fetches new URLs.

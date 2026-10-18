@@ -316,3 +316,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] fix — Static files revalidate instead of caching for 4 hours
 - With no Cache-Control from the origin, Cloudflare gave `app.js` and the page a 4-hour browser TTL, so visitors kept the pre-deploy UI (the read-only settings page still showed enabled controls). Pages, scripts and styles now send `no-cache`; `/vendor/` (fonts, libraries) sends a 7-day immutable cache. Tests: `static-cache.test.mjs`.
 - Pages updated: backend/http-api.md.
+
+## [2026-10-18] fix — Versioned asset URLs; locked settings read clearly as unavailable
+- Cloudflare's zone Browser Cache TTL overrode `no-cache` and its edge kept old CSS, so the server now appends a content hash (`?v=`) to every app stylesheet/script in `index.html` and to relative module imports; each deploy uses URLs no cache has seen, unchanged deploys keep theirs. `/vendor/` is untouched. The read-only settings tab adds `.settings-locked`, which greys every control, including the accent Save buttons. Tests: `static-cache.test.mjs`.
+- Pages updated: backend/http-api.md.
