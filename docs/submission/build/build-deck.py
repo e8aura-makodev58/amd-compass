@@ -63,7 +63,7 @@ NODES = [
     ("ui", "Live Floor & Analytics", "UI, fixed snapshots", 9.0, 3.79, 2.55, 0.72, "code"),
     ("resolution", "Resolution engine", "hidden skill → outcome", 9.0, 5.2, 2.55, 0.72, "code"),
     ("context", "Context engine", "eligibility, travel, history", 5.75, 5.2, 2.05, 0.72, "code"),
-    ("compass", "Compass", "AMD Token Factory: ranks", 3.1, 4.85, 2.05, 0.72, "model"),
+    ("compass", "Compass", "ranks responders, fixes", 3.1, 4.85, 2.05, 0.72, "model"),
     ("baselines", "Baselines", "nearest + naive score", 3.1, 6.0, 2.05, 0.72, "code"),
     ("dispatch", "Dispatch", "ranked offer queue", 0.45, 5.4, 2.05, 0.72, "code"),
     ("responders", "Responders", "accept or reject", 0.45, 4.2, 2.05, 0.72, "human"),
@@ -76,6 +76,26 @@ EDGES = [
     ("compass", "dispatch"), ("baselines", "dispatch"), ("dispatch", "responders"),
     ("responders", "state"),
 ]
+# Autonomy loop: the system runs dispatch on its own; people decide at the amber nodes.
+LOOP_NODES = [
+    ("issue", "Issue raised", "equipment fault, symptom", 0.45, 1.95, 2.1, 0.72, "code"),
+    ("rank", "Rank responders", "Compass on AMD", 3.05, 1.95, 2.1, 0.72, "model"),
+    ("offer", "Offer sent", "automatic, ranked queue", 5.65, 1.95, 2.1, 0.72, "code"),
+    ("accept", "Responder", "accepts or rejects", 8.25, 1.95, 2.1, 0.72, "human"),
+    ("fix", "Rank fixes", "Compass on AMD", 10.85, 1.95, 2.1, 0.72, "model"),
+    ("overtime", "Rank overtime", "Compass, legal options only", 0.45, 3.5, 2.1, 0.72, "model"),
+    ("approve", "Central command", "approves or rejects", 3.05, 3.5, 2.1, 0.72, "human"),
+    ("override", "Central command", "override, transfer, support", 8.25, 3.5, 2.1, 0.72, "human"),
+    ("attempt", "Repair attempt", "outcome from hidden truth", 10.85, 3.5, 2.1, 0.72, "code"),
+    ("backlog", "Backlog review", "before each handover", 0.45, 5.05, 2.1, 0.72, "code"),
+    ("history", "Observed history", "evidence for every ranking", 8.25, 5.05, 2.1, 0.72, "store"),
+    ("screens", "Wall screens", "floor, issues, feed, Pareto", 8.25, 6.4, 2.1, 0.72, "code"),
+]
+LOOP_EDGES = [
+    ("issue", "rank"), ("rank", "offer"), ("offer", "accept"), ("accept", "fix"), ("fix", "attempt"),
+    ("attempt", "history"), ("history", "rank"), ("override", "offer"), ("history", "screens"),
+    ("history", "backlog"), ("backlog", "overtime"), ("overtime", "approve"), ("approve", "rank"),
+]
 NODE_STYLE = {  # fill, border, title colour, sub colour
     "code": (WHITE, NAVY, NAVY, MUTED),
     "model": (TEAL, TEAL, WHITE, "E6FFFF"),
@@ -84,115 +104,167 @@ NODE_STYLE = {  # fill, border, title colour, sub colour
 }
 
 
-def diagram():
-    return [("diagram", dict(nodes=NODES, edges=EDGES)),
-            ("legend", dict(x=9.0, y=6.3))]
+def diagram(nodes=None, edges=None, legend=(9.0, 6.3)):
+    return [("diagram", dict(nodes=nodes or NODES, edges=edges or EDGES)),
+            ("legend", dict(x=legend[0], y=legend[1]))]
+
+
+def wall():
+    """Six monitors, one panel each, as native picture + bezel shapes."""
+    screens = [("screen-map.png", "Floor map"), ("screen-issues.png", "Issues"), ("screen-dispatch.png", "Dispatch"),
+               ("screen-events.png", "Event feed"), ("screen-pareto.png", "Issue Pareto"), ("screen-analytics.png", "Analytics")]
+    items, w, h = [], 3.85, 3.85 * 9 / 16
+    for i, (name, label) in enumerate(screens):
+        x, y = 0.6 + (i % 3) * 4.1, 1.75 + (i // 3) * 2.62
+        items += [("rect", dict(x=x - 0.07, y=y - 0.07, w=w + 0.14, h=h + 0.14, fill=NAVY)),
+                  *image(name, x, y, w=w, h=h),
+                  ("text", dict(x=x, y=y + h + 0.12, w=w, h=0.3, text=label, size=12, bold=True, color=NAVY, align="center"))]
+    return items
 
 
 SLIDES = [
     dict(kind="cover", items=[
         ("rect", dict(x=0, y=0, w=W, h=H, fill=BG)),
-        ("rect", dict(x=0.6, y=2.0, w=0.12, h=2.6, fill=TEAL)),
-        ("text", dict(x=1.0, y=1.95, w=7.4, h=1.1, text="ResponseCompass", size=50, bold=True, color=NAVY)),
-        ("text", dict(x=1.0, y=3.2, w=7.4, h=0.5, text="The right responder. The right fix.", size=24, color=TEAL, bold=True)),
-        ("text", dict(x=1.0, y=3.75, w=7.4, h=0.5, text="Learned from every past repair.", size=24, color=MUTED)),
-        ("text", dict(x=1.0, y=5.3, w=7.4, h=0.8, text="An AI dispatch agent for operations control rooms, built on AMD Token Factory.", size=16, color=INK)),
-        *image("live-floor.png", 8.75, 1.65, w=4.2),
-        ("text", dict(x=8.75, y=4.15, w=4.2, h=0.4, text="Live Floor, simulated plant e8-aura-p1", size=11, color=MUTED)),
-    ], notes="ResponseCompass is a dispatch agent for operations control rooms, built on AMD Token Factory. "
-             "The tagline is the product vision: responder ranking is built today; recommending the fix from "
-             "past repairs is the next step (last slide). Say so when presenting this slide."),
+        ("rect", dict(x=0.6, y=1.75, w=0.12, h=3.2, fill=TEAL)),
+        ("text", dict(x=1.0, y=1.7, w=7.4, h=1.1, text="ResponseCompass", size=50, bold=True, color=NAVY)),
+        ("text", dict(x=1.0, y=2.95, w=7.4, h=0.5, text="The right responder. The right fix.", size=24, color=TEAL, bold=True)),
+        ("text", dict(x=1.0, y=3.5, w=7.4, h=0.5, text="Learned from every past repair.", size=24, color=MUTED)),
+        ("text", dict(x=1.0, y=4.3, w=7.4, h=0.5, text="Runs autonomously. Supervised by your control room.", size=16, color=NAVY, bold=True)),
+        ("text", dict(x=1.0, y=5.4, w=7.4, h=0.8, text="An AI dispatch agent for operations control rooms, built on AMD Token Factory.", size=16, color=INK)),
+        *image("screen-map.png", 8.75, 1.65, w=4.2),
+        ("text", dict(x=8.75, y=4.15, w=4.2, h=0.4, text="Floor-map wall screen, simulated plant e8-aura-p1", size=11, color=MUTED)),
+    ], notes="ResponseCompass is a dispatch agent for operations control rooms, built on AMD Token Factory. It runs "
+             "dispatch on its own and the control room supervises it: Compass ranks who to send and which fix to try "
+             "first, from the plant's own repair history, and people approve or override the decisions that matter."),
 
     dict(items=[*title("The problem"), *bullets(0.6, 1.6, 12.1, 4.8, [
         "When equipment fails, **closest** or **free** may be an incomplete answer.",
-        "The nearest technician may never have fixed this kind of fault.",
-        "A poor match can mean downtime, a reopened issue or another trip.",
+        "The nearest technician may never have fixed this kind of fault, and the first fix tried is often a guess.",
+        "A poor match means downtime, a reopened issue or another trip; a backlog means overtime decisions under pressure.",
         "Who fixes what, and how, lives in people's heads and old tickets.",
-    ], size=24)], notes="Proximity is easy to compute and easy to defend, but it ignores fit. What matters is who is "
-                        "likely to resolve this class of issue on the first attempt, given where everyone is and what they "
-                        "are already doing."),
+    ], size=23)], notes="Proximity is easy to compute and easy to defend, but it ignores fit. What matters is who is "
+                        "likely to resolve this class of issue on the first attempt, with which procedure, and whether "
+                        "the shift can cover the backlog."),
 
-    dict(items=[*title("What ResponseCompass does"), *bullets(0.6, 1.55, 5.6, 5.4, [
-        "For every new issue, Compass **ranks the eligible responders** and explains the tradeoffs.",
-        "Offers go out automatically; responders accept or reject; complex work can get a second responder.",
-        "Central command can override a pending dispatch; every step is audited.",
-        "Each issue carries a **response action**; recommending fixes from past repairs is **planned**.",
-    ], size=18), *image("live-floor.png", 6.5, 1.6, w=6.35)],
-        notes="Compass does not replace the operator. It proposes a ranked shortlist with reasons, and the system "
-              "dispatches automatically with a human able to step in."),
+    dict(items=[*title("One agent, many screens", "Each panel can run full screen on its own monitor; the operator console keeps the controls."),
+                *wall()],
+         notes="A control room puts the floor map, the issue queue, the dispatch context, the event feed, the Issue "
+               "Pareto and analytics on separate monitors (/rooms/<room>/display/<screen>). The screens update live from "
+               "the same state. The operator console, with override and approval controls, is the seventh screen."),
+
+    dict(items=[*title("Autonomous by default, human in command",
+                       "Code runs the loop; AMD models rank; people decide at the amber steps."),
+                *diagram(LOOP_NODES, LOOP_EDGES, legend=(10.85, 5.2))],
+         notes="Issues are dispatched without anyone touching the console: Compass ranks the eligible responders, an "
+               "offer goes out, the responder accepts, Compass ranks the troubleshooting procedures, and the repair "
+               "outcome feeds the history that every later ranking uses. Central command can override, transfer or add "
+               "support at any time. Before each shift handover a backlog review asks Compass to rank lawful overtime "
+               "options; central command approves or rejects them, and nothing changes without that decision."),
 
     dict(items=[*title("Code owns the facts. Models only rank.",
                        "Application code owns time, facts, eligibility, baselines and every mutation; models only propose."),
                 *diagram()],
-         notes="The ranker receives application-owned evidence and ranks only the eligible candidates it is given. "
-               "The planner proposes synthetic incidents; code validates every proposal and owns all mutations. "
-               "If a model is slow, rate-limited or returns invalid output, the deterministic fallback takes over, "
-               "so dispatch continues."),
+         notes="The ranker receives application-owned evidence and ranks only the eligible candidates, fixes or "
+               "overtime options it is given. The planner proposes synthetic incidents; code validates every proposal "
+               "and owns all mutations. If a model is slow, rate-limited or returns invalid output, the deterministic "
+               "fallback takes over, so dispatch continues."),
 
     dict(items=[*title("Honest by design"), *bullets(0.6, 1.6, 12.1, 5.2, [
-        "Each responder's **true skill is hidden** simulation truth: no model, UI or analytics sees it.",
-        "Outcomes are simulated from that hidden skill, independently of what the model claims.",
-        "Two transparent baselines (nearest, naive score) run alongside; disagreements are flagged.",
+        "Each responder's **true skill** and each fault's **true cause** are hidden simulation truth: no model, screen or analytics sees them.",
+        "Outcomes are simulated from that hidden truth, independently of what the model claims.",
+        "Transparent baselines run alongside (nearest, naive score, most common fix); disagreements are recorded.",
         "Analytics show denominators, suppress thin samples and are not an employee leaderboard.",
         "Excluded from ranking: pay, seniority, demographics, fatigue, HR data.",
-    ], size=21)], notes="We wanted the demo to be able to show Compass being wrong as well as right. Hidden truth plus "
+    ], size=20)], notes="We wanted the system to be able to show Compass being wrong as well as right. Hidden truth plus "
                         "baselines make its choices inspectable. Disagreement alone does not prove better outcomes."),
+
+    dict(items=[*title("The right responder", "ISS-3618, Station 48 · captured live on AMD Token Factory (MiMo-V2.6-Flash)"),
+                *bullets(0.6, 1.75, 12.1, 2.4, [
+        "Nearest responder **Engr361**: half a minute away, 26 similar cases.",
+        "Compass ranked **Engr370** first: 110 similar cases, 87% observed success, the same half-minute away, and explained why.",
+        "Offer accepted automatically; central command could have overridden it at any time.",
+    ], size=18), *image("compass-record.png", 0.6, 4.35, w=12.1)],
+        notes="Captured live on 2026-10-18 (simulated 6 October). The nearest-responder baseline chose Engr361; "
+              "Compass ranked Engr370 first. One good outcome is not proof of better performance; disagreements with "
+              "the baselines are recorded for review. In this capture 15 of 18 live responder rankings returned valid "
+              "output; the rest fell back deterministically."),
+
+    dict(items=[*title("The right fix", "Same record: Compass ranks the troubleshooting procedures for the observed symptom"),
+                *bullets(0.6, 1.75, 4.6, 5.0, [
+        "Code supplies the catalog procedures and their **observed** success on this symptom, class and station.",
+        "Compass ranked **Correct mechanical alignment** first; the most common fix is the baseline.",
+        "Engr370 applied it: fixed **first time in 7.0 min**.",
+        "A failed attempt reopens the issue and the next procedure is tried.",
+    ], size=16), *image("fix-record.png", 5.45, 1.75, w=7.45)],
+        notes="The true fault cause is hidden simulation truth, like responder skill: the model sees only the public "
+              "symptom and observed outcomes. In this capture 12 of 15 live fix rankings were valid AMD results. A live "
+              "check also found and fixed a defect: the fix ranking never reached the provider until that check."),
+
+    dict(items=[*title("Overtime, decided by people", "Backlog review → lawful options → Compass ranking → central command approves or rejects"),
+                *bullets(0.6, 1.75, 4.4, 5.2, [
+        "When the backlog outgrows the shift, code lists only **legal** options: 16 h duty, 12 h rest, staffing cap.",
+        "Compass ranks them by observed coverage of the backlog; the old first-eligible rule is the baseline.",
+        "Nothing changes until **central command** approves; unanswered recommendations expire.",
+        "Every decision, and who made it, is audited.",
+    ], size=16), *image("staffing.png", 5.3, 1.75, w=7.5)],
+        notes="Live capture: staffing-7 was ranked by MiMo on AMD Token Factory and approved by central command in the "
+              "recording. A live check found that approving went stale whenever the top option had picked up a job in "
+              "the meantime; extensions now depend only on duty and rest limits. Rooms can opt into an audited "
+              "auto-approve policy; the default is operator approval."),
+
+    dict(items=[*title("Where the downtime comes from", "Issue Pareto: issue class → observed symptom → applied fix, or floor → station"),
+                *image("screen-pareto.png", 0.6, 1.75, w=8.3),
+                *bullets(9.2, 1.8, 3.6, 5.0, [
+        "Issues, downtime or failed attempts per day, week or month.",
+        "Sorted bars, cumulative line and an **80%** marker, plus a donut.",
+        "Click to drill from class to symptom to the fix that was applied.",
+        "Built from public records only; hidden causes are never used.",
+    ], size=15)],
+        notes="The Pareto answers the supervisor's first question: which few problems cost us most of the time. In "
+              "September two of three issue classes accounted for 80% of issues; drilling into a symptom shows which "
+              "procedures failed most often. It describes recorded work; it does not rank people or claim causation."),
+
+    dict(items=[*title("A month of operations"), *bullets(0.6, 1.6, 5.3, 5.2, [
+        "e8-aura-p1: **3,512 issues**, 1 September to 6 October (simulated).",
+        "September: **2,966 raised / 2,985 resolved** events.",
+        "First-time fix rate in September: **73.5%** (1,858 of 2,527 first attempts).",
+        "Weekly first-time fix: 67.1%, 74.9%, 76.5%, 75.6%: not a steady climb.",
+    ], size=17), *image("analytics-month.png", 6.2, 1.6, w=6.65)],
+        notes="This history was generated with the app's own engine, offline and deterministically, so every record "
+              "is one the app itself would produce. The month extension used deterministic fallbacks, so it is not an "
+              "AMD-only benchmark or a controlled comparison of model and baseline outcomes. Weekly rates use Monday "
+              "08:00 UTC boundaries; they rose then dipped, and we report them as measured."),
 
     dict(items=[*title("Built on AMD Token Factory"), *bullets(0.6, 1.6, 7.4, 5.2, [
         "OpenAI-compatible API, JSON output; our validators are the contract.",
-        "Default model **MiMo-V2.6-Flash**; ranking and event planner can use different models.",
+        "Default model **MiMo-V2.6-Flash** ranks responders, fixes and overtime; the event planner can use another model.",
         "Local budget: 10 requests/min, 2 concurrent; bounded 429 retries; circuit breaker.",
-        "Recorded MiMo check: **9/10** valid rankings, **10/10** valid event plans.",
-        "Ranking deadline 90 s; model calls never hold the simulation clock.",
-    ], size=18), *image("settings-models.png", 8.55, 1.5, h=5.4)],
+        "Recorded MiMo check: **9/10** valid responder rankings, **10/10** valid event plans.",
+        "Model calls run in a background lane and never hold the simulation clock.",
+    ], size=17), *image("settings-models.png", 8.55, 1.5, h=5.4)],
         notes="We measured several Token Factory models on the same scenario and chose the default per role from "
-              "the data. These are small-sample validity results (10 samples, 60 s ranking / 30 s planner timeouts), "
-              "not outcome accuracy or uptime guarantees; the ranking deadline was later raised to 90 s including "
-              "one repair. Retries: at most two, only on HTTP 429. Five consecutive service failures open the "
-              "breaker; one probe after 60 s. Rankings run in a background lane, so the clock keeps moving."),
-
-    dict(items=[*title("A real MiMo ranking, end to end", "ISS-3642, captured live on AMD Token Factory (MiMo-V2.6-Flash)"),
-                *bullets(0.6, 1.9, 4.6, 5.0, [
-        "Nearest responder: **Optr375**, 0.8 min away, thin history on this fault.",
-        "Compass ranked **Engr370** first: deepest evidence, 92% success, 2 min away.",
-        "Offer accepted; resolved first time in **11.2 min**.",
-        "Every step, and the action taken, is in the issue's audit trail.",
-    ], size=17), *image("compass-record.png", 5.45, 1.85, w=7.45)],
-        notes="This record was captured live on AMD Token Factory with MiMo-V2.6-Flash on 2026-10-17 (simulated time "
-              "6 October). Both baselines picked someone else: nearest chose Optr375, the naive score chose Tech363. "
-              "One good outcome is not proof of better performance; the disagreement is recorded so it can be reviewed. "
-              "In that capture, 7 of 11 live rankings returned valid output; the rest fell back deterministically."),
-
-    dict(items=[*title("A month of operations"), *bullets(0.6, 1.6, 5.3, 5.2, [
-        "e8-aura-p1: **3,531 issues**, 1 September to 6 October (simulated).",
-        "September: **2,978 raised / 2,998 resolved** events.",
-        "Day, week and month views; Compass-vs-baseline records.",
-        "Seven-day detail retention: live state served in **56 ms** in a local check.",
-    ], size=18), *image("analytics-month.png", 6.2, 1.6, w=6.65)],
-        notes="This history was generated with the app's own engine, offline and deterministically, so every record "
-              "is one the app itself would produce. Retention archives older detail without changing any analytics "
-              "number. The month extension used deterministic fallbacks; it is not an AMD-only benchmark or a "
-              "controlled comparison of model and baseline outcomes. Latency is one local measurement, not a "
-              "guarantee."),
+              "the data. These are small-sample validity results, not outcome accuracy or uptime guarantees. Retries: "
+              "at most two, only on HTTP 429. Five consecutive service failures open the breaker; one probe after 60 s."),
 
     dict(items=[*title("Engineering quality"), *bullets(0.6, 1.6, 12.1, 5.2, [
         "Live and Offline are one app; Offline makes no API calls and is fully reproducible.",
-        "**277** hermetic unit and integration tests and **51** Chromium end-to-end tests.",
+        "**317** hermetic unit and integration tests and **67** Chromium end-to-end tests.",
         "Deterministic seeded simulation; restart-safe scheduler; atomic, crash-safe persistence.",
         "Runs on Node.js 22 or Docker; no external services besides the model API.",
     ], size=21)], notes="Everything that matters is tested without spending API credits; the browser tests force "
-                        "provider failures to prove the fallbacks."),
+                        "provider failures to prove the fallbacks. A live check on AMD found and fixed one defect the "
+                        "hermetic tests could not: the fix ranking never reached the provider."),
 
     dict(items=[*title("What's next"), *bullets(0.6, 1.6, 12.1, 3.6, [
-        "**Recommended fixes:** rank response actions retrieved from comparable past resolutions.",
-        "Learn from outcomes: feed accepted and successful fixes back into the evidence.",
-        "Connect to real maintenance and ticketing systems in place of the simulated floor.",
+        "Connect to real maintenance, ticketing and rostering systems in place of the simulated floor.",
+        "Learn from approvals: feed operator decisions and repair outcomes back into the evidence.",
+        "Measure Compass against its baselines on live AMD rankings over a longer run.",
         "Long-run storage: compact the remaining growing history for year-long runs.",
     ], size=21),
         ("rect", dict(x=0.6, y=5.55, w=12.1, h=1.1, fill=NAVY)),
         ("text", dict(x=0.9, y=5.72, w=11.5, h=0.8, text="The right responder. The right fix.", size=30, bold=True, color=WHITE, align="center")),
-    ], notes="The dispatch half is built and measured. The next step uses the same boundary for actions: code "
-             "retrieves comparable past resolutions, and the model ranks and explains the fix."),
+    ], notes="Responder ranking, fix ranking, overtime recommendations and the control-room screens are built. "
+             "Next is real integration and a longer live measurement."),
 ]
 
 # ---------------------------------------------------------------------------
@@ -205,8 +277,8 @@ def runs_of(text):
     return [(part, i % 2 == 1) for i, part in enumerate(parts) if part]
 
 
-def node_map():
-    return {n[0]: dict(id=n[0], label=n[1], sub=n[2], x=n[3], y=n[4], w=n[5], h=n[6], kind=n[7]) for n in NODES}
+def node_map(nodes):
+    return {n[0]: dict(id=n[0], label=n[1], sub=n[2], x=n[3], y=n[4], w=n[5], h=n[6], kind=n[7]) for n in nodes}
 
 
 def sites(node):
@@ -296,7 +368,7 @@ def add_arrowhead(connector):
 
 def pptx_diagram(slide, spec):
     shapes = {}
-    for node in node_map().values():
+    for node in node_map(spec["nodes"]).values():
         fill, border, title_color, sub_color = NODE_STYLE[node["kind"]]
         shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(node["x"]), Inches(node["y"]), Inches(node["w"]), Inches(node["h"]))
         shape.adjustments[0] = 0.18
@@ -323,7 +395,7 @@ def pptx_diagram(slide, spec):
         run.text = node["sub"]
         set_font(run, 9.5, False, sub_color)
         shapes[node["id"]] = shape
-    nodes = node_map()
+    nodes = node_map(spec["nodes"])
     for a, b in spec["edges"]:
         start, end = pick_sites(nodes[a], nodes[b])
         connector = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, 0, 0, 0, 0)
@@ -459,7 +531,7 @@ def build_pdf():
         c.drawPath(p, fill=1, stroke=0)
 
     def diagram(item):
-        nodes = node_map()
+        nodes = node_map(item["nodes"])
         for a, b in item["edges"]:
             s, e = pick_sites(nodes[a], nodes[b])
             (x1, y1), (x2, y2) = sites(nodes[a])[s], sites(nodes[b])[e]

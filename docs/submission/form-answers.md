@@ -1,7 +1,7 @@
 # Submission form answers (draft)
 
 Draft text for the submission form. Character limits are the form's; counts are for the
-text inside each code block. Status: **reviewed draft; user choices and final media still pending**.
+text inside each code block. Status: **revised draft (2026-10-18); user choices, round 9 and final media still pending**.
 
 ## Page 1 — Basic information
 
@@ -14,21 +14,25 @@ ResponseCompass: Context-Aware Responder Dispatch
 ### Short Description (50–255)
 
 ```
-An AI dispatch agent for operations control rooms. When equipment fails, Compass ranks which responder should go, explaining why, using AMD Token Factory models while deterministic code owns every fact and keeps dispatch running offline.
+An AI dispatch agent for operations control rooms. Compass ranks who to send and which fix to try first on AMD Token Factory models, while code owns every fact and the control room supervises from wall screens and approves overtime.
 ```
 
 ### Long Description (600–2000 characters, 100+ words)
 
+Revised 2026-10-18 for the command-center framing (user direction). The overtime sentence
+depends on codex round 9 (overtime recommendations with approval); do not submit it until
+that is merged and verified on 3200.
+
 ```
-When equipment fails on a factory floor, the closest available technician is often not the best person to send. ResponseCompass is a context-aware dispatch agent inside a persistent, simulated control room. It finds who should respond to each issue right now, and explains why.
+When equipment fails on a factory floor, the closest available technician is often not the best person to send, and the first fix tried is often a guess. ResponseCompass is an AI dispatch agent for operations control rooms. It runs dispatch on its own, and the control room supervises it from wall screens: floor map, issue queue, dispatch context, event feed, analytics and an issue Pareto, each on its own monitor.
 
-Application code establishes the evidence: the simulation clock, each responder's location, shift and workload, eligibility, past resolution history, and two transparent baselines (nearest responder and a naive score). Compass, running on AMD Token Factory (MiMo-V2.6-Flash by default), then ranks only the eligible candidates it is given and writes a qualitative rationale. A second model acts as an event planner that proposes realistic incidents and a response action for each. Every model output is validated; if it is slow, rate-limited or invalid, the system falls back to a deterministic path, so model failure does not stop dispatch.
+Application code establishes the evidence: the simulation clock, each responder's location, shift and workload, eligibility, past resolution history, and transparent baselines. Compass, running on AMD Token Factory (MiMo-V2.6-Flash by default), ranks only what it is given, with a qualitative rationale: the eligible responders for each issue, then the troubleshooting procedures for the observed symptom, from what actually worked on comparable past repairs. Before each shift handover it ranks lawful overtime options for the backlog, and central command approves or rejects them. Every model output is validated; if it is slow or invalid, a deterministic path takes over, so dispatch never stops.
 
-Offers go out automatically. Responders accept or reject asynchronously, complex jobs can receive a second responder, and central command can override a pending dispatch. Each decision keeps a full audit trail, and the event feed flags where Compass disagreed with the baselines.
+Offers go out automatically, responders accept or reject, complex jobs get a second responder, and central command can override at any time. Every decision has an audit trail and is compared with its baseline.
 
-Each responder's true skill is hidden simulation truth that no model ever sees, so simulated outcomes are independent of the model's claims about skill. Operators get a live floor map, issue and responder views, day, week and month activity/downtime charts, plus observed resolution-time and success summaries. Next, Compass will also recommend the fix, drawing on the actions recorded in past resolutions.
+Responder skill and each fault's true cause are hidden simulation truth that no model or screen sees, so outcomes stay independent of the model's claims. A simulated month shows a 73.5% first-time fix rate and a Pareto from issue class to symptom to applied fix.
 
-Provider controls (local rate limiting, bounded 429 retries, a circuit breaker) limit requests and handle service failures, and an API-free Offline mode makes the demo reproducible. Built with Node.js and plain JavaScript; verified by 276 unit/integration tests and 49 Chromium end-to-end tests.
+Provider controls (rate limiting, bounded retries, a circuit breaker) protect the API budget, and an API-free Offline mode makes the demo reproducible. Built with Node.js and plain JavaScript, with hermetic unit tests and Chromium end-to-end tests.
 ```
 
 ### Reviewed form counts
@@ -38,8 +42,8 @@ Counts include paragraph breaks inside each code block, excluding the fences.
 | Field | Characters | Words | Requirement |
 |---|---:|---:|---|
 | Title | 49 | 4 | ≤50 characters |
-| Short description | 237 | 35 | 50–255 characters |
-| Long description | 1,906 | 285 | 600–2,000 characters; ≥100 words |
+| Short description | 232 | 40 | 50–255 characters |
+| Long description | 1,842 | 287 | 600–2,000 characters; ≥100 words |
 
 ### Participation Mode
 
@@ -63,7 +67,7 @@ Open: the form did not show the options. Pick after the user pastes them.
 ## Page 2 — Media
 
 - **Cover image (16:9):** to be generated from the reviewed prompt below.
-- **Video presentation (required):** `ResponseCompass-demo.webm` (1:40, captions); see [demo-video-script.md](demo-video-script.md).
+- **Video presentation (required):** `ResponseCompass-demo.webm` (≤3:00, captions; being re-recorded); see [demo-video-script.md](demo-video-script.md).
 - **Slide presentation (required, PDF):** `ResponseCompass-deck.pdf` (from `ResponseCompass-deck.pptx`); content in [pitch-deck.md](pitch-deck.md).
 
 ### Cover image prompt (ChatGPT, 16:9)
