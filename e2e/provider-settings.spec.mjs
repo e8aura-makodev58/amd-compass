@@ -108,3 +108,20 @@ for (const width of [375, 1280]) {
     expect(outbound).toEqual([]);
   });
 }
+
+test.describe("through the public tunnel", () => {
+  // Cloudflare's edge adds this header to every tunnel request; the server makes settings read-only for them.
+  test.use({ extraHTTPHeaders: { "cf-connecting-ip": "203.0.113.7" } });
+
+  test("Settings is visible but read-only: a note explains it and every API control is greyed out", async ({ page }) => {
+    await page.goto("/rooms/plant-1");
+    await page.getByRole("button", { name: "Settings" }).click();
+    await expect(page.getByRole("note")).toHaveText(/Read-only on the public demo/);
+    await expect(page.locator("#settings-provider")).toBeVisible();
+    const controls = page.locator("#settings-content").locator("input, select, button");
+    expect(await controls.count()).toBeGreaterThan(4);
+    for (const control of await controls.all()) await expect(control).toBeDisabled();
+    // The room's own controls are untouched.
+    await expect(page.locator("#settings-demo-tab")).toBeEnabled();
+  });
+});

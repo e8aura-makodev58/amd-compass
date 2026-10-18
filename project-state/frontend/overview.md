@@ -125,7 +125,8 @@ Chart colours are the `--chart-*` tokens.
 - **Analytics** — KPI grid, issue/equipment/responder tables, Compass-vs-baseline
   disagreement, timeline charts, and a searchable equipment directory. See
   [../concepts/analytics-and-ethics.md](../concepts/analytics-and-ethics.md).
-- **Settings** — an **API** sub-tab (shared provider/credential and separate Ranking
+- **Settings** — an **API** sub-tab (read-only with a note and every control disabled when
+  `GET /api/settings` reports `editable: false`, i.e. for tunnel visitors; shared provider/credential and separate Ranking
   (Compass) / Event planner model and reasoning pickers with individual validation status,
   saves and preserved unsaved drafts, with live model
   discovery) and a **Demo** sub-tab (workforce scenario, agent activity, deferred-demand

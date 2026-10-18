@@ -22,6 +22,13 @@ per-room).
 | GET | `/api/logs` | Recent structured application events. Accepts `?limit=`. |
 | POST | `/api/logs/client` | Accept a client-side (browser) error report. |
 
+**Public visitors are read-only on settings.** A request carrying `Cf-Connecting-IP` (set by
+Cloudflare's edge on every tunnel request) gets `editable: false` in `GET /api/settings`, and
+every other `/api/settings*` route (model discovery, saves, credential changes) returns
+`403 SETTINGS_READ_ONLY`. Host and LAN requests have no such header and keep full access.
+`COMPASS_PUBLIC_SETTINGS=editable` lifts this for a tunnel already behind Cloudflare Access.
+Tests: `public-settings.test.mjs`.
+
 ## Room-scoped routes
 
 Every path below is addressed as `/api/control-rooms/:id/<path>`. The manager resolves

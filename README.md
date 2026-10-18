@@ -39,7 +39,7 @@ This is a net-new, synthetic project. It contains no LOCI source, proprietary fa
 - clickable, on-demand issue audit trails with complete Compass analysis, offer history, control-center overrides, and resolution actions;
 - fixed-snapshot P0 analytics with denominators and thin-sample safeguards;
 - API-free deterministic Offline Demo using the same offer/accept and override interaction;
-- 334 hermetic unit and integration tests (including a 100-opportunity deterministic soak) and 72 Chromium E2E tests.
+- 338 hermetic unit and integration tests (including a 100-opportunity deterministic soak) and 73 Chromium E2E tests.
 
 ## Architecture
 
@@ -126,8 +126,11 @@ RESPONSECOMPASS_TUNNEL_TOKEN_FILE=/absolute/path/to/tunnel.token
 
 In the Cloudflare dashboard, set the public hostname's service to
 `http://responsecompass:3000` (the app's name on the Compose network, not `localhost:3200`).
-The app has no login: put a Cloudflare Access policy on at least `/api/settings*` so visitors
-cannot change or remove the provider key.
+The app has no login. Provider settings are therefore read-only for anyone arriving through
+the tunnel (Cloudflare adds `Cf-Connecting-IP` to those requests): they see the Settings page
+greyed out, and the server refuses changes. Change the key or models from
+`http://<host>:3200` on the host or LAN. `COMPASS_PUBLIC_SETTINGS=editable` lifts this, for a
+tunnel already behind Cloudflare Access.
 
 ### Switchover, data migration, and rollback
 

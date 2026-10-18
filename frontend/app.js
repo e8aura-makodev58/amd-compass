@@ -1307,6 +1307,13 @@ function renderSettings(settings) {
     </section><div class="settings-role-grid">${rolePickers}</div>
     <p id="settings-feedback" class="workflow-prompt" aria-live="polite"></p>
   </section>`;
+  // The server refuses settings changes from tunnel visitors; show that instead of
+  // letting them fill in a form that would fail.
+  if (settings.editable === false) {
+    elements["settings-content"].querySelector(".settings-card").insertAdjacentHTML("afterbegin", `<p class="settings-read-only" role="note">Read-only on the public demo. Provider settings can only be changed by the operator.</p>`);
+    for (const control of elements["settings-content"].querySelectorAll("input, select, button")) control.disabled = true;
+    return;
+  }
 
   document.querySelector("#settings-provider").addEventListener("change", (event) => {
     selectedProviderId = event.target.value;

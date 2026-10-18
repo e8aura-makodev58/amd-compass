@@ -38,6 +38,7 @@ baselines.
 | `COMPASS_PORT` (or `PORT`) | `3000` | HTTP listen port. |
 | `COMPASS_HOST` | `0.0.0.0` | HTTP listen host. |
 | `NODE_ENV` | — | `test` gates the test-only data-root override. |
+| `COMPASS_PUBLIC_SETTINGS` | `read-only` | `read-only`: requests through the Cloudflare Tunnel (they carry `Cf-Connecting-IP`) may read provider settings but not change them or run model discovery; host/LAN requests are unaffected. `editable` lifts this, only for a tunnel behind Cloudflare Access. Any other value fails startup. |
 | `COMPASS_IDLE_PAUSE_MINUTES` | `10` | Pause a RUNNING room after this many real minutes without operator activity (room mutations or the browser heartbeat; GET polling does not count), so an unattended room stops placing model calls. `0` disables it, e.g. for an unattended wall display. Rejects negative or non-numeric values at startup. |
 | `COMPASS_HISTORY_RETENTION_DAYS` | `7` | Archive closed detail at daily simulated boundaries, plus on load. `0` disables new archiving; existing archives/facts remain readable. Open/pending work and exact outcome evidence remain live. |
 | `COMPASS_CONTROL_ROOMS_DATA_ROOT` | — | **Test-only** multi-room data dir; requires `NODE_ENV=test`. Not a production relocation setting. |
@@ -116,6 +117,7 @@ the README's Docker section for switchover and rollback.
 Public access is through a Cloudflare Tunnel: the `cloudflared` service in `compose.yaml`
 (profile `tunnel`, token from the host file in `RESPONSECOMPASS_TUNNEL_TOKEN_FILE`, mounted as
 a read-only secret) forwards the public hostname to `http://responsecompass:3000`. No host
-port is opened for it. The app has no authentication, so Cloudflare Access must protect at
-least `/api/settings*`.
+port is opened for it. The app has no authentication; provider settings are read-only for
+tunnel visitors (`COMPASS_PUBLIC_SETTINGS`), so the shared key can only be changed from the
+host or LAN at port 3200.
 

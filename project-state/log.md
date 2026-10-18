@@ -308,3 +308,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] ops — Cloudflare Tunnel service
 - `compose.yaml` gains a `cloudflared` service (pinned 2026.10.1, profile `tunnel`, starts after the app is healthy, read-only, no capabilities). The tunnel token is a Compose secret read with `--token-file`, like the AMD key. Public hostname service: `http://responsecompass:3000`.
 - Pages updated: operations/running-and-config.md; README Docker section.
+
+## [2026-10-18] security — Provider settings read-only through the tunnel
+- Requests carrying `Cf-Connecting-IP` (every Cloudflare Tunnel request) get `editable: false` from `GET /api/settings`, and all other `/api/settings*` routes return `403 SETTINGS_READ_ONLY`; the API settings tab shows a note and disables every control. Host/LAN access on 3200 is unchanged. `COMPASS_PUBLIC_SETTINGS=editable` lifts it. Tests: `public-settings.test.mjs`, a tunnel case in `e2e/provider-settings.spec.mjs`.
+- Pages updated: backend/http-api.md, frontend/overview.md, operations/running-and-config.md; README.

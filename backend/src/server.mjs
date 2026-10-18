@@ -41,6 +41,25 @@ function mutationResponse(response, result) {
   return conflict ? sendJson(response, 409, { error: conflict.reason, code: conflict.reason, conflict }) : sendJson(response, 200, result);
 }
 
+/**
+ * Requests that arrive through the Cloudflare Tunnel carry Cf-Connecting-IP: Cloudflare's edge
+ * sets it, and a visitor can neither remove nor forge its absence. Requests from the host
+ * or the LAN (http://<host>:3200) do not. Provider settings are deployment-wide and hold the
+ * shared API key, so tunnel visitors may read them but not change them, unless the operator
+ * sets COMPASS_PUBLIC_SETTINGS=editable (for a tunnel already behind Cloudflare Access).
+ */
+function settingsEditable(request, publicSettingsEditable) {
+  return publicSettingsEditable || !request.headers["cf-connecting-ip"];
+}
+
+export function publicSettingsEditableFromEnv(value = process.env.COMPASS_PUBLIC_SETTINGS) {
+  if (value === undefined || value === "" || value === "read-only") return false;
+  if (value === "editable") return true;
+  throw new Error('COMPASS_PUBLIC_SETTINGS must be "read-only" or "editable"');
+}
+
+const SETTINGS_READ_ONLY = { error: "Provider settings are read-only on the public demo", code: "SETTINGS_READ_ONLY" };
+
 // A room URL (/rooms/:id) has no matching file on disk — it's a client-side
 // route the frontend parses from location.pathname at boot (see
 // Control_Rooms_SOW_v1_DRAFT.md §4.5) — so serve the same index.html rather
@@ -235,7 +254,7 @@ async function handleRoomScopedRoute({ request, response, path, runtime, logger,
  * /api/control-rooms/:id/. No route reaches a room's runtime except through
  * `manager.getRoom(id)` — see §4.1, "the manager is the sole boundary".
  */
-export function createRequestHandler(manager, logger = null, settingsService = null) {
+export function createRequestHandler(manager, logger = null, settingsService = null, { publicSettingsEditable = false } = {}) {
   return async (request, response) => {
     const url = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
     const startedAt = performance.now();
@@ -260,10 +279,13 @@ export function createRequestHandler(manager, logger = null, settingsService = n
           return sendJson(response, requestErrorStatus(error, 503), { error: error.message });
         }
       }
+      const editable = settingsEditable(request, publicSettingsEditable);
       if (request.method === "GET" && url.pathname === "/api/settings") {
         if (!settingsService) return sendJson(response, 503, { error: "Provider settings are unavailable" });
-        return sendJson(response, 200, await settingsService.snapshot());
+        return sendJson(response, 200, { ...await settingsService.snapshot(), editable });
       }
+      // Model discovery calls the provider, so it is an operator action like a save.
+      if (url.pathname.startsWith("/api/settings") && !editable) return sendJson(response, 403, SETTINGS_READ_ONLY);
       if (request.method === "GET" && url.pathname === "/api/settings/models") {
         if (!settingsService) return sendJson(response, 503, { error: "Provider settings are unavailable" });
         // No per-room Offline gate here (an earlier single-instance design had
@@ -355,8 +377,8 @@ export function createRequestHandler(manager, logger = null, settingsService = n
   };
 }
 
-export function createCompassServer(manager, logger = console, settingsService = null) {
-  const server = createServer(createRequestHandler(manager, logger, settingsService));
+export function createCompassServer(manager, logger = console, settingsService = null, options = {}) {
+  const server = createServer(createRequestHandler(manager, logger, settingsService, options));
   server.on("error", (error) => logEvent(logger, "server_error", { error: error.message }));
   return server;
 }
@@ -382,7 +404,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // createControlRoomManager already reconciled each READY room once during
   // construction; this is the same reconcile-before-serve discipline the
   // single-instance boot sequence used, extended per room.
-  const server = createCompassServer(manager, logger, settingsService);
+  const server = createCompassServer(manager, logger, settingsService, { publicSettingsEditable: publicSettingsEditableFromEnv() });
   // Only the process that owns the port may drive the simulation. Starting the
   // scheduler before binding left every failed start (EADDRINUSE) alive as a
   // headless writer competing for the same state files.
