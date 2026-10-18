@@ -98,6 +98,25 @@ The health check calls `GET /api/control-rooms` and passes only when every room 
 same host (project `compass`, volume `compass-data`, port 3000); never point this file at
 that volume. `docker-compose.yml` is a separate development setup (port 3100).
 
+### Public access through Cloudflare Tunnel
+
+The `cloudflared` service (container `responsecompass-tunnel`, pinned
+`cloudflare/cloudflared:2026.10.1`) connects outbound to Cloudflare, so no host port is
+opened. It runs only under the `tunnel` profile and starts after the app is healthy. The
+tunnel token is mounted like the AMD key: a read-only secret from the host file named by
+`RESPONSECOMPASS_TUNNEL_TOKEN_FILE`, read with `--token-file`, never placed in an
+environment variable. In `.env`:
+
+```sh
+COMPOSE_PROFILES=tunnel
+RESPONSECOMPASS_TUNNEL_TOKEN_FILE=/absolute/path/to/tunnel.token
+```
+
+In the Cloudflare dashboard, set the public hostname's service to
+`http://responsecompass:3000` (the app's name on the Compose network, not `localhost:3200`).
+The app has no login: put a Cloudflare Access policy on at least `/api/settings*` so visitors
+cannot change or remove the provider key.
+
 ### Switchover, data migration, and rollback
 
 A room is a checkpoint file plus a change journal (see

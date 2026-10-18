@@ -304,3 +304,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] feature — Idle auto-pause
 - A RUNNING room now pauses after `COMPASS_IDLE_PAUSE_MINUTES` (default 10, `0` disables) of real time without operator activity, so a visitor or judge who resumes a room and leaves stops spending AMD tokens. Activity is any non-GET room request plus a throttled browser heartbeat on real input; GET polling never counts. The pause records `SIMULATION_PAUSED` with `reason: OPERATOR_INACTIVITY` and logs `simulation_auto_paused`.
 - Pages updated: backend/control-rooms.md, backend/http-api.md, frontend/overview.md, operations/running-and-config.md.
+
+## [2026-10-18] ops — Cloudflare Tunnel service
+- `compose.yaml` gains a `cloudflared` service (pinned 2026.10.1, profile `tunnel`, starts after the app is healthy, read-only, no capabilities). The tunnel token is a Compose secret read with `--token-file`, like the AMD key. Public hostname service: `http://responsecompass:3000`.
+- Pages updated: operations/running-and-config.md; README Docker section.

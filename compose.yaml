@@ -41,7 +41,31 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  # Cloudflare Tunnel to the app. Outbound-only: no host port is opened. Runs only with
+  # the "tunnel" profile (COMPOSE_PROFILES=tunnel in .env), so the app still deploys on
+  # its own. In the Cloudflare dashboard the public hostname's service must be
+  # http://responsecompass:3000 (the app's name on this Compose network).
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.1
+    container_name: responsecompass-tunnel
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "run", "--token-file", "/run/secrets/responsecompass_tunnel_token"]
+    secrets:
+      - responsecompass_tunnel_token
+    depends_on:
+      responsecompass:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
 secrets:
+  responsecompass_tunnel_token:
+    # Host path of the tunnel token file, from RESPONSECOMPASS_TUNNEL_TOKEN_FILE in .env.
+    file: ${RESPONSECOMPASS_TUNNEL_TOKEN_FILE:-./.tunnel-token-not-configured}
   amd_token_factory_key:
     # Host path of the key file, taken from AMD_TOKEN_FACTORY_API_KEY_FILE in .env.
     file: ${AMD_TOKEN_FACTORY_API_KEY_FILE:?set AMD_TOKEN_FACTORY_API_KEY_FILE in .env to the host key file}

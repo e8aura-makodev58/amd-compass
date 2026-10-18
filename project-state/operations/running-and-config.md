@@ -113,3 +113,9 @@ The earlier non-container process on 3200 is retired; its data was copied into t
 and the pre-switchover backup is `.cache/backups/data-pre-docker-20261018T042107Z`. See
 the README's Docker section for switchover and rollback.
 
+Public access is through a Cloudflare Tunnel: the `cloudflared` service in `compose.yaml`
+(profile `tunnel`, token from the host file in `RESPONSECOMPASS_TUNNEL_TOKEN_FILE`, mounted as
+a read-only secret) forwards the public hostname to `http://responsecompass:3000`. No host
+port is opened for it. The app has no authentication, so Cloudflare Access must protect at
+least `/api/settings*`.
+
