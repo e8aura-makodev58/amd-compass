@@ -27,8 +27,8 @@ const instruction = 'Rank only the supplied fix IDs from the observed evidence. 
 export async function requestFixRanking(packet, options = {}) {
   assertNoResponderSkill(packet);
   const mode = options.mode ?? 'fixture';
-  const modelId = options.modelId ?? process.env.AMD_TOKEN_FACTORY_MODEL ?? AMD_DEFAULT_MODEL_ID;
-  const modelInfo = { provider: options.provider ?? 'amd', modelId, mode, reasoningEffort: options.reasoningEffort ?? defaultReasoningEffortFor(modelId) };
+  const modelId = options.modelId ?? (process.env.AMD_TOKEN_FACTORY_MODEL || AMD_DEFAULT_MODEL_ID);
+  const modelInfo = { provider: options.provider ?? 'amd', modelId, mode, reasoningEffort: options.reasoningEffort ?? (process.env.AMD_TOKEN_FACTORY_REASONING_EFFORT || defaultReasoningEffortFor(modelId)) };
   if (mode === 'force-failure') return { status: 'unavailable', reason: 'forced-failure', modelInfo };
   try {
     let result;

@@ -51,10 +51,36 @@ test('a pending fix provider wait yields the live agent lane and never holds dis
  // A normal responder recommendation can still complete while the fix request waits.
  const response=await Promise.race([runtime.recommend('ISS-104'),new Promise((_,reject)=>setTimeout(()=>reject(Error('dispatch blocked by fix ranking')),1000))]);
  assert.ok(response.issues.find(i=>i.id==='ISS-104').pendingOfferId);
+ await store.mutate('new-work-during-fix-wait',(state)=>{
+   const at=state.simulationState.simulationTime;
+   state.issues.push({id:'ISS-105',equipmentId:'EQ-05',issueClass:'A',complexity:'STANDARD',status:'PENDING',existingPriority:'UNSPECIFIED',raisedAt:at,createdAt:at,downtimeStartedAt:at});
+   state.equipment.find(e=>e.id==='EQ-05').status='ISSUE_ACTIVE';
+ });
  const before=(await store.snapshot()).simulationState.simulationTime;
  await new Promise(r=>setTimeout(r,30));await runtime.runScheduledTick();
  assert.ok(Date.parse((await store.snapshot()).simulationState.simulationTime)>Date.parse(before));
  assert.equal((await runtime.snapshot()).agentActivity.fixes.status,'RUNNING');
+ const dispatchDeadline=performance.now()+3000;
+ while(!(await store.snapshot()).issues.find(i=>i.id==='ISS-105')?.pendingOfferId && performance.now()<dispatchDeadline) await new Promise(r=>setTimeout(r,10));
+ assert.ok((await store.snapshot()).issues.find(i=>i.id==='ISS-105').pendingOfferId,'the real-time agent lane offered new work while fix inference was pending');
  release({status:'ok',result:resultFor(packet),modelInfo:{mode:'live',provider:'amd',modelId:'test-model'}});
  await runtime.agentWorkIdle();await runtime.pause();
+});
+
+test('replacing a fix request identity makes the previous provider result stale', async()=>{
+ const store=memoryStore();let release,started;const ready=new Promise(r=>started=r);
+ const service=createFixRecommendationService(store,{requestRanking:async packet=>{started(packet);return new Promise(r=>release=r);}});
+ const pending=service.recommend('ISS-104');const packet=await ready;
+ const issue=store.state().issues.find(i=>i.id==='ISS-104');
+ issue.fixRecommendation={...issue.fixRecommendation,requestToken:'replacement-after-reset'};
+ release({status:'ok',result:resultFor(packet),modelInfo:{mode:'live',provider:'amd',modelId:'old-result'}});
+ const response=await pending;
+ assert.equal(response.result.status,'STALE');assert.equal(issue.fixRecommendation.requestToken,'replacement-after-reset');assert.equal(issue.fixRecommendation.source,'DETERMINISTIC');
+});
+
+test('paused Live rooms do not initiate fix model calls',async()=>{
+ const store=memoryStore();store.state().simulationState.status='PAUSED';let calls=0;
+ const {createLiveRuntime}=await import('../src/live-runtime.mjs');
+ const runtime=createLiveRuntime({store,plannerOptions:{mode:'force-failure'},agentOptions:{mode:'force-failure'},requestFixRecommendation:async()=>{calls++;return{status:'unavailable'};}});
+ await runtime.runScheduledTick();await runtime.agentWorkIdle();assert.equal(calls,0);
 });

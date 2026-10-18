@@ -1,3 +1,4 @@
+import { readDemoSeedState } from '../src/demo-seed-reader.mjs';
 import assert from "node:assert/strict";
 import test from "node:test";
 import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
@@ -21,7 +22,7 @@ async function scratch(t) {
 test("one day from the committed seed is byte-identical, offline, loadable and skill-safe", { timeout: 60_000 }, async (t) => {
   const directory = await scratch(t);
   const from = join(repository, "backend/seed/demo-control-rooms/plant-1.json");
-  const input = JSON.parse(await readFile(from, "utf8"));
+  const input = await readDemoSeedState(from);
   const until = new Date(Date.parse(input.simulationState.simulationTime) + 86_400_000).toISOString();
   const outputs = [join(directory, "first.json"), join(directory, "second.json")];
   for (const out of outputs) {

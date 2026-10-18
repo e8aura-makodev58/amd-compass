@@ -1,3 +1,4 @@
+import { readDemoSeedBytes } from './demo-seed-reader.mjs';
 /**
  * One-time bootstrap for portable, pre-seeded Compass demos.
  *
@@ -5,7 +6,7 @@
  * its control-rooms directory. Existing state is never merged, replaced, or
  * otherwise touched, so pulling new code cannot overwrite a running demo.
  */
-import { access, copyFile, mkdir, readdir, rename, rm } from "node:fs/promises";
+import { access, copyFile, mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,7 +37,8 @@ export async function bootstrapDemoSeed({ dataRoot, seedRoot = defaultSeedRoot, 
   try {
     for (const [source, target] of targets) {
       await mkdir(dirname(target), { recursive: true });
-      await copyFile(join(seedRoot, source), target, constants.COPYFILE_EXCL);
+      if (source === 'room-metadata.json') await copyFile(join(seedRoot, source), target, constants.COPYFILE_EXCL);
+      else await writeFile(target, await readDemoSeedBytes(join(seedRoot, source)), { flag: 'wx' });
     }
     for (const room of ["plant-1", "plant-2"]) await copyHistoryArchive(join(seedRoot, `${room}.json.history`), join(staging, room, "history-archive"));
     try { await rename(staging, roomsRoot); }

@@ -110,3 +110,6 @@ prevents reset races. Interrupted requests are made eligible for retry on load.
 `responseAction` remains accepted as the planner's incident note. New resolution actions
 come from the applied catalog procedure. Offline uses the same evidence and attempt
 engines with `backend/fixtures/fix-rankings.json`, always API-free.
+
+Paused rooms do not start new fix inference. The fix-work selector uses the queued
+read-only projection rather than cloning all history just to inspect pending work.

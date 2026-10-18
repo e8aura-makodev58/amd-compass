@@ -68,3 +68,27 @@ test('fallback uses observed same-symptom smoothing, counts and catalog ties; le
   for(let i=0;i<4;i++)s.resolutionHistory.push({issueId:`other-${i}`,issueClass:'B',equipmentId:issue.equipmentId,symptomCode:issue.symptom.code,fixApplied:fixesFor('B')[2],fixAttemptNumber:1,success:true,resolutionMinutes:8,resolvedAt:s.simulationState.simulationTime});
   const packet=buildFixPacket(s,issue.id);assert.equal(fallbackFixOrder(packet)[0].fixId,fixesFor('B')[2].id);assert.equal(baselineFix(packet),fixesFor('B')[2].id);assert.equal(packet.candidates[2].sameSymptom.firstTimeSuccesses,4);
 });
+
+test('Offline fix fixtures and interrupted-request migration preserve the privacy boundary', async()=>{
+ const {createDemoRuntime}=await import('../src/offline-runtime.mjs');
+ const offline=createDemoRuntime({mode:'fixture'},{create:async()=>{},updateDecision:async()=>{}});
+ await offline.raiseIssue('ISS-104');const snapshot=offline.snapshot();
+ assertNoResponderSkill(snapshot);assertNoFaultTruth(snapshot);
+ assert.equal(snapshot.issues.find(i=>i.id==='ISS-104').fixRecommendation.source,'FIXTURE');
+ const seed=createLiveSeed();const issue=seed.issues.find(i=>i.id==='ISS-104');
+ issue.fixRecommendation={...deterministicFixRecommendation(seed,issue),status:'PENDING_MODEL',modelAttempted:true,requestToken:'interrupted'};
+ const migrated=migrateLiveState(seed);const rec=migrated.issues.find(i=>i.id===issue.id).fixRecommendation;
+ assert.equal(rec.status,'INTERRUPTED');assert.equal(rec.modelAttempted,false);assert.equal(rec.requestToken,undefined);
+ assert.deepEqual(migrated.faultTruth,seed.faultTruth);assert.deepEqual(migrated.simulationState.rngStreams,seed.simulationState.rngStreams);
+});
+
+test('first-time fix and agreement metrics exclude legacy retries and suppress thin samples',()=>{
+ const state=createLiveSeed();const issue=state.issues.find(i=>i.id==='ISS-104');
+ issue.fixRecommendation={...deterministicFixRecommendation(state,issue),modelAttempted:true};
+ for(let n=0;n<2;n++)state.resolutionHistory.push({id:`metric-${n}`,issueId:`metric-issue-${n}`,issueClass:'B',equipmentId:issue.equipmentId,fixApplied:fixesFor('B')[0],fixAttemptNumber:1,legacyFix:false,success:n===0,resolutionMinutes:10,resolvedAt:state.simulationState.simulationTime,responderId:'R-ENGR028'});
+ let f=buildAnalytics(state).fixes;assert.equal(f.firstTimeFixRate.denominator,2);assert.equal(f.firstTimeFixRate.numerator,1);assert.equal(f.firstTimeFixRate.status,'INSUFFICIENT_DATA');assert.equal(f.firstTimeFixRate.rate,null);
+ state.resolutionHistory.push({...state.resolutionHistory.at(-1),id:'metric-retry',fixAttemptNumber:2,success:true});
+ assert.equal(buildAnalytics(state).fixes.firstTimeFixRate.denominator,2);
+ state.resolutionHistory.push({...state.resolutionHistory.at(-1),id:'metric-third',fixAttemptNumber:1,success:true});
+ f=buildAnalytics(state).fixes;assert.equal(f.firstTimeFixRate.denominator,3);assert.equal(f.firstTimeFixRate.rate,2/3);assert.equal(f.recommendedVsBaselineAgreement.denominator,1);assert.equal(f.recommendedVsBaselineAgreement.status,'INSUFFICIENT_DATA');
+});

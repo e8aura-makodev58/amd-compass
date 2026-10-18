@@ -26,6 +26,8 @@ for (const width of [375,1280]) test(`fix recommendations, evidence and applied 
  await page.locator('[data-feed-issue-id="ISS-104"]').first().click();
  await expect(page.locator('#recommendation-panel')).toContainText('Applied fixes by attempt');
  await expect(page.locator('#recommendation-panel')).toContainText(/FIX-B-/);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ expect(await page.locator('#recommendation-panel').evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
  await page.getByRole('button',{name:'Analytics',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Fix recommendations and outcomes',exact:true})).toBeVisible();
  await expect(page.locator('#analytics-content')).toContainText('First-time fix rate');

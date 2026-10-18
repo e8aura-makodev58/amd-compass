@@ -132,3 +132,7 @@ retain their existing sizing. Active applied fixes are labelled separately from 
 recommendation. Both audit paths show each applied fix and outcome, or label legacy
 free-text actions. Analytics adds first-time fix and agreement summaries plus period rows.
 The planner's retained free-text response is labelled Incident note.
+
+Fix-rate percentages use one decimal place so small week-to-week decreases remain
+visible. Audit grid columns and evidence scroll areas are constrained to their context
+tile; mobile tests check overflow after opening the full applied-fix chronology too.

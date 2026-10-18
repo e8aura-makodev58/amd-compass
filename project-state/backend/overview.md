@@ -76,3 +76,6 @@ one TypeScript type file; there is no build step.
   comparator and immutable applied selection for new attempts.
 - `fix-ranking.mjs`: bounded structured model/fixture request and strict validator.
 - `fix-recommendation-service.mjs`: request/result persistence, fallback and late/reset guards.
+
+`demo-seed-reader.mjs` reads ordinary seed JSON or a checksum-verified compressed seed
+manifest. Bootstrap and generation use it; live persistence remains plain JSON.

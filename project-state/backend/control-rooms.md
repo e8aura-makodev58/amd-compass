@@ -74,3 +74,9 @@ normal room storage places them at `plant-1/history-archive/`. Missing indexed d
 fail room startup instead of silently losing audit history. See
 [demo-history.md](../../docs/demo-history.md) for reproduction and measurements, and
 [history-retention.md](../../docs/history-retention.md) for persistence and reader inventory.
+
+Round 8 plant-1 uses a checksum-verified gzip manifest and companion payload to keep each
+committed file below 20 MB. `demo-seed-reader.mjs` restores ordinary runtime JSON during
+bootstrap; plant-2's ordinary JSON remains supported. The generator also accepts either
+format. Copying the manifest as a live state file is invalid; see the materialization
+command in `docs/demo-history.md`. Runtime state and memory are not compressed.

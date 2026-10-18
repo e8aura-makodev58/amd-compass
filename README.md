@@ -138,3 +138,16 @@ The application persists up to 1,000 structured runtime log events in the ignore
 The generic control rooms are **e8-aura-p1** (`/rooms/plant-1`) and
 **e8-aura-p2** (`/rooms/plant-2`). Compass ranks eligible responders from aggregate
 simulated history; MES integration and case-guided response plans are not included.
+
+## Evidence-based troubleshooting
+
+Issues expose an observed symptom and a Recommended fix section with catalog procedures,
+ranked order, observed evidence and an explicit AMD / deterministic / Offline-fixture
+source. The applied procedure is frozen when work begins and affects the seeded simulated
+outcome; failed work tries the next untried procedure. The incident planner's free-text
+response remains a note, while audit entries record the fix actually applied.
+
+Models never see latent fault causes, effectiveness tables or hidden responder skill.
+First-time fix rates and recommendation/baseline agreement carry denominators; legacy
+free-text actions are labelled and excluded from fix evidence. These are simulated
+observations, not proof of improvement in a real facility.

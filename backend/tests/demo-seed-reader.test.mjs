@@ -1,0 +1,21 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {mkdtemp,writeFile,readFile,rm,mkdir,symlink} from 'node:fs/promises';import{join}from'node:path';import{gzipSync}from'node:zlib';import{createHash}from'node:crypto';
+import{readDemoSeedBytes,readDemoSeedState}from'../src/demo-seed-reader.mjs';
+import{bootstrapDemoSeed}from'../src/demo-seed-bootstrap.mjs';
+import{createLiveSeed}from'../seed/live-simulation.mjs';
+test('compressed seeds restore exact state bytes, bootstrap with archives and reject corrupt or escaping payloads',async t=>{
+ const root=await mkdtemp(new URL('../../.cache/seed-reader-',import.meta.url).pathname);t.after(()=>rm(root,{recursive:true,force:true}));
+ const bytes=Buffer.from(JSON.stringify(createLiveSeed())+'\n');const compressed=gzipSync(bytes,{level:9});
+ assert.deepEqual(compressed,gzipSync(bytes,{level:9}));
+ const manifest={format:'compass-seed-gzip-v1',file:'plant-1.state.json.gz',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
+ const file=join(root,'plant-1.json');await writeFile(file,JSON.stringify(manifest));await writeFile(join(root,manifest.file),compressed);
+ assert.deepEqual(await readDemoSeedBytes(file),bytes);assert.deepEqual(await readDemoSeedState(file),JSON.parse(bytes));
+ await writeFile(join(root,'plant-2.json'),bytes);await writeFile(join(root,'room-metadata.json'),'{}');
+ await mkdir(join(root,'plant-1.json.history/0'),{recursive:true});await writeFile(join(root,'plant-1.json.history/0/2026-09-01.json'),'{}');
+ const out=join(root,'runtime');await bootstrapDemoSeed({dataRoot:out,seedRoot:root,enabled:true});
+ assert.deepEqual(await readFile(join(out,'control-rooms/plant-1/live-simulation.json')),bytes);
+ assert.equal(await readFile(join(out,'control-rooms/plant-1/history-archive/0/2026-09-01.json'),'utf8'),'{}');
+ await writeFile(file,JSON.stringify({...manifest,sha256:'0'.repeat(64)}));await assert.rejects(readDemoSeedBytes(file),/checksum/);
+ await writeFile(file,JSON.stringify({...manifest,file:'../escape.json.gz'}));await assert.rejects(readDemoSeedBytes(file),/manifest/);
+ const inner=join(root,'inner');await mkdir(inner);await symlink(join(root,manifest.file),join(inner,manifest.file));await writeFile(join(inner,'seed.json'),JSON.stringify(manifest));await assert.rejects(readDemoSeedBytes(join(inner,'seed.json')),/inside/);
+});

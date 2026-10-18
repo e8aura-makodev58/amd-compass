@@ -199,11 +199,11 @@ export function createLiveRuntime({
   }
 
   async function rankNextFix() {
-    const state = await store.snapshot();
-    const issue = state.issues.find((row) => row.status !== 'RESOLVED' && row.fixRecommendation?.status !== 'PENDING_MODEL' && !row.fixRecommendation?.modelAttempted);
-    if (!issue) return;
-    return trackAgent('fixes', `Ranking supplied fixes for ${issue.id}.`, () => fixRecommendations.recommend(issue.id),
-      (outcome) => `Fix ranking for ${issue.id}: ${outcome?.result?.status ?? outcome?.status ?? 'complete'}.`);
+    const select = (state) => state.simulationState.status !== 'RUNNING' ? null : state.issues.find((row) => row.status !== 'RESOLVED' && row.fixRecommendation?.status !== 'PENDING_MODEL' && !row.fixRecommendation?.modelAttempted)?.id;
+    const issueId = store.project ? await store.project(select) : select(await store.snapshot());
+    if (!issueId) return;
+    return trackAgent('fixes', `Ranking supplied fixes for ${issueId}.`, () => fixRecommendations.recommend(issueId),
+      (outcome) => `Fix ranking for ${issueId}: ${outcome?.result?.status ?? outcome?.status ?? 'complete'}.`);
   }
 
   async function scheduleFixWork() {

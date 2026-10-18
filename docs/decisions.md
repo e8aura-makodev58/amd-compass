@@ -895,3 +895,18 @@ denominators and thin-sample suppression. Recommended/baseline agreement compare
 not causal effectiveness. Exact fix observations and compact recommendation facts survive
 retention without archive reads on analytics requests. Weekly month-seed results will be
 reported as produced; no monotonic-improvement tuning or claims are assumed.
+
+## 2026-10-18 — Package the expanded month losslessly without trimming evidence
+
+The fix-enabled month restores to 26,996,348 bytes, exceeding the 20 MB committed-file
+limit. Keep every canonical observation and audit detail; package it as a small JSON
+manifest plus a 1,753,758-byte deterministic gzip payload, with uncompressed byte count and
+SHA-256 checked by `demo-seed-reader.mjs`. Bootstrap and generation accept both ordinary
+JSON and this format. Daily archive JSON files remain below 3.3 MB. Runtime persistence
+is still ordinary JSON; compression does not fix its size, cold-load time or memory use.
+Operators must materialize the manifest before manual installation and back up the room.
+
+Generated first-time fix rates by complete week were 67.1%, 74.9%, 76.5%, 75.6%: not a
+monotonic improvement or a causal model-versus-baseline result. No outcome was rewritten.
+New fix requests are gated on RUNNING; their read-only selector avoids full history clones.
+Existing running attempts retain legacy actions and are labelled separately in the UI.
