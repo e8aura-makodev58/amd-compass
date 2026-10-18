@@ -49,8 +49,13 @@ export function createLiveRuntime({
   let dispatchQueued = false;
 
   function inLoop() { return loopContext.getStore() === true; }
-  // With a live provider, the planner and each ranking take tens of seconds.
-  const liveProviderCalls = [plannerOptions?.mode, agentOptions?.mode].includes("live");
+  // With a live provider, the planner and each ranking take tens of seconds. Rooms pass
+  // their options as functions over the saved provider settings, so resolve them per call.
+  async function liveProviderCalls() {
+    const resolveOptions = async (options) => (typeof options === "function" ? await options() : options);
+    const [planner, compass] = await Promise.all([resolveOptions(plannerOptions), resolveOptions(agentOptions)]);
+    return [planner?.mode, compass?.mode].includes("live");
+  }
 
   function startAgentLane() {
     if (agentLane) return;
@@ -309,7 +314,7 @@ export function createLiveRuntime({
       // planner and the dispatch ranking then run in the agent lane, so the
       // operator's request returns in milliseconds instead of minutes; the new
       // issue appears on the next poll. Offline-style modes stay inline.
-      if (liveProviderCalls) return withState(await loopContext.run(true, () => scheduler.forceNextEvent()));
+      if (await liveProviderCalls()) return withState(await loopContext.run(true, () => scheduler.forceNextEvent()));
       return withState(await scheduler.forceNextEvent());
     },
     async forceResolve(issueId) { const result = await scheduler.forceResolve(issueId); await drainDeferredAgentWork(); return withState(result); },

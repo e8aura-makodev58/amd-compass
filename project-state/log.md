@@ -292,3 +292,7 @@ See [README.md](README.md#logmd-entry-format) for the entry format. `<type>` is 
 ## [2026-10-18] perf — Journaled live store, frozen snapshots (round 10)
 - Copy-on-write drafts, changed-row validation, an fsynced checksummed journal with periodic checkpoints, and frozen published state returned by `snapshot()` without cloning. Month-seed benchmark: `/state` p95 1.16 s → 0.18 s, speed change 1.50 s → 0.27 s, tick mutation 0.43 s → 0.18 s (50 ms target not met). Crash/torn-write/corruption/legacy-load/replay tests in `live-journal.test.mjs`. Finished by the main agent after Codex ran out of tokens.
 - Pages updated: backend/live-runtime.md, backend/control-rooms.md, architecture.md; docs/decisions.md.
+
+## [2026-10-18] fix — Trigger Next Event queues model work in real rooms too
+- Rooms pass provider options as functions over the saved settings, so the earlier "is the provider live?" check (which read `.mode` on a plain object) never matched on a real server and Trigger Next Event still waited for the AMD planner (7–42 s on 3200). The check now resolves the options per call. The regression test covers both option shapes.
+- Pages updated: none (behaviour now matches backend/live-runtime.md).
