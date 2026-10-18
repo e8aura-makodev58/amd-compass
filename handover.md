@@ -93,7 +93,7 @@ A watcher also stops on its own once the **Current task per agent** table shows 
 
 | Agent | Watcher |
 |---|---|
-| codex | RUN (round 10 task open) |
+| codex | STOP (no open task) |
 | gemini | STOP (excluded from tasks) |
 | codebuddy | STOP (excluded from tasks) |
 | claude | STOP (task taken by the main agent) |
@@ -107,7 +107,7 @@ and stops once no agent has an open assignment.
 
 | Agent | Current task | Round |
 |---|---|---|
-| codex | Keep the live store fast at month scale | 10 |
+| codex | none | — |
 | gemini | none — **excluded from tasks** (user, 2026-10-17); theme merged `87b3a77` | — |
 | codebuddy | none — **excluded from tasks** (user, 2026-10-17) | — |
 | claude | none — provider controls built by the main agent on master | — |
@@ -454,6 +454,7 @@ queues behind that chain.
 
 ### Merge log
 
+- 2026-10-18 — **codex** `7d74b73` → merge `9aee67d`: journaled live store, copy-on-write drafts, frozen snapshots (round 10). Codex ran out of tokens mid-task; the main agent finished it in the codex worktree at the user's request (16 failing tests fixed, crash-safety tests added). Clean merge. `npm test` 327/327, E2E 71/71. Tick-mutation 50 ms target not met (p95 0.18 s). Handoff archived.
 - 2026-10-18 — **codex** `28b0fed` → merge `4e0cfb8`: user-directed operational UI refinements (decision-first staffing, phone workspace, analytics layout) and strict staffing prose `ce2b7c2`. Clean merge. `npm test` 319/319, E2E 71/71. Handoff archived. Round 10 (store performance) still open.
 - 2026-10-18 — **codex** `9e82f9e` → merge `a37849a`: overtime recommendations with command-center approval, Staffing tile and display screen, staffing analytics, regenerated month (round 9). Conflicts with the main agent's Pareto screen resolved by keeping both. Main agent fixed the staffing ranking's missing transport on master. `npm test` 316/316, E2E 67/67. Handoff archived.
 - 2026-10-18 — **main agent** on master: wall-display screens, Issue Pareto panel, live fix-ranking transport and prose fix, non-blocking Trigger Next Event.
@@ -477,13 +478,9 @@ queues behind that chain.
 
 ## codex
 
-- **Status:** READY FOR MERGE
+- **Status:** IDLE
 - **Updated:** 2026-10-18
-- **Task:** Round 10, keep the live store fast at month scale. Codex built the journal, copy-on-write drafts and changed-row validation, then ran out of tokens with the work uncommitted and 16 unit tests failing; the main agent finished it in this worktree at the user's request.
-- **Finished by the main agent:** draft results are detached before the draft closes; branches built during a transaction are unwrapped so no proxy reaches published state; frozen subtrees are shared instead of copied; `snapshot()` returns the frozen state without a 30 MB clone (generator and fixture tests copy explicitly); `readDurableLiveState` for tools/tests; crash-safety tests (`live-journal.test.mjs`: restart without checkpoint, torn tail, corrupt frame fails closed, checkpoint/journal crash window, compaction, legacy file, replay equality, frozen snapshots).
-- **Benchmark** (`scripts/benchmark-live-store.mjs`, month seed, 5×, forced providers, 8 samples, p95): `/state` 1.16 s → 0.18 s; speed change 1.50 s → 0.27 s; `/analytics` 1.57 s → 0.61 s; Pareto 1.25 s → 0.34 s; tick mutation 0.43 s → 0.18 s (**50 ms target not met**); forced-mode Trigger Next Event 3.6 s → 0.98 s (live mode returns after a 31 ms claim).
-- **Verification:** `npm test` 327/327; E2E 71/71 on 3021; ports freed.
-- **Operations:** back up and copy a room as a whole directory; the checkpoint file alone is not the current state.
+- **Task:** None. Round 10 merged; see `docs/handover-history.md`.
 
 ---
 
