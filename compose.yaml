@@ -49,6 +49,9 @@ services:
     image: cloudflare/cloudflared:2026.10.1
     container_name: responsecompass-tunnel
     profiles: ["tunnel"]
+    # The host token file should be mode 600; a file secret is a bind mount that keeps the
+    # host owner, so run as that owner (uid 1000 on m920) rather than the image's 65532.
+    user: "1000:1000"
     command: ["tunnel", "--no-autoupdate", "run", "--token-file", "/run/secrets/responsecompass_tunnel_token"]
     secrets:
       - responsecompass_tunnel_token

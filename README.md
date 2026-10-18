@@ -100,7 +100,7 @@ that volume. `docker-compose.yml` is a separate development setup (port 3100).
 
 ### Public access through Cloudflare Tunnel
 
-The `cloudflared` service (container `responsecompass-tunnel`, pinned
+The `cloudflared` service (container `responsecompass-tunnel`, running as uid 1000 so a mode-600 token file stays readable, pinned
 `cloudflare/cloudflared:2026.10.1`) connects outbound to Cloudflare, so no host port is
 opened. It runs only under the `tunnel` profile and starts after the app is healthy. The
 tunnel token is mounted like the AMD key: a read-only secret from the host file named by
